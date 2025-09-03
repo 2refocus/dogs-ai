@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   other: { "color-scheme": "dark light" }
 };
 
+const BUILD_TAG = process.env.NEXT_PUBLIC_BUILD_TAG || "ui-patch-" + new Date().toISOString().slice(0,16).replace(/[:T]/g, "").slice(0,12);
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -31,8 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="container" style={{ paddingTop: '0.5rem', paddingBottom: '3rem' }}>
           {children}
         </main>
-        <footer className="container" style={{ paddingBottom: '2rem', opacity:.7, fontSize:'.85rem' }}>
-          Made with ❤️
+        <footer className="container" style={{ paddingBottom: '2rem', opacity:.7, fontSize:'.85rem', display:'flex', justifyContent:'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <span>Made with ❤️</span>
+          <span style={{ opacity:.65 }}>build: <code>{BUILD_TAG}</code></span>
         </footer>
       </body>
     </html>

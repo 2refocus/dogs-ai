@@ -16,9 +16,10 @@ export default function HistoryPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
-  const [cols, setCols] = useState<2 | 3 | 6>(3);
+  const [cols, setCols] = useState<1 | 2 | 3 | 6>(1); // default 1 on mobile
 
   useEffect(() => {
+    // Server + local merge
     (async () => {
       const local = readLocal();
       let server: Item[] = [];
@@ -32,13 +33,23 @@ export default function HistoryPage() {
         }
       }
       const map = new Map<string, Item>();
-      [...server, ...local].forEach(it => {
-        if (!map.has(it.output_url)) map.set(it.output_url, it);
-      });
+      [...server, ...local].forEach(it => { if (!map.has(it.output_url)) map.set(it.output_url, it); });
       const merged = Array.from(map.values()).sort((a,b) => +new Date(b.created_at) - +new Date(a.created_at));
       setItems(merged);
       setLoading(false);
     })();
+  }, []);
+
+  // Auto-adjust columns by screen width (1 col on <640px)
+  useEffect(() => {
+    const apply = () => {
+      if (window.innerWidth < 640) setCols(1);
+      else if (window.innerWidth < 900) setCols(2);
+      else setCols(3);
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
   }, []);
 
   const downloadViaProxy = async (url: string) => {
@@ -77,7 +88,7 @@ export default function HistoryPage() {
   };
 
   const GridControls = () => (
-    <div className="flex items-center gap-2">
+    <div className="hidden sm:flex items-center gap-2">
       <span className="text-sm opacity-80">View:</span>
       <button className={`btn-outline btn-sm ${cols===2 ? '!bg-white/10' : ''}`} onClick={() => setCols(2)}>2×</button>
       <button className={`btn-outline btn-sm ${cols===3 ? '!bg-white/10' : ''}`} onClick={() => setCols(3)}>3×</button>
@@ -100,7 +111,7 @@ export default function HistoryPage() {
         <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {items.map((it, idx) => (
             <div key={(it as any).id ?? idx} className="card bg-white/5">
-              <img className="preview" src={it.output_url} alt={it.preset_label ?? "result"} />
+              <img className="preview" src={it.output_url} alt={it.preset_label ?? "result"} style={{ width: '100%', height: 'auto' }} />
               <div className="mt-2 text-sm opacity-80 truncate">
                 <div className="truncate"><b>{it.preset_label || "Custom"}</b>{it.species ? ` · ${it.species}` : ""}</div>
                 <div>{new Date(it.created_at).toLocaleString()}</div>
