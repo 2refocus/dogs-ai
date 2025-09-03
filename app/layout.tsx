@@ -1,12 +1,14 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import Logo from "@/components/Logo";
+import { SITE } from "@/lib/site";
 
 const NavGate = dynamic(() => import("@/components/NavGate"), { ssr: false });
 
 export const metadata: Metadata = {
-  title: "Nano Banana Pet Portrait",
-  description: "Upload a pet photo → stylized portrait via google/nano-banana on Replicate.",
+  title: SITE.title,
+  description: SITE.subtitle,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,13 +16,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <div className="container">
-          <header className="mb-6 flex items-center justify-between gap-3">
-            <h1 className="text-3xl font-semibold">🍌 Nano Banana Pet Portrait</h1>
+          <header className="mb-6 navbar relative">
+            <a href="/" className="brand">
+              <Logo variant={SITE.logo} className="logo-mark" />
+              <div>
+                <div className="brand-title">{SITE.title}</div>
+                <div className="brand-sub">{SITE.subtitle}</div>
+              </div>
+            </a>
             <NavGate />
           </header>
           {children}
           <footer className="mt-16 opacity-60 text-sm">
-            Note: Outputs include Google’s invisible SynthID watermark.
+            Note: Outputs may include Google’s invisible SynthID watermark.
           </footer>
         </div>
       </body>
