@@ -27,6 +27,7 @@ export default function Home() {
   const [signedIn, setSignedIn] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgLoading, setImgLoading] = useState(false);
+  const [showPanel, setShowPanel] = useState(false); // NEW: reveal result panel as soon as we start
 
   const mergedPresets = useMemo(() => {
     const seen = new Set<string>();
@@ -83,7 +84,7 @@ export default function Home() {
 
   const onSubmit = async () => {
     if (!file) { setError("Please select an image first."); return; }
-    setLoading(true); setError(null); setResult(null); setPercent(1);
+    setLoading(true); setError(null); setResult(null); setPercent(1); setShowPanel(true); // reveal panel early
 
     const timer = window.setInterval(() => {
       setPercent(p => (p < 87 ? p + Math.max(1, Math.round((87 - p) / 8)) : p));
@@ -193,7 +194,8 @@ export default function Home() {
 
         {error && <p className="text-red-400">{error}</p>}
 
-        {result && (
+        {/* Result panel shows from the start of generation */}
+        {(showPanel || result) && (
           <div className="grid gap-4">
             <div className="text-sm opacity-80">Preset used: <b>{presetLabel}</b></div>
             <div className="grid gap-3 sm:grid-cols-[160px_1fr] items-start">
@@ -202,14 +204,15 @@ export default function Home() {
                 <div className="text-xs opacity-70 text-center">Original</div>
               </div>
               <div className="grid gap-2">
-                {imgLoading && <div className="skeleton-pattern" />}
-                <img className="preview" src={result} alt="generated portrait" onLoad={() => setImgLoading(false)} style={{ display: imgLoading ? "none" : "block" }} />
+                {(!result || imgLoading) && <div className="skeleton-pattern" />}
+                {result && (<img className="preview" src={result} alt="generated portrait" onLoad={() => setImgLoading(false)} style={{ display: imgLoading ? "none" : "block" }} />)}
                 <div className="flex gap-2 flex-wrap">
-                  <button className="btn-primary" onClick={downloadNow}>Download</button>
-                  <a className="btn-outline" href={result} target="_blank" rel="noopener noreferrer">View full size</a>
+                  <button className="btn-primary" onClick={downloadNow} disabled={!result}>Download</button>
+                  <a className={`btn-outline ${!result ? 'opacity-60 pointer-events-none' : ''}`} href={result || '#'} target="_blank" rel="noopener noreferrer">View full size</a>
                 </div>
               </div>
             </div>
+            {loading && <div className="text-xs opacity-70">Generating… this can take a moment.</div>}
           </div>
         )}
       </section>
