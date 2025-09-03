@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { PRESETS, type Species } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
 import BeforeAfter from "@/components/BeforeAfter";
-import { pushLocal } from "@/lib/localHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +25,7 @@ export default function Home() {
   const [preview, setPreview] = useState<string | null>(null);
 
   const presets = useMemo(() => PRESETS[species], [species]);
+  const presetLabel = presets[presetIdx]?.label || "Custom";
 
   useEffect(() => { setPrompt(presets[presetIdx]?.value || ""); }, [species, presetIdx, presets]);
 
@@ -89,7 +89,7 @@ export default function Home() {
         fd.append("file", file);
         fd.append("prompt", prompt);
         fd.append("species", species);
-        fd.append("preset_label", presets[presetIdx]?.label || "");
+        fd.append("preset_label", presetLabel);
 
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;
@@ -104,8 +104,17 @@ export default function Home() {
         const url = out.output as string;
         setResult(url);
 
-        // Always push to local history for visibility even if server save fails
-        pushLocal({ prompt, species, preset_label: presets[presetIdx]?.label || "", output_url: url });
+        // Optional: store quick local copy in case server save fails
+        try {
+          const raw = localStorage.getItem("localGenerations");
+          const arr = raw ? JSON.parse(raw) : [];
+          arr.unshift({
+            id: Math.random(),
+            created_at: new Date().toISOString(),
+            prompt, species, preset_label: presetLabel, output_url: url
+          });
+          localStorage.setItem("localGenerations", JSON.stringify(arr.slice(0, 100)));
+        } catch {}
       }
     } catch (e: any) {
       setError(e.message || "Something went wrong");
@@ -114,16 +123,16 @@ export default function Home() {
     }
   };
 
-  const resetFree = () => {
-    localStorage.setItem("freeGenerationsLeft", "1");
-    setFreeLeft(1);
-  };
-
   const downloadNow = async () => {
     if (!result) return;
     try {
       const res = await fetch(`/api/proxy?url=${encodeURIComponent(result)}`);
       const blob = await res.blob();
+      if (!blob || blob.size < 20 * 1024 && !result.startsWith("data:")) {
+        // fallback open in new tab if unexpectedly small
+        window.open(result, "_blank");
+        return;
+      }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = "portrait.jpg";
@@ -144,11 +153,11 @@ export default function Home() {
                 <a className="btn" href="/bundles">Buy bundles</a>
               </>
             )}
-            {ALLOW_RESET && <button className="btn" onClick={resetFree} title="Testing helper">Reset free</button>}
+            {ALLOW_RESET && <button className="btn" onClick={() => { localStorage.setItem("freeGenerationsLeft","1"); setFreeLeft(1);} } title="Testing helper">Reset free</button>}
           </div>
         </div>
 
-        {/* --- Generator UI ALWAYS visible --- */}
+        {/* --- Controls --- */}
         <div className="grid gap-2">
           <Label>Species</Label>
           <select className="select" value={species} onChange={e => { setSpecies(e.target.value as Species); setPresetIdx(0); }}>
@@ -162,6 +171,7 @@ export default function Home() {
           <select className="select" value={presetIdx} onChange={e => setPresetIdx(parseInt(e.target.value, 10))}>
             {presets.map((p, i) => (<option key={i} value={i}>{p.label}</option>))}
           </select>
+          <div className="text-xs opacity-70">Selected preset: <b>{presetLabel}</b></div>
         </div>
 
         <div className="grid gap-2">
@@ -179,9 +189,26 @@ export default function Home() {
         </button>
 
         {error && <p className="text-red-400">{error}</p>}
-        {preview && result && (<BeforeAfter before={preview} after={result} />)}
-        {!preview && result && (<img className="preview" src={result} alt="result" />)}
-        {result && <button className="btn" onClick={downloadNow}>Download</button>}
+
+        {/* --- Result presentation: small thumb (upload) + big result --- */}
+        {result && (
+          <div className="grid gap-4">
+            <div className="text-sm opacity-80">Preset used: <b>{presetLabel}</b></div>
+            <div className="grid gap-3 sm:grid-cols-[160px_1fr] items-start">
+              <div className="grid gap-2">
+                {preview && <img className="preview" src={preview} alt="original upload" />}
+                <div className="text-xs opacity-70 text-center">Original</div>
+              </div>
+              <div className="grid gap-2">
+                <img className="preview" src={result} alt="generated portrait" />
+                <div className="flex gap-2">
+                  <button className="btn" onClick={downloadNow}>Download</button>
+                  <a className="btn-secondary" href={result} target="_blank" rel="noopener noreferrer">View full size</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );
