@@ -15,20 +15,22 @@ type Item = {
 export default function HistoryPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const local = readLocal();
       let server: Item[] = [];
       const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (token) {
-        const res = await fetch("/api/history/list", { headers: { Authorization: `Bearer ${token}` } });
+      const t = sess.session?.access_token || null;
+      setToken(t);
+      if (t) {
+        const res = await fetch("/api/history/list", { headers: { Authorization: `Bearer ${t}` } });
         if (res.ok) {
           const j = await res.json(); server = j.items || [];
         }
       }
-      // Merge & dedupe by output_url
+      // Merge & dedupe by output_url, newest first
       const map = new Map<string, Item>();
       [...server, ...local].forEach(it => {
         if (!map.has(it.output_url)) map.set(it.output_url, it);
@@ -53,6 +55,30 @@ export default function HistoryPage() {
     }
   };
 
+  const deleteItem = async (it: Item) => {
+    // Try server delete when possible
+    if (token && typeof it.id === "number") {
+      const res = await fetch("/api/history/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: it.id })
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({} as any));
+        alert(j?.error || "Delete failed on server; removing locally.");
+      }
+    }
+    // Remove from local cache as well
+    try {
+      const raw = localStorage.getItem("localGenerations");
+      const arr: Item[] = raw ? JSON.parse(raw) : [];
+      const filtered = arr.filter(x => x.output_url !== it.output_url);
+      localStorage.setItem("localGenerations", JSON.stringify(filtered));
+    } catch {}
+    // Remove from UI
+    setItems(prev => prev.filter(x => x.output_url !== it.output_url));
+  };
+
   if (loading) return <main className="card">Loading…</main>;
 
   return (
@@ -68,7 +94,11 @@ export default function HistoryPage() {
                 <div><b>{it.preset_label || "Custom"}</b>{it.species ? ` · ${it.species}` : ""}</div>
                 <div>{new Date(it.created_at).toLocaleString()}</div>
               </div>
-              <button className="btn mt-3" onClick={() => downloadViaProxy(it.output_url)}>Download</button>
+              <div className="flex gap-2 mt-3">
+                <button className="btn-primary" onClick={() => downloadViaProxy(it.output_url)}>Download</button>
+                <button className="btn-outline" onClick={() => window.open(it.output_url, "_blank")}>View</button>
+                <button className="btn-secondary" onClick={() => deleteItem(it)}>Delete</button>
+              </div>
             </div>
           ))}
         </div>
