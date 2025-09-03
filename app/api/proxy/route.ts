@@ -1,5 +1,6 @@
 
 import { NextRequest } from "next/server";
+import { Buffer } from "node:buffer";
 
 export const runtime = "nodejs";
 
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
   const w = wParam ? parseInt(wParam, 10) : 0;
   if (!url) return new Response("Missing url", { status: 400 });
 
-  // Handle data URLs directly (no resize)
+  // Data URLs: return directly
   if (url.startsWith("data:")) {
     const buf = dataUrlToBuffer(url);
     if (!buf) return new Response("Bad data URL", { status: 400 });
@@ -42,32 +43,32 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      return new Response(txt || "Upstream error", { status: res.status });
+    const upstream = await fetch(url, { cache: "no-store" });
+    if (!upstream.ok) {
+      const txt = await upstream.text().catch(() => "");
+      return new Response(txt || "Upstream error", { status: upstream.status });
     }
-    let arrayBuf = await res.arrayBuffer();
-    let buf = Buffer.from(arrayBuf);
-    const ct = res.headers.get("content-type") || "image/jpeg";
+
+    const arrayBuf = await upstream.arrayBuffer();
+    let buf: Buffer = Buffer.from(arrayBuf as ArrayBuffer);
+    const ct = upstream.headers.get("content-type") || "image/jpeg";
     const name = filenameFromUrl(url);
 
-    // Try to resize if w is provided and sharp is available
     if (w && w > 0 && w <= 1024) {
       try {
         const sharp = (await import("sharp")).default;
-        buf = await sharp(buf).resize({ width: w, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
-        return new Response(buf, {
+        const resized = await sharp(buf).resize({ width: w, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+        return new Response(resized, {
           status: 200,
           headers: {
             "content-type": "image/jpeg",
-            "content-length": String(buf.length),
+            "content-length": String(resized.length),
             "cache-control": "public, max-age=31536000, immutable",
             "content-disposition": `inline; filename="${name || "portrait"}-${w}.jpg"`
           }
         });
       } catch {
-        // sharp not installed/available; fall through to original
+        // sharp unavailable -> fall through with original buffer
       }
     }
 
