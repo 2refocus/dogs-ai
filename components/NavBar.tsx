@@ -27,6 +27,7 @@ export default function NavBar() {
       ) : (
         <>
           <Link className="btn" href="/account">Account</Link>
+          <Link className="btn" href="/dashboard">Dashboard</Link>
           <button className="btn" onClick={onSignOut}>Sign out</button>
         </>
       )}

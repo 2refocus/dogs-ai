@@ -5,20 +5,8 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function DashboardPage() {
   const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-  }, []);
-
-  if (!email) {
-    return (
-      <main className="card">
-        <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
-        <p>Please <Link className="link" href="/login">sign in</Link> to view your dashboard.</p>
-      </main>
-    );
-  }
-
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null)); }, []);
+  if (!email) return <main className="card">Please <a className="link" href="/login">sign in</a>.</main>;
   return (
     <main className="grid gap-6">
       <section className="card">
