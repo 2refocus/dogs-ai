@@ -22,9 +22,10 @@ function dataUrlToBuffer(dataUrl: string) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get("url");
+  const w = parseInt(searchParams.get("w") || "0", 10);
   if (!url) return new Response("Missing url", { status: 400 });
 
-  // Handle data URLs directly
+  // Handle data URLs directly (no resize)
   if (url.startsWith("data:")) {
     const buf = dataUrlToBuffer(url);
     if (!buf) return new Response("Bad data URL", { status: 400 });
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
       headers: {
         "content-type": "image/jpeg",
         "content-length": String(buf.length),
-        "content-disposition": `attachment; filename="portrait.jpg"`
+        "content-disposition": `inline; filename="portrait.jpg"`
       }
     });
   }
@@ -44,16 +45,32 @@ export async function GET(req: NextRequest) {
       const txt = await res.text().catch(() => "");
       return new Response(txt || "Upstream error", { status: res.status });
     }
-    const arrayBuf = await res.arrayBuffer();
-    const buf = Buffer.from(arrayBuf);
-    const ct = res.headers.get("content-type") || "application/octet-stream";
+    let arrayBuf = await res.arrayBuffer();
+    let buf = Buffer.from(arrayBuf);
+    const ct = res.headers.get("content-type") || "image/jpeg";
     const name = filenameFromUrl(url);
+
+    // Optional: resize with Sharp when w is provided
+    if (w && w > 0 && w <= 1024) {
+      const sharp = (await import("sharp")).default;
+      buf = await sharp(buf).resize({ width: w, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+      return new Response(buf, {
+        status: 200,
+        headers: {
+          "content-type": "image/jpeg",
+          "content-length": String(buf.length),
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-disposition": `inline; filename="${name || "portrait"}-${w}.jpg"`
+        }
+      });
+    }
+
     return new Response(buf, {
       status: 200,
       headers: {
         "content-type": ct,
         "content-length": String(buf.length),
-        "content-disposition": `attachment; filename="${name || "portrait"}.jpg"`,
+        "content-disposition": `inline; filename="${name || "portrait"}.jpg"`,
         "cache-control": "public, max-age=31536000, immutable"
       }
     });
