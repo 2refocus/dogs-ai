@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PRESETS } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
+import { pushLocal } from "@/lib/localHistory"; // <-- restore local history
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,6 @@ export default function Home() {
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [signedIn, setSignedIn] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [imgLoading, setImgLoading] = useState(false);
 
   // Build current presets: subject dog/cat picks that list; auto merges both (dedup by label)
   const mergedPresets = useMemo(() => {
@@ -139,6 +139,14 @@ export default function Home() {
         if (!res.ok) throw new Error(out.error || "Generation failed");
         const url = out.output as string;
         setResult(url);
+
+        // ✅ Restore local history push (always)
+        pushLocal({
+          prompt,
+          species: subject === "auto" ? null : subject,
+          preset_label: presetLabel,
+          output_url: url
+        });
       }
     } catch (e: any) {
       setError(e.message || "Something went wrong");
@@ -181,7 +189,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Subject decides presets */}
         <div className="grid gap-2">
           <Label>Subject in photo</Label>
           <div className="flex gap-2 flex-wrap">

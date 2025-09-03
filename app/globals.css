@@ -2,21 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Color scheme */
+/* Winnie the Pooh palette */
 :root {
   --bg: #0f1115;
   --fg: #e9eef6;
-  --brand: #ffd166;   /* primary banana */
+  --brand: #F09C20;     /* primary honey orange */
   --brand-ink: #0f1115;
-  --brand-2: #EF6C57; /* warm coral secondary */
-  --brand-2-hover: #d95b47;
+  --brand-2: #C57429;   /* secondary warm brown/orange */
+  --brand-2-hover: #955223; /* deeper hover */
   --muted: #1a1f29;
   --line: rgba(255,255,255,0.08);
+  --soft-1: #F4D7A1;    /* light */
+  --soft-5: #786552;    /* deep earthy */
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f8fafc;
+    --bg: #faf9f7;
     --fg: #0f1115;
     --muted: #ffffff;
     --line: rgba(0,0,0,0.08);
@@ -30,12 +32,12 @@ body { background: var(--bg); color: var(--fg); }
 @media (min-width: 640px) { .container { padding: 2rem; } }
 
 .card { background: var(--muted); border: 1px solid var(--line); border-radius: 1rem; padding: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-@media (min-width: 640px) { .card { padding: 1.25rem; border-radius: 1.25rem; } }
+@media (min-width: 640px) { .card { padding: 1.1rem; border-radius: 1.1rem; } }
 
 /* Buttons */
 .btn, .btn-primary, .btn-secondary, .btn-outline {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  border-radius: .75rem; padding: .6rem 1rem; font-weight: 600; transition: filter .15s ease, opacity .15s ease;
+  border-radius: .7rem; padding: .6rem 1rem; font-weight: 600; transition: filter .15s ease, opacity .15s ease;
 }
 .btn, .btn-primary { background: var(--brand); color: var(--brand-ink); }
 .btn:hover, .btn-primary:hover { filter: brightness(0.95); }
@@ -43,6 +45,9 @@ body { background: var(--bg); color: var(--fg); }
 .btn-secondary:hover { background: var(--brand-2-hover); }
 .btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--line); }
 .btn-outline:hover { background: rgba(255,255,255,0.06); }
+
+/* Small buttons for dense grids and card actions */
+.btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: .55rem; }
 
 /* Inputs */
 .input, .select, textarea.input {
@@ -54,8 +59,8 @@ body { background: var(--bg); color: var(--fg); }
 }
 textarea.input { min-height: 120px; }
 
-.label { font-size: .85rem; opacity: .8; }
-img.preview { border-radius: .75rem; border: 1px solid var(--line); max-width: 100%; height: auto; }
+.label { font-size: .85rem; opacity: .85; }
+img.preview { border-radius: .6rem; border: 1px solid var(--line); max-width: 100%; height: auto; }
 .link { text-decoration: underline; }
 
 /* Mobile nav */
@@ -72,10 +77,13 @@ header .brand { display: inline-flex; align-items: center; gap: .5rem; color: va
 
 /* Progress bar */
 .progress-wrap { position: relative; height: 10px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--brand), #ffc65a); width: 0%; transition: width .2s ease; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--brand), #F4D7A1); width: 0%; transition: width .2s ease; }
 .progress-fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0)); animation: shimmer 1.2s infinite; }
 @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
 /* Skeleton for image loading */
-.skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,0.06); border-radius: .75rem; min-height: 240px; border: 1px solid var(--line); }
+.skeleton { position: relative; overflow: hidden; background: rgba(255,255,255,0.06); border-radius: .6rem; min-height: 240px; border: 1px solid var(--line); }
 .skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent); animation: shimmer 1.2s infinite; }
+
+/* Utility: card actions bar that wraps without overlap */
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; }

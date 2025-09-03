@@ -16,6 +16,7 @@ export default function HistoryPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [cols, setCols] = useState<2 | 3 | 6>(3);
 
   useEffect(() => {
     (async () => {
@@ -30,7 +31,6 @@ export default function HistoryPage() {
           const j = await res.json(); server = j.items || [];
         }
       }
-      // Merge & dedupe by output_url, newest first
       const map = new Map<string, Item>();
       [...server, ...local].forEach(it => {
         if (!map.has(it.output_url)) map.set(it.output_url, it);
@@ -56,7 +56,6 @@ export default function HistoryPage() {
   };
 
   const deleteItem = async (it: Item) => {
-    // Try server delete when possible
     if (token && typeof it.id === "number") {
       const res = await fetch("/api/history/delete", {
         method: "POST",
@@ -68,36 +67,48 @@ export default function HistoryPage() {
         alert(j?.error || "Delete failed on server; removing locally.");
       }
     }
-    // Remove from local cache as well
     try {
       const raw = localStorage.getItem("localGenerations");
       const arr: Item[] = raw ? JSON.parse(raw) : [];
       const filtered = arr.filter(x => x.output_url !== it.output_url);
       localStorage.setItem("localGenerations", JSON.stringify(filtered));
     } catch {}
-    // Remove from UI
     setItems(prev => prev.filter(x => x.output_url !== it.output_url));
   };
+
+  const GridControls = () => (
+    <div className="flex items-center gap-2">
+      <span className="text-sm opacity-80">View:</span>
+      <button className={`btn-outline btn-sm ${cols===2 ? '!bg-white/10' : ''}`} onClick={() => setCols(2)}>2×</button>
+      <button className={`btn-outline btn-sm ${cols===3 ? '!bg-white/10' : ''}`} onClick={() => setCols(3)}>3×</button>
+      <button className={`btn-outline btn-sm ${cols===6 ? '!bg-white/10' : ''}`} onClick={() => setCols(6)}>6×</button>
+    </div>
+  );
 
   if (loading) return <main className="card">Loading…</main>;
 
   return (
     <main className="grid gap-6">
       <section className="card">
-        <h2 className="text-xl font-semibold mb-2">Your history</h2>
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h2 className="text-xl font-semibold">Your history</h2>
+          <GridControls />
+        </div>
+
         {!items.length && <p className="opacity-80">No generations yet.</p>}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {items.map((it, idx) => (
             <div key={(it as any).id ?? idx} className="card bg-white/5">
               <img className="preview" src={it.output_url} alt={it.preset_label ?? "result"} />
-              <div className="mt-2 text-sm opacity-80">
-                <div><b>{it.preset_label || "Custom"}</b>{it.species ? ` · ${it.species}` : ""}</div>
+              <div className="mt-2 text-sm opacity-80 truncate">
+                <div className="truncate"><b>{it.preset_label || "Custom"}</b>{it.species ? ` · ${it.species}` : ""}</div>
                 <div>{new Date(it.created_at).toLocaleString()}</div>
               </div>
-              <div className="flex gap-2 mt-3">
-                <button className="btn-primary" onClick={() => downloadViaProxy(it.output_url)}>Download</button>
-                <button className="btn-outline" onClick={() => window.open(it.output_url, "_blank")}>View</button>
-                <button className="btn-secondary" onClick={() => deleteItem(it)}>Delete</button>
+              <div className="actions mt-3">
+                <button className="btn-primary btn-sm" onClick={() => downloadViaProxy(it.output_url)}>Download</button>
+                <button className="btn-outline btn-sm" onClick={() => window.open(it.output_url, "_blank")}>View</button>
+                <button className="btn-secondary btn-sm" onClick={() => deleteItem(it)}>Delete</button>
               </div>
             </div>
           ))}
