@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+// replace
+// import { supabase } from "@/lib/supabaseClient";
+// with
+import { supabase } from "../../lib/supabaseClient";
 const BUNDLES = [
   { id: "starter", name: "Starter", credits: 10, price: 5 },
   { id: "standard", name: "Standard", credits: 30, price: 12 },

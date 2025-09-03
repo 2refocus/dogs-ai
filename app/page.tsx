@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { PRESETS, type Species } from "./presets";
-import BeforeAfter from "@/components/BeforeAfter";
+// replace
+// import BeforeAfter from "@/components/BeforeAfter";
+// with
+import BeforeAfter from "../components/BeforeAfter";
 
 export default function Page() {
   const [species, setSpecies] = useState<Species>("dog");
