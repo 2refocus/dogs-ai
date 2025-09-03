@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (url.startsWith("data:")) {
     const buf = dataUrlToBuffer(url);
     if (!buf) return new Response("Bad data URL", { status: 400 });
-    return new Response(buf, {
+    return new Response(new Uint8Array(buf), {
       status: 200,
       headers: {
         "content-type": "image/jpeg",
@@ -57,8 +57,8 @@ export async function GET(req: NextRequest) {
     if (w && w > 0 && w <= 1024) {
       try {
         const sharp = (await import("sharp")).default;
-        const resized = await sharp(buf).resize({ width: w, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
-        return new Response(resized, {
+        const resized: Buffer = await sharp(buf).resize({ width: w, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+        return new Response(new Uint8Array(resized), {
           status: 200,
           headers: {
             "content-type": "image/jpeg",
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return new Response(buf, {
+    return new Response(new Uint8Array(buf), {
       status: 200,
       headers: {
         "content-type": ct,
