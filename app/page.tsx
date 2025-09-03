@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { PRESETS, type Species } from "@/app/presets";
+import { PRESETS } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
@@ -14,40 +14,52 @@ type SubjectMode = "dog" | "cat" | "auto";
 const ALLOW_RESET = process.env.NEXT_PUBLIC_ALLOW_TEST_RESET === "1";
 
 export default function Home() {
-  const [species, setSpecies] = useState<Species>("dog");
-  const [subject, setSubject] = useState<SubjectMode>("auto"); // new: protects against mismatch
+  const [subject, setSubject] = useState<SubjectMode>("auto");
   const [presetIdx, setPresetIdx] = useState<number>(0);
   const [file, setFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState<string>("");
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [percent, setPercent] = useState(0); // progressive %
+  const [percent, setPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [signedIn, setSignedIn] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgLoading, setImgLoading] = useState(false);
 
-  const presets = useMemo(() => PRESETS[species], [species]);
+  // Build current presets: subject dog/cat picks that list; auto merges both (dedup by label)
+  const mergedPresets = useMemo(() => {
+    const seen = new Set<string>();
+    const res: { label: string; value: string }[] = [];
+    [...PRESETS.dog, ...PRESETS.cat].forEach(p => {
+      if (!seen.has(p.label)) { seen.add(p.label); res.push(p); }
+    });
+    return res;
+  }, []);
+
+  const presets = useMemo(() => {
+    if (subject === "dog") return PRESETS.dog;
+    if (subject === "cat") return PRESETS.cat;
+    return mergedPresets;
+  }, [subject, mergedPresets]);
+
   const presetLabel = presets[presetIdx]?.label || "Custom";
 
-  useEffect(() => { setPrompt(presets[presetIdx]?.value || ""); }, [species, presetIdx, presets]);
+  // Default prompt from preset (neutralize species words when subject=auto)
+  useEffect(() => {
+    let base = presets[presetIdx]?.value || "";
+    if (subject === "auto") {
+      base = base.replace(/\bdog(s)?\b/gi, "pet$1").replace(/\bcat(s)?\b/gi, "pet$1");
+    }
+    setPrompt(base);
+  }, [presetIdx, subject, presets]);
 
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("resetFree") === "1") {
-          localStorage.setItem("freeGenerationsLeft", "1");
-          setFreeLeft(1);
-          const url = new URL(window.location.href);
-          url.searchParams.delete("resetFree");
-          window.history.replaceState({}, "", url.pathname + url.search);
-        } else {
-          const key = localStorage.getItem("freeGenerationsLeft");
-          if (key === null) localStorage.setItem("freeGenerationsLeft", "1");
-          setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
-        }
+        const key = localStorage.getItem("freeGenerationsLeft");
+        if (key === null) localStorage.setItem("freeGenerationsLeft", "1");
+        setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
       }
     } catch {}
 
@@ -63,7 +75,7 @@ export default function Home() {
     } else { setPreview(null); }
   };
 
-  // Neutralize species in prompt if subject="auto" to avoid forcing cat->dog or vice versa.
+  // Final prompt builder
   const buildPrompt = () => {
     if (subject === "auto") {
       let p = prompt;
@@ -71,7 +83,7 @@ export default function Home() {
       p = p.replace(/\bcat(s)?\b/gi, "pet$1");
       return p;
     }
-    // else ensure prompt mentions correct subject at least once
+    // ensure mention at least once
     if (!/\bdog|cat\b/i.test(prompt)) {
       return `${prompt} ${subject === "dog" ? "portrait of a dog" : "portrait of a cat"}`.trim();
     }
@@ -81,8 +93,6 @@ export default function Home() {
   const onSubmit = async () => {
     if (!file) { setError("Please select an image first."); return; }
     setLoading(true); setError(null); setResult(null); setPercent(1);
-
-    // Progress simulation (since replicate.run is non-streaming). Caps at 87% until we finish.
     const timer = window.setInterval(() => {
       setPercent(p => (p < 87 ? p + Math.max(1, Math.round((87 - p) / 8)) : p));
     }, 300);
@@ -114,7 +124,7 @@ export default function Home() {
         const fd = new FormData();
         fd.append("file", file);
         fd.append("prompt", buildPrompt());
-        fd.append("species", species);
+        fd.append("species", subject === "auto" ? "" : subject);
         fd.append("preset_label", presetLabel);
 
         const { data } = await supabase.auth.getSession();
@@ -128,7 +138,6 @@ export default function Home() {
         const out = await res.json();
         if (!res.ok) throw new Error(out.error || "Generation failed");
         const url = out.output as string;
-        setImgLoading(true);
         setResult(url);
       }
     } catch (e: any) {
@@ -136,7 +145,7 @@ export default function Home() {
     } finally {
       window.clearInterval(timer);
       setPercent(100);
-      setTimeout(() => setLoading(false), 250); // let the bar reach 100% visually
+      setTimeout(() => setLoading(false), 250);
     }
   };
 
@@ -145,9 +154,8 @@ export default function Home() {
     try {
       const res = await fetch(`/api/proxy?url=${encodeURIComponent(result)}`);
       const blob = await res.blob();
-      if (!blob || blob.size < 20 * 1024 && !result.startsWith("data:")) {
-        window.open(result, "_blank");
-        return;
+      if (!blob || (blob.size < 20 * 1024 && !result.startsWith("data:"))) {
+        window.open(result, "_blank"); return;
       }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -173,25 +181,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- Controls --- */}
-        <div className="grid gap-2">
-          <Label>Species (styles)</Label>
-          <select className="select" value={species} onChange={e => { setSpecies(e.target.value as Species); setPresetIdx(0); }}>
-            <option value="dog">Dog styles</option>
-            <option value="cat">Cat styles</option>
-          </select>
-        </div>
-
+        {/* Subject decides presets */}
         <div className="grid gap-2">
           <Label>Subject in photo</Label>
-          <div className="flex gap-2">
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="auto"} onChange={() => setSubject("auto")} />Auto (safe)</label>
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="dog"} onChange={() => setSubject("dog")} />Dog</label>
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="cat"} onChange={() => setSubject("cat")} />Cat</label>
+          <div className="flex gap-2 flex-wrap">
+            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="auto"} onChange={() => { setSubject("auto"); setPresetIdx(0); }} />Auto (safe)</label>
+            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="dog"} onChange={() => { setSubject("dog"); setPresetIdx(0); }} />Dog</label>
+            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="cat"} onChange={() => { setSubject("cat"); setPresetIdx(0); }} />Cat</label>
           </div>
-          <p className="text-xs opacity-70">
-            Tip: If you’re not sure, choose <b>Auto</b>. We’ll avoid species words in the prompt so the model stays faithful to your upload.
-          </p>
+          <p className="text-xs opacity-70">We’ll tailor the styles to your chosen subject. <b>Auto</b> merges both sets and neutralizes species words in the prompt.</p>
         </div>
 
         <div className="grid gap-2">
@@ -226,7 +224,6 @@ export default function Home() {
 
         {error && <p className="text-red-400">{error}</p>}
 
-        {/* --- Result presentation: small thumb (upload) + big result --- */}
         {result && (
           <div className="grid gap-4">
             <div className="text-sm opacity-80">Preset used: <b>{presetLabel}</b></div>
@@ -236,9 +233,8 @@ export default function Home() {
                 <div className="text-xs opacity-70 text-center">Original</div>
               </div>
               <div className="grid gap-2">
-                {imgLoading && <div className="skeleton" />}
-                <img className="preview" src={result} alt="generated portrait" onLoad={() => setImgLoading(false)} style={{ display: imgLoading ? "none" : "block" }} />
-                <div className="flex gap-2">
+                <img className="preview" src={result} alt="generated portrait" />
+                <div className="flex gap-2 flex-wrap">
                   <button className="btn-primary" onClick={downloadNow}>Download</button>
                   <a className="btn-outline" href={result} target="_blank" rel="noopener noreferrer">View full size</a>
                 </div>

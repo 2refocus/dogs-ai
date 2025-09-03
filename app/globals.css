@@ -6,9 +6,10 @@
 :root {
   --bg: #0f1115;
   --fg: #e9eef6;
-  --brand: #ffd166;   /* primary */
+  --brand: #ffd166;   /* primary banana */
   --brand-ink: #0f1115;
-  --brand-2: #7bdff2; /* secondary accent */
+  --brand-2: #EF6C57; /* warm coral secondary */
+  --brand-2-hover: #d95b47;
   --muted: #1a1f29;
   --line: rgba(255,255,255,0.08);
 }
@@ -38,8 +39,8 @@ body { background: var(--bg); color: var(--fg); }
 }
 .btn, .btn-primary { background: var(--brand); color: var(--brand-ink); }
 .btn:hover, .btn-primary:hover { filter: brightness(0.95); }
-.btn-secondary { background: var(--brand-2); color: #0a0c10; }
-.btn-secondary:hover { filter: brightness(0.95); }
+.btn-secondary { background: var(--brand-2); color: #fff; }
+.btn-secondary:hover { background: var(--brand-2-hover); }
 .btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--line); }
 .btn-outline:hover { background: rgba(255,255,255,0.06); }
 
