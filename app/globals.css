@@ -138,3 +138,43 @@ header .brand { display: inline-flex; align-items: center; gap: .5rem; color: va
 @media (min-width: 640px) {
   .icon-btn { width: 38px; height: 38px; }
 }
+/* Speeds */
+html[data-skeleton-speed="fast"]   { --skeleton-speed: 1.1s; }
+html[data-skeleton-speed="normal"] { --skeleton-speed: 1.8s; }
+html[data-skeleton-speed="slow"]   { --skeleton-speed: 2.6s; }
+
+/* Pattern style */
+html[data-loading-style="pattern"] .skeleton-pattern {
+  background: repeating-linear-gradient(45deg,
+    var(--skeleton-a) 0 14px,
+    var(--skeleton-b) 14px 28px,
+    var(--skeleton-c) 28px 42px);
+  background-size: 200% 100%;
+  animation: patternSlide var(--skeleton-speed) linear infinite;
+}
+
+/* Shimmer style */
+html[data-loading-style="shimmer"] .skeleton-pattern {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer var(--skeleton-speed) ease-in-out infinite;
+}
+
+/* Solid style */
+html[data-loading-style="solid"] .skeleton-pattern {
+  background: var(--muted);
+  animation: pulse var(--skeleton-speed) ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes pulse {
+  0% { opacity: .9; }
+  50% { opacity: .6; }
+  100% { opacity: .9; }
+}
