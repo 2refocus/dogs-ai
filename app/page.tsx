@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { PRESETS, type Species } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
 import BeforeAfter from "@/components/BeforeAfter";
+
+export const dynamic = "force-dynamic";
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="label">{children}</label>;
@@ -23,27 +24,30 @@ export default function Home() {
   const [signedIn, setSignedIn] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
 
-  const params = useSearchParams();
   const presets = useMemo(() => PRESETS[species], [species]);
 
-  // Initialize prompt from preset
   useEffect(() => { setPrompt(presets[presetIdx]?.value || ""); }, [species, presetIdx, presets]);
 
-  // Bootstraps auth + free counter, and supports ?resetFree=1
   useEffect(() => {
-    const resetParam = params.get("resetFree");
-    if (resetParam === "1") {
-      localStorage.setItem("freeGenerationsLeft", "1");
-      setFreeLeft(1);
-      history.replaceState(null, "", "/");
-    } else {
-      const key = localStorage.getItem("freeGenerationsLeft");
-      if (key === null) localStorage.setItem("freeGenerationsLeft", "1");
-      setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
-    }
+    try {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("resetFree") === "1") {
+          localStorage.setItem("freeGenerationsLeft", "1");
+          setFreeLeft(1);
+          const url = new URL(window.location.href);
+          url.searchParams.delete("resetFree");
+          window.history.replaceState({}, "", url.pathname + url.search);
+        } else {
+          const key = localStorage.getItem("freeGenerationsLeft");
+          if (key === null) localStorage.setItem("freeGenerationsLeft", "1");
+          setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
+        }
+      }
+    } catch {}
 
     supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
-  }, [params]);
+  }, []);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null; setFile(f); setResult(null); setError(null);
