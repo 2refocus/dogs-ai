@@ -11,3 +11,5 @@ body { background: var(--bg); color: var(--fg); }
 .label { @apply text-sm opacity-80; }
 textarea.input { min-height: 120px; }
 img.preview { @apply rounded-xl border border-white/10; max-width: 100%; height: auto; }
+hr.sep { @apply border-white/10 my-4; }
+.link { @apply underline; }

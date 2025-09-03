@@ -1,17 +1,16 @@
-# 🍌 Nano Banana Pet Portraits (Dog & Cat Presets)
+# 🍌 Nano Banana Pet Portraits — Before/After + Auth UI
 
-Next.js app with **style presets** for dogs and cats, using **google/nano-banana** on **Replicate**.
+What's included:
+- Before/After slider component
+- 1 free generation per browser (localStorage gating)
+- Supabase Google sign-in page (`/login`) and bundles UI (`/bundles`) to prepare for credits
 
-## Presets
-- **Dogs:** Studio portrait, Golden hour outdoors, Cozy indoor, Surf-skate poster, Galaxy explorer
-- **Cats:** Minimalist studio, Vintage armchair, Playful motion, Galaxy explorer
+Set env:
+- `REPLICATE_API_TOKEN` (required)
+- `NANO_BANANA_VERSION` (optional pinned model version)
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (for OAuth)
 
-You can still fully edit the prompt after choosing a preset.
-
-## Deploy (Vercel)
-1. Set env vars:
-   - `REPLICATE_API_TOKEN=...`
-   - (optional) `NANO_BANANA_VERSION=google/nano-banana:f0a9d34b...`
-2. Deploy → open `/`
-
-MIT © 2025
+Next steps (server features):
+- Add Supabase tables for user credits + RLS
+- Wire Stripe checkout → webhook adds credits
+- Server-side enforcement: check credits before call, decrement after success

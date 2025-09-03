@@ -1,13 +1,14 @@
 {
   "name": "nano-banana-pet-portrait",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": { "dev": "next dev", "build": "next build", "start": "next start", "lint": "next lint" },
   "dependencies": {
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "replicate": "^0.32.0"
+    "replicate": "^0.32.0",
+    "@supabase/supabase-js": "^2.45.2"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",
