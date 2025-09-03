@@ -13,23 +13,33 @@ export default function LoginPage() {
 
   const signIn = async () => {
     setLoading(true);
-    try { await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); }
-    finally { setLoading(false); }
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/account" }
+      });
+    } finally { setLoading(false); }
   };
+
   const signOut = async () => { await supabase.auth.signOut(); };
 
   return (
     <main className="card grid gap-3">
       <h2 className="text-xl font-semibold">Sign in</h2>
+      <p className="opacity-80 text-sm">
+        Make sure Google is enabled in Supabase (see <a className="link" href="/docs/google-oauth-setup" target="_blank">setup guide</a>).
+      </p>
       {!user ? (
-        <button className="btn" onClick={signIn} disabled={loading}>{loading ? "Opening Google…" : "Continue with Google"}</button>
+        <button className="btn" onClick={signIn} disabled={loading}>
+          {loading ? "Opening Google…" : "Continue with Google"}
+        </button>
       ) : (
         <div className="grid gap-2">
           <p>Signed in as <b>{user.email}</b></p>
+          <a className="btn" href="/dashboard">Go to dashboard</a>
           <button className="btn" onClick={signOut}>Sign out</button>
         </div>
       )}
-      <p className="opacity-80 text-sm">After sign-in, you can purchase bundles and keep your history.</p>
     </main>
   );
 }

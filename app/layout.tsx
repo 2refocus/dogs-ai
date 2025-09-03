@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import Link from "next/link";
+import NavBar from "@/components/NavBar";
 
 export const metadata: Metadata = {
   title: "Nano Banana Pet Portrait",
@@ -17,10 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <h1 className="text-3xl font-semibold">🍌 Nano Banana Pet Portrait</h1>
               <p className="opacity-80 text-sm">One free portrait · then buy bundles</p>
             </div>
-            <nav className="flex items-center gap-3">
-              <Link className="btn" href="/login">Sign in</Link>
-              <Link className="btn" href="/bundles">Buy bundles</Link>
-            </nav>
+            <NavBar />
           </header>
           {children}
           <footer className="mt-16 opacity-60 text-sm">
