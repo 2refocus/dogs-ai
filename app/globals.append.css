@@ -1,0 +1,22 @@
+/* Icon-only quick action buttons */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: .55rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  transition: background-color .15s ease, opacity .15s ease;
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+.icon-btn:active {
+  opacity: .85;
+}
+@media (min-width: 640px) {
+  .icon-btn { width: 38px; height: 38px; }
+}
