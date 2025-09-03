@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PRESETS } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
-import { pushLocal } from "@/lib/localHistory"; // <-- restore local history
+import { pushLocal } from "@/lib/localHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +26,12 @@ export default function Home() {
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [signedIn, setSignedIn] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [imgLoading, setImgLoading] = useState(false);
 
-  // Build current presets: subject dog/cat picks that list; auto merges both (dedup by label)
   const mergedPresets = useMemo(() => {
     const seen = new Set<string>();
     const res: { label: string; value: string }[] = [];
-    [...PRESETS.dog, ...PRESETS.cat].forEach(p => {
-      if (!seen.has(p.label)) { seen.add(p.label); res.push(p); }
-    });
+    [...PRESETS.dog, ...PRESETS.cat].forEach(p => { if (!seen.has(p.label)) { seen.add(p.label); res.push(p); } });
     return res;
   }, []);
 
@@ -45,7 +43,6 @@ export default function Home() {
 
   const presetLabel = presets[presetIdx]?.label || "Custom";
 
-  // Default prompt from preset (neutralize species words when subject=auto)
   useEffect(() => {
     let base = presets[presetIdx]?.value || "";
     if (subject === "auto") {
@@ -62,7 +59,6 @@ export default function Home() {
         setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
       }
     } catch {}
-
     supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
   }, []);
 
@@ -75,24 +71,20 @@ export default function Home() {
     } else { setPreview(null); }
   };
 
-  // Final prompt builder
   const buildPrompt = () => {
     if (subject === "auto") {
       let p = prompt;
-      p = p.replace(/\bdog(s)?\b/gi, "pet$1");
-      p = p.replace(/\bcat(s)?\b/gi, "pet$1");
+      p = p.replace(/\bdog(s)?\b/gi, "pet$1").replace(/\bcat(s)?\b/gi, "pet$1");
       return p;
     }
-    // ensure mention at least once
-    if (!/\bdog|cat\b/i.test(prompt)) {
-      return `${prompt} ${subject === "dog" ? "portrait of a dog" : "portrait of a cat"}`.trim();
-    }
+    if (!/\bdog|cat\b/i.test(prompt)) return `${prompt} ${subject === "dog" ? "portrait of a dog" : "portrait of a cat"}`.trim();
     return prompt;
   };
 
   const onSubmit = async () => {
     if (!file) { setError("Please select an image first."); return; }
     setLoading(true); setError(null); setResult(null); setPercent(1);
+
     const timer = window.setInterval(() => {
       setPercent(p => (p < 87 ? p + Math.max(1, Math.round((87 - p) / 8)) : p));
     }, 300);
@@ -100,7 +92,6 @@ export default function Home() {
     try {
       let token: string | null = null;
       let canProceed = false;
-
       if (freeLeft > 0) {
         const left = Math.max(0, freeLeft - 1);
         localStorage.setItem("freeGenerationsLeft", String(left));
@@ -109,15 +100,9 @@ export default function Home() {
       } else {
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;
-        if (!token) {
-          setError("Free preview used. Please sign in and buy a bundle to continue.");
-          setLoading(false);
-          window.clearInterval(timer);
-          return;
-        }
+        if (!token) { setError("Free preview used. Please sign in and buy a bundle to continue."); setLoading(false); window.clearInterval(timer); return; }
         const res = await fetch("/api/credits/use", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error("No credits available");
-        canProceed = true;
+        if (!res.ok) throw new Error("No credits available"); canProceed = true;
       }
 
       if (canProceed) {
@@ -129,24 +114,14 @@ export default function Home() {
 
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;
-
-        const res = await fetch("/api/stylize", {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          body: fd
-        });
+        const res = await fetch("/api/stylize", { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
         const out = await res.json();
         if (!res.ok) throw new Error(out.error || "Generation failed");
         const url = out.output as string;
+        setImgLoading(true);
         setResult(url);
 
-        // ✅ Restore local history push (always)
-        pushLocal({
-          prompt,
-          species: subject === "auto" ? null : subject,
-          preset_label: presetLabel,
-          output_url: url
-        });
+        pushLocal({ prompt, species: subject === "auto" ? null : subject, preset_label: presetLabel, output_url: url });
       }
     } catch (e: any) {
       setError(e.message || "Something went wrong");
@@ -162,13 +137,8 @@ export default function Home() {
     try {
       const res = await fetch(`/api/proxy?url=${encodeURIComponent(result)}`);
       const blob = await res.blob();
-      if (!blob || (blob.size < 20 * 1024 && !result.startsWith("data:"))) {
-        window.open(result, "_blank"); return;
-      }
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "portrait.jpg";
-      a.click();
+      if (!blob || (blob.size < 20 * 1024 && !result.startsWith("data:"))) { window.open(result, "_blank"); return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "portrait.jpg"; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     } catch { window.open(result, "_blank"); }
   };
@@ -217,16 +187,8 @@ export default function Home() {
           <input className="input" type="file" accept="image/*" onChange={onChange} />
         </div>
 
-        <button className="btn-primary" onClick={onSubmit} disabled={loading || !file}>
-          {loading ? (
-            <span className="w-full grid gap-2">
-              <span className="text-center">Generating… {percent}%</span>
-              <span className="progress-wrap">
-                <span className="progress-bar" style={{ width: `${percent}%` }} />
-                <span className="progress-fade" />
-              </span>
-            </span>
-          ) : "Generate portrait"}
+        <button className={`btn-primary ${loading ? 'btn-loading' : ''}`} onClick={onSubmit} disabled={loading || !file}>
+          {loading ? `Generating… ${percent}%` : "Generate portrait"}
         </button>
 
         {error && <p className="text-red-400">{error}</p>}
@@ -236,11 +198,12 @@ export default function Home() {
             <div className="text-sm opacity-80">Preset used: <b>{presetLabel}</b></div>
             <div className="grid gap-3 sm:grid-cols-[160px_1fr] items-start">
               <div className="grid gap-2">
-                {preview ? (<img className="preview" src={preview} alt="original upload" />) : (<div className="skeleton" />)}
+                {preview ? (<img className="preview" src={preview} alt="original upload" />) : (<div className="skeleton-pattern" />)}
                 <div className="text-xs opacity-70 text-center">Original</div>
               </div>
               <div className="grid gap-2">
-                <img className="preview" src={result} alt="generated portrait" />
+                {imgLoading && <div className="skeleton-pattern" />}
+                <img className="preview" src={result} alt="generated portrait" onLoad={() => setImgLoading(false)} style={{ display: imgLoading ? "none" : "block" }} />
                 <div className="flex gap-2 flex-wrap">
                   <button className="btn-primary" onClick={downloadNow}>Download</button>
                   <a className="btn-outline" href={result} target="_blank" rel="noopener noreferrer">View full size</a>
