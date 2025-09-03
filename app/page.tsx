@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PRESETS, type Species } from "@/app/presets";
 import { supabase } from "@/lib/supabaseClient";
 import BeforeAfter from "@/components/BeforeAfter";
-import { safeJson } from "@/lib/http";
+import { pushLocal } from "@/lib/localHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -56,9 +56,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = () => setPreview(String(reader.result));
       reader.readAsDataURL(f);
-    } else {
-      setPreview(null);
-    }
+    } else { setPreview(null); }
   };
 
   const onSubmit = async () => {
@@ -81,12 +79,8 @@ export default function Home() {
           setLoading(false);
           return;
         }
-        const creditsRes = await fetch("/api/credits/use", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        const creditsBody = await safeJson(creditsRes);
-        if (!creditsRes.ok) {
-          const msg = (creditsBody && (creditsBody.error || creditsBody.message || creditsBody._text)) || "No credits available";
-          throw new Error(msg);
-        }
+        const res = await fetch("/api/credits/use", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error("No credits available");
         canProceed = true;
       }
 
@@ -100,28 +94,20 @@ export default function Home() {
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;
 
-        const genRes = await fetch("/api/stylize", {
+        const res = await fetch("/api/stylize", {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           body: fd
         });
+        const out = await res.json();
+        if (!res.ok) throw new Error(out.error || "Generation failed");
+        const url = out.output as string;
+        setResult(url);
 
-        const genBody = await safeJson(genRes);
-
-        if (!genRes.ok) {
-          const msg = (genBody && (genBody.error || genBody.message || genBody._text)) || `Generation failed (HTTP ${genRes.status})`;
-          throw new Error(msg);
-        }
-
-        // Expect either { output: "url" } or raw text in _text
-        const output = genBody?.output || genBody?._text;
-        if (!output || typeof output !== "string") {
-          throw new Error("Unexpected response format from /api/stylize");
-        }
-        setResult(output);
+        // Always push to local history for visibility even if server save fails
+        pushLocal({ prompt, species, preset_label: presets[presetIdx]?.label || "", output_url: url });
       }
     } catch (e: any) {
-      console.error("Generate error:", e);
       setError(e.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -131,6 +117,19 @@ export default function Home() {
   const resetFree = () => {
     localStorage.setItem("freeGenerationsLeft", "1");
     setFreeLeft(1);
+  };
+
+  const downloadNow = async () => {
+    if (!result) return;
+    try {
+      const res = await fetch(`/api/proxy?url=${encodeURIComponent(result)}`);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "portrait.jpg";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch { window.open(result, "_blank"); }
   };
 
   return (
@@ -182,6 +181,7 @@ export default function Home() {
         {error && <p className="text-red-400">{error}</p>}
         {preview && result && (<BeforeAfter before={preview} after={result} />)}
         {!preview && result && (<img className="preview" src={result} alt="result" />)}
+        {result && <button className="btn" onClick={downloadNow}>Download</button>}
       </section>
     </main>
   );

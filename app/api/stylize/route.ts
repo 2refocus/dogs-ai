@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const prompt = (form.get("prompt") || "").toString();
+    const species = (form.get("species") || "").toString();
+    const preset_label = (form.get("preset_label") || "").toString();
 
     if (!file) {
       return NextResponse.json({ error: "Missing file" }, { status: 400 });
@@ -21,12 +24,10 @@ export async function POST(req: NextRequest) {
 
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! });
 
-    // nano-banana expects: { prompt, image_input: [<b64-or-url>] }
     const output: any = await replicate.run(MODEL as `${string}/${string}` | `${string}/${string}:${string}`, {
       input: { prompt, image_input: [b64] }
     });
 
-    // Try to resolve the first image URL/string from common shapes
     let url: string | null = null;
     if (typeof output === "string") url = output;
     else if (Array.isArray(output)) url = output[0] || null;
@@ -37,7 +38,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unexpected Replicate response", output }, { status: 500 });
     }
 
-    return NextResponse.json({ output: url });
+    let saved = false;
+    let saveError: string | undefined;
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    if (token) {
+      try {
+        const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
+        if (!error && userData?.user) {
+          const { error: insErr } = await supabaseAdmin.from("generations").insert({
+            user_id: userData.user.id,
+            species,
+            preset_label,
+            prompt,
+            output_url: url
+          });
+          if (!insErr) saved = true; else saveError = insErr.message;
+        }
+      } catch (e: any) {
+        saveError = e?.message || "save failed";
+      }
+    }
+
+    return NextResponse.json({ output: url, saved, saveError });
   } catch (err: any) {
     console.error("stylize error:", err);
     return NextResponse.json({ error: err?.message || "Stylize failed" }, { status: 500 });
