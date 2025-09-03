@@ -1,218 +1,134 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { PRESETS } from "@/app/presets";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { pushLocal } from "@/lib/localHistory";
-import ProgressiveImage from "@/components/ProgressiveImage";
+import { readLocal } from "@/lib/localHistory";
 
-export const dynamic = "force-dynamic";
+type Item = {
+  id?: number | string;
+  created_at: string;
+  prompt: string | null;
+  species: string | null;
+  preset_label: string | null;
+  output_url: string;
+};
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="label">{children}</label>;
-}
-
-type SubjectMode = "dog" | "cat" | "auto";
-
-const ALLOW_RESET = process.env.NEXT_PUBLIC_ALLOW_TEST_RESET === "1";
-
-export default function Home() {
-  const [subject, setSubject] = useState<SubjectMode>("auto");
-  const [presetIdx, setPresetIdx] = useState<number>(0);
-  const [file, setFile] = useState<File | null>(null);
-  const [prompt, setPrompt] = useState<string>("");
-  const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [percent, setPercent] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [freeLeft, setFreeLeft] = useState<number>(1);
-  const [signedIn, setSignedIn] = useState<boolean>(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [showPanel, setShowPanel] = useState(false);
-
-  const mergedPresets = useMemo(() => {
-    const seen = new Set<string>();
-    const res: { label: string; value: string }[] = [];
-    [...PRESETS.dog, ...PRESETS.cat].forEach(p => { if (!seen.has(p.label)) { seen.add(p.label); res.push(p); } });
-    return res;
-  }, []);
-
-  const presets = useMemo(() => {
-    if (subject === "dog") return PRESETS.dog;
-    if (subject === "cat") return PRESETS.cat;
-    return mergedPresets;
-  }, [subject, mergedPresets]);
-
-  const presetLabel = presets[presetIdx]?.label || "Custom";
+export default function HistoryPage() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+  const [cols, setCols] = useState<1 | 2 | 3 | 6>(1); // allow 1× on any screen
+  const [userSet, setUserSet] = useState(false);      // distinguish auto vs manual selection
 
   useEffect(() => {
-    let base = presets[presetIdx]?.value || "";
-    if (subject === "auto") {
-      base = base.replace(/\bdog(s)?\b/gi, "pet$1").replace(/\bcat(s)?\b/gi, "pet$1");
-    }
-    setPrompt(base);
-  }, [presetIdx, subject, presets]);
-
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const key = localStorage.getItem("freeGenerationsLeft");
-        if (key === null) localStorage.setItem("freeGenerationsLeft", "1");
-        setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10));
+    // Server + local merge
+    (async () => {
+      const local = readLocal();
+      let server: Item[] = [];
+      const { data: sess } = await supabase.auth.getSession();
+      const t = sess.session?.access_token || null;
+      setToken(t);
+      if (t) {
+        const res = await fetch("/api/history/list", { headers: { Authorization: `Bearer ${t}` } });
+        if (res.ok) {
+          const j = await res.json(); server = j.items || [];
+        }
       }
-    } catch {}
-    supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
+      const map = new Map<string, Item>();
+      [...server, ...local].forEach(it => { if (!map.has(it.output_url)) map.set(it.output_url, it); });
+      const merged = Array.from(map.values()).sort((a,b) => +new Date(b.created_at) - +new Date(a.created_at));
+      setItems(merged);
+      setLoading(false);
+    })();
   }, []);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] || null; setFile(f); setResult(null); setError(null);
-    if (f) {
-      const reader = new FileReader();
-      reader.onload = () => setPreview(String(reader.result));
-      reader.readAsDataURL(f);
-    } else { setPreview(null); }
-  };
+  // Auto-adjust columns by screen width unless the user manually chose a value
+  useEffect(() => {
+    const apply = () => {
+      if (userSet) return;
+      if (window.innerWidth < 640) setCols(1);
+      else if (window.innerWidth < 900) setCols(2);
+      else setCols(3);
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [userSet]);
 
-  const buildPrompt = () => {
-    if (subject === "auto") {
-      let p = prompt;
-      p = p.replace(/\bdog(s)?\b/gi, "pet$1").replace(/\bcat(s)?\b/gi, "pet$1");
-      return p;
-    }
-    if (!/\bdog|cat\b/i.test(prompt)) return `${prompt} ${subject === "dog" ? "portrait of a dog" : "portrait of a cat"}`.trim();
-    return prompt;
-  };
+  const setColsUser = (n: 1 | 2 | 3 | 6) => { setCols(n); setUserSet(true); };
 
-  const onSubmit = async () => {
-    if (!file) { setError("Please select an image first."); return; }
-    setLoading(true); setError(null); setResult(null); setPercent(1); setShowPanel(true);
-
-    const timer = window.setInterval(() => {
-      setPercent(p => (p < 87 ? p + Math.max(1, Math.round((87 - p) / 8)) : p));
-    }, 300);
-
+  const downloadViaProxy = async (url: string) => {
     try {
-      let token: string | null = null;
-      let canProceed = false;
-      if (freeLeft > 0) {
-        const left = Math.max(0, freeLeft - 1);
-        localStorage.setItem("freeGenerationsLeft", String(left));
-        setFreeLeft(left);
-        canProceed = true;
-      } else {
-        const { data } = await supabase.auth.getSession();
-        token = data.session?.access_token || null;
-        if (!token) { setError("Free preview used. Please sign in and buy a bundle to continue."); setLoading(false); window.clearInterval(timer); return; }
-        const res = await fetch("/api/credits/use", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error("No credits available"); canProceed = true;
-      }
-
-      if (canProceed) {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("prompt", buildPrompt());
-        fd.append("species", subject === "auto" ? "" : subject);
-        fd.append("preset_label", presetLabel);
-
-        const { data } = await supabase.auth.getSession();
-        token = data.session?.access_token || null;
-        const res = await fetch("/api/stylize", { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: fd });
-        const out = await res.json();
-        if (!res.ok) throw new Error(out.error || "Generation failed");
-        const url = out.output as string;
-        setResult(url);
-
-        pushLocal({ prompt, species: subject === "auto" ? null : subject, preset_label: presetLabel, output_url: url });
-      }
-    } catch (e: any) {
-      setError(e.message || "Something went wrong");
-    } finally {
-      window.clearInterval(timer);
-      setPercent(100);
-      setTimeout(() => setLoading(false), 250);
-    }
-  };
-
-  const downloadNow = async () => {
-    if (!result) return;
-    try {
-      const res = await fetch(`/api/proxy?url=${encodeURIComponent(result)}`);
+      const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
       const blob = await res.blob();
-      if (!blob || (blob.size < 20 * 1024 && !result.startsWith("data:"))) { window.open(result, "_blank"); return; }
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "portrait.jpg"; a.click();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "portrait.jpg";
+      a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    } catch { window.open(result, "_blank"); }
+    } catch {
+      window.open(url, "_blank");
+    }
   };
+
+  const deleteItem = async (it: Item) => {
+    if (token && typeof it.id === "number") {
+      const res = await fetch("/api/history/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: it.id })
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({} as any));
+        alert(j?.error || "Delete failed on server; removing locally.");
+      }
+    }
+    try {
+      const raw = localStorage.getItem("localGenerations");
+      const arr: Item[] = raw ? JSON.parse(raw) : [];
+      const filtered = arr.filter(x => x.output_url !== it.output_url);
+      localStorage.setItem("localGenerations", JSON.stringify(filtered));
+    } catch {}
+    setItems(prev => prev.filter(x => x.output_url !== it.output_url));
+  };
+
+  const GridControls = () => (
+    <div className="flex items-center gap-2">
+      <span className="text-sm opacity-80">View:</span>
+      <button className={`btn-outline btn-sm ${cols===1 ? '!bg-white/10' : ''}`} onClick={() => setColsUser(1)}>1×</button>
+      <button className={`btn-outline btn-sm ${cols===2 ? '!bg-white/10' : ''}`} onClick={() => setColsUser(2)}>2×</button>
+      <button className={`btn-outline btn-sm ${cols===3 ? '!bg-white/10' : ''}`} onClick={() => setColsUser(3)}>3×</button>
+      <button className={`btn-outline btn-sm ${cols===6 ? '!bg-white/10' : ''}`} onClick={() => setColsUser(6)}>6×</button>
+    </div>
+  );
+
+  if (loading) return <main className="card">Loading…</main>;
 
   return (
     <main className="grid gap-6">
-      <section className="card grid gap-4">
-        <div className="flex flex-wrap items-center justify-between">
-          <div className="text-sm opacity-80">Free preview left: <b>{freeLeft}</b></div>
-          <div className="flex gap-2">
-            {freeLeft <= 0 && (
-              <>
-                {!signedIn && <a className="btn-outline" href="/login">Sign in</a>}
-                <a className="btn-secondary" href="/bundles">Buy bundles</a>
-              </>
-            )}
-            {ALLOW_RESET && <button className="btn-outline" onClick={() => { localStorage.setItem("freeGenerationsLeft","1"); setFreeLeft(1);} } title="Testing helper">Reset free</button>}
-          </div>
+      <section className="card">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h2 className="text-xl font-semibold">Your history</h2>
+          <GridControls />
         </div>
 
-        <div className="grid gap-2">
-          <Label>Subject in photo</Label>
-          <div className="flex gap-2 flex-wrap">
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="auto"} onChange={() => { setSubject("auto"); setPresetIdx(0); }} />Auto (safe)</label>
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="dog"} onChange={() => { setSubject("dog"); setPresetIdx(0); }} />Dog</label>
-            <label className="btn-outline"><input type="radio" name="subject" className="mr-2" checked={subject==="cat"} onChange={() => { setSubject("cat"); setPresetIdx(0); }} />Cat</label>
-          </div>
-          <p className="text-xs opacity-70">We’ll tailor the styles to your chosen subject. <b>Auto</b> merges both sets and neutralizes species words in the prompt.</p>
-        </div>
+        {!items.length && <p className="opacity-80">No generations yet.</p>}
 
-        <div className="grid gap-2">
-          <Label>Style preset</Label>
-          <select className="select" value={presetIdx} onChange={e => setPresetIdx(parseInt(e.target.value, 10))}>
-            {presets.map((p, i) => (<option key={i} value={i}>{p.label}</option>))}
-          </select>
-          <div className="text-xs opacity-70">Selected preset: <b>{presetLabel}</b></div>
-        </div>
-
-        <div className="grid gap-2">
-          <Label>Editable prompt</Label>
-          <textarea className="input" value={prompt} onChange={e => setPrompt(e.target.value)} />
-        </div>
-
-        <div className="grid gap-2">
-          <Label>Upload one image of your pet</Label>
-          <input className="input" type="file" accept="image/*" onChange={onChange} />
-        </div>
-
-        <button className={`btn-primary ${loading ? 'btn-loading' : ''}`} onClick={onSubmit} disabled={loading || !file}>
-          {loading ? `Generating… ${percent}%` : "Generate portrait"}
-        </button>
-
-        {error && <p className="text-red-400">{error}</p>}
-
-        {(showPanel || result) && (
-          <div className="grid gap-4">
-            <div className="text-sm opacity-80">Preset used: <b>{presetLabel}</b></div>
-            <div className="grid gap-3 sm:grid-cols-[160px_1fr] items-start">
-              <div className="grid gap-2">
-                {preview ? (<img className="preview" src={preview} alt="original upload" />) : (<div className="skeleton-pattern" />)}
-                <div className="text-xs opacity-70 text-center">Original</div>
+        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {items.map((it, idx) => (
+            <div key={(it as any).id ?? idx} className="card bg-white/5">
+              <img className="preview" src={it.output_url} alt={it.preset_label ?? "result"} style={{ width: '100%', height: 'auto' }} />
+              <div className="mt-2 text-sm opacity-80 truncate">
+                <div className="truncate"><b>{it.preset_label || "Custom"}</b>{it.species ? ` · ${it.species}` : ""}</div>
+                <div>{new Date(it.created_at).toLocaleString()}</div>
               </div>
-              <div className="grid gap-2">
-                {!result && <div className="skeleton-pattern" />}
-                {result && <ProgressiveImage className="w-full" src={result} alt="generated portrait" />}
-                <div className="flex gap-2 flex-wrap">
-                  <button className="btn-primary" onClick={downloadNow} disabled={!result}>Download</button>
-                  <a className={`btn-outline ${!result ? 'opacity-60 pointer-events-none' : ''}`} href={result || '#'} target="_blank" rel="noopener noreferrer">View full size</a>
-                </div>
+              <div className="actions mt-3">
+                <button className="btn-primary btn-sm" onClick={() => downloadViaProxy(it.output_url)}>Download</button>
+                <button className="btn-outline btn-sm" onClick={() => window.open(it.output_url, "_blank")}>View</button>
+                <button className="btn-secondary btn-sm" onClick={() => deleteItem(it)}>Delete</button>
               </div>
             </div>
-            {loading && <div className="text-xs opacity-70">Generating… this can take a moment.</div>}
-          </div>
-        )}
+          ))}
+        </div>
       </section>
     </main>
   );

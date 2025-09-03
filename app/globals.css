@@ -8,16 +8,28 @@
   --fg: #e9eef6;
   --brand: #F09C20;     /* primary honey */
   --brand-ink: #0f1115;
-  --brand-2: #786552;   /* secondary */
-  --brand-2-hover: #f09c20;
+  --brand-2: #C57429;   /* secondary */
+  --brand-2-hover: #955223;
   --muted: #1a1f29;
   --line: rgba(255,255,255,0.08);
   --soft-1: #F4D7A1;
   --soft-5: #786552;
+
+  /* Skeleton theming */
+  --skeleton-a: rgba(255,255,255,0.06);  /* darker, close to bg */
+  --skeleton-b: rgba(255,255,255,0.04);
+  --skeleton-c: rgba(255,255,255,0.02);
+  --skeleton-speed: 1.8s;                /* slower than before (was 1.1s) */
 }
 
 @media (prefers-color-scheme: light) {
-  :root { --bg: #faf9f7; --fg: #0f1115; --muted: #ffffff; --line: rgba(0,0,0,0.08); }
+  :root {
+    --bg: #faf9f7; --fg: #0f1115; --muted: #ffffff; --line: rgba(0,0,0,0.08);
+    /* keep skeleton subtle in light too */
+    --skeleton-a: rgba(0,0,0,0.06);
+    --skeleton-b: rgba(0,0,0,0.04);
+    --skeleton-c: rgba(0,0,0,0.02);
+  }
 }
 
 html, body { height: 100%; }
@@ -66,7 +78,7 @@ textarea.input { min-height: 120px; }
 img.preview { border-radius: .6rem; border: 1px solid var(--line); max-width: 100%; height: auto; }
 .link { text-decoration: underline; }
 
-/* Pattern skeleton & progressive image */
+/* Darker pattern skeleton & progressive image */
 .skeleton-pattern {
   position: relative;
   overflow: hidden;
@@ -75,14 +87,15 @@ img.preview { border-radius: .6rem; border: 1px solid var(--line); max-width: 10
   min-height: 240px;
   background:
     repeating-linear-gradient(45deg,
-      rgba(244,215,161,0.25) 0 14px,
-      rgba(240,156,32,0.25) 14px 28px,
-      rgba(197,116,41,0.25) 28px 42px);
+      var(--skeleton-a) 0 14px,
+      var(--skeleton-b) 14px 28px,
+      var(--skeleton-c) 28px 42px);
   background-size: 200% 100%;
-  animation: patternSlide 1.1s linear infinite;
+  animation: patternSlide var(--skeleton-speed) linear infinite;
 }
 @keyframes patternSlide { 0%{background-position:0 0} 100%{background-position:200% 0} }
 
+/* Progressive image (blur-up) */
 .progressive-wrap { position: relative; overflow: hidden; }
 .progressive { display: block; width: 100%; height: auto; border-radius: .6rem; border: 1px solid var(--line); }
 .progressive.low { filter: blur(12px); transform: scale(1.02); transition: opacity .3s ease; }
