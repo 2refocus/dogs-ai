@@ -43,6 +43,7 @@ export default function Home() {
   }, [subject, mergedPresets]);
 
   const presetLabel = presets[presetIdx]?.label || "Custom";
+  
 
   useEffect(() => {
     let base = presets[presetIdx]?.value || "";
@@ -111,8 +112,8 @@ export default function Home() {
         fd.append("file", file);
         fd.append("prompt", buildPrompt());
         fd.append("species", subject === "auto" ? "" : subject);
-        fd.append("preset_label", presetLabel);
         fd.append("aspectRatio", "1:1");
+        fd.append("preset_label", presetLabel);
 
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;
