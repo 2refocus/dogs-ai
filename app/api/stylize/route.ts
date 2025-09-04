@@ -26,35 +26,27 @@ const REPLICATE_VERSION = process.env.REPLICATE_VERSION; // optional
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "images";
+const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
 
 function isHttpsUrl(s: unknown): s is string {
   if (typeof s !== "string") return false;
-  try {
-    return new URL(s).protocol === "https:";
-  } catch {
-    return false;
-  }
+  try { return new URL(s).protocol === "https:"; } catch { return false; }
 }
 
 // accept a generic SupabaseClient<any> to avoid schema-generic mismatch
 async function uploadToSupabasePublic(
-  supabase: SupabaseClient<any>,
   file: File,
+  supabase: SupabaseClient<any>
 ): Promise<string> {
   const safeName = (file.name || "upload.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
-  const ext = safeName.includes(".")
-    ? safeName.split(".").pop()!.toLowerCase()
-    : "jpg";
-  const path = `inputs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const ext = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "jpg";
+  const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const buf = Buffer.from(await file.arrayBuffer());
-  const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, buf, {
-      contentType: file.type || "image/jpeg",
-      upsert: false,
-    });
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, buf, {
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
   if (error) throw new Error("Upload failed: " + error.message);
 
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
@@ -63,26 +55,36 @@ async function uploadToSupabasePublic(
 }
 
 async function replicateCreate(imageUrl: string, prompt: string) {
-  const body: Record<string, any> = {
-    version: REPLICATE_VERSION,
-    input: { prompt, image_input: [imageUrl] },
+  const model = REPLICATE_MODEL;
+  const version = REPLICATE_VERSION || "";
+
+  const input: Record<string, any> = {
+    prompt,
+    image_input: [imageUrl],
   };
-  const res = await fetch(
-    `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+
+  const url = version
+    ? "https://api.replicate.com/v1/predictions"
+    : `https://api.replicate.com/v1/models/${model}/predictions`;
+
+  const body = version
+    ? { version, input }
+    : { input };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
     },
-  );
-  if (!res.ok)
-    throw new Error(
-      `Replicate create failed (${res.status}): ${await res.text().catch(() => "")}`,
-    );
-  return (await res.json()) as any;
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Replicate create failed (${res.status}): ${text}`);
+  }
+  return JSON.parse(text);
 }
 
 async function replicateGet(id: string) {
@@ -90,23 +92,16 @@ async function replicateGet(id: string) {
     headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
     cache: "no-store",
   });
-  if (!res.ok)
-    throw new Error(
-      `Replicate get failed (${res.status}): ${await res.text().catch(() => "")}`,
-    );
+  if (!res.ok) throw new Error(`Replicate get failed (${res.status}): ${await res.text().catch(()=>"")}`);
   return (await res.json()) as any;
 }
 
 export async function POST(req: NextRequest) {
   try {
     if (!REPLICATE_API_TOKEN) return fail("Missing REPLICATE_API_TOKEN", 500);
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY)
-      return fail("Missing Supabase config", 500);
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return fail("Missing Supabase config", 500);
 
-    const supabase = createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-    ) as SupabaseClient<any>;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as SupabaseClient<any>;
     const ct = req.headers.get("content-type") || "";
 
     let imageUrl = "";
@@ -121,10 +116,8 @@ export async function POST(req: NextRequest) {
       prompt = (body?.prompt || "").toString().trim();
       user_id = typeof body?.user_id === "string" ? body.user_id : null;
       preset_id = typeof body?.preset_id === "string" ? body.preset_id : null;
-      preset_label =
-        typeof body?.preset_label === "string" ? body.preset_label : null;
-      if (!isHttpsUrl(imageUrl))
-        return fail("imageUrl must be a public https URL", 400);
+      preset_label = typeof body?.preset_label === "string" ? body.preset_label : null;
+      if (!isHttpsUrl(imageUrl)) return fail("imageUrl must be a public https URL", 400);
     } else if (ct.startsWith("multipart/form-data")) {
       const form = await req.formData();
       const file = form.get("file") as File | null;
@@ -133,14 +126,13 @@ export async function POST(req: NextRequest) {
       user_id = (form.get("user_id") || null) as string | null;
       preset_id = (form.get("preset_id") || null) as string | null;
       preset_label = (form.get("preset_label") || null) as string | null;
-      imageUrl = await uploadToSupabasePublic(supabase, file);
+      imageUrl = await uploadToSupabasePublic(file, supabase);
     } else {
       return fail("Unsupported Content-Type", 415);
     }
 
     if (!prompt) {
-      prompt =
-        "A timeless, elegant pet portrait in warm light, detailed and high quality";
+      prompt = "A timeless, elegant pet portrait in warm light, detailed and high quality";
     }
 
     // create + poll
@@ -161,10 +153,7 @@ export async function POST(req: NextRequest) {
         break;
       }
       if (status === "failed" || status === "canceled") {
-        const errMsg =
-          typeof pred?.error === "string"
-            ? pred.error
-            : JSON.stringify(pred?.error || {});
+        const errMsg = typeof pred?.error === "string" ? pred.error : JSON.stringify(pred?.error || {});
         return fail(`Generation failed: ${errMsg}`, 502);
       }
       await new Promise((r) => setTimeout(r, 1200));
@@ -183,7 +172,7 @@ export async function POST(req: NextRequest) {
         preset_label,
       };
       const { data, error } = await (supabase as SupabaseClient<any>)
-        .from("uploads")
+        .from("generations")
         .insert(insertPayload)
         .select("id")
         .single();
@@ -192,12 +181,10 @@ export async function POST(req: NextRequest) {
 
     return ok({ id: rowId, input_url: imageUrl, output_url: outputUrl });
   } catch (err: any) {
-    // final safety: still JSON
     return fail(err?.message || "Unknown error", 500);
   }
 }
 
-// Optional: reject non-POST with JSON too
 export async function GET() {
   return fail("Use POST", 405);
 }
