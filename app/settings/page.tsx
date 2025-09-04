@@ -1,40 +1,42 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-export default function SettingsPage() {
-  const [style, setStyle] = useState("shimmer");
-  const [speed, setSpeed] = useState("normal");
-  const [ar, setAr] = useState("1:1");
+type Style = "pattern" | "shimmer" | "solid";
+type Speed = "fast" | "normal" | "slow";
+type AR = "1:1" | "4:5" | "3:4" | "16:9";
 
-  useEffect(function init() {
+export default function SettingsPage(): JSX.Element {
+  const [style, setStyle] = useState<Style>("shimmer");
+  const [speed, setSpeed] = useState<Speed>("normal");
+  const [ar, setAr] = useState<AR>("1:1");
+
+  useEffect(() => {
     try {
-      const s = localStorage.getItem("loadingStyle") || "shimmer";
-      const p = localStorage.getItem("loadingSpeed") || "normal";
-      const a = localStorage.getItem("aspectRatio") || "1:1";
-      setStyle(s);
-      setSpeed(p);
-      setAr(a);
+      const s = (localStorage.getItem("loadingStyle") as Style) || "shimmer";
+      const p = (localStorage.getItem("loadingSpeed") as Speed) || "normal";
+      const a = (localStorage.getItem("aspectRatio") as AR) || "1:1";
+      setStyle(s); setSpeed(p); setAr(a);
       document.documentElement.setAttribute("data-loading-style", s);
       document.documentElement.setAttribute("data-skeleton-speed", p);
       document.documentElement.setAttribute("data-aspect-ratio", a);
-    } catch (e) { /* ignore */ }
+    } catch {}
   }, []);
 
-  function onStyleChange(ev) {
-    const s = ev.target.value;
+  function onStyleChange(ev: React.ChangeEvent<HTMLSelectElement>) {
+    const s = ev.target.value as Style;
     setStyle(s);
     try { localStorage.setItem("loadingStyle", s); } catch {}
     document.documentElement.setAttribute("data-loading-style", s);
   }
 
-  function onSpeedChange(ev) {
-    const p = ev.target.value;
+  function onSpeedChange(ev: React.ChangeEvent<HTMLSelectElement>) {
+    const p = ev.target.value as Speed;
     setSpeed(p);
     try { localStorage.setItem("loadingSpeed", p); } catch {}
     document.documentElement.setAttribute("data-skeleton-speed", p);
   }
 
-  function chooseAR(val) {
+  function chooseAR(val: AR) {
     setAr(val);
     try { localStorage.setItem("aspectRatio", val); } catch {}
     document.documentElement.setAttribute("data-aspect-ratio", val);
@@ -66,18 +68,19 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-lg font-semibold mb-2">Aspect Ratio</h2>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => chooseAR("1:1")} className={"px-3 py-2 rounded border" + (ar === "1:1" ? " bg-yellow-500 text-black" : " bg-gray-800 text-gray-200")}>
-            Square (1:1)
-          </button>
-          <button type="button" onClick={() => chooseAR("4:5")} className={"px-3 py-2 rounded border" + (ar === "4:5" ? " bg-yellow-500 text-black" : " bg-gray-800 text-gray-200")}>
-            Portrait 4:5
-          </button>
-          <button type="button" onClick={() => chooseAR("3:4")} className={"px-3 py-2 rounded border" + (ar === "3:4" ? " bg-yellow-500 text-black" : " bg-gray-800 text-gray-200")}>
-            Portrait 3:4
-          </button>
-          <button type="button" onClick={() => chooseAR("16:9")} className={"px-3 py-2 rounded border" + (ar === "16:9" ? " bg-yellow-500 text-black" : " bg-gray-800 text-gray-200")}>
-            Wide 16:9
-          </button>
+          {(["1:1","4:5","3:4","16:9"] as AR[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => chooseAR(key)}
+              className={
+                "px-3 py-2 rounded border " +
+                (ar === key ? "bg-yellow-500 text-black" : "bg-gray-800 text-gray-200")
+              }
+            >
+              {key === "1:1" ? "Square" : key === "16:9" ? "Wide 16:9" : `Portrait ${key}`} ({key})
+            </button>
+          ))}
         </div>
       </div>
     </main>
