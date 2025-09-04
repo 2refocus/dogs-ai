@@ -1,114 +1,145 @@
-/* app/page.tsx — inline SVG placeholder (no public file needed) */
+/* app/page.tsx — minimal client with placeholder + shimmer + robust polling */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-function SvgPlaceholder() {
+/** Simple inline SVG placeholder (1:1) */
+function Placeholder() {
   return (
     <svg
-      viewBox="0 0 512 512"
-      className="absolute inset-0 h-full w-full"
-      aria-hidden="true"
+      viewBox="0 0 400 400"
+      xmlns="http://www.w3.org/2000/svg"
       role="img"
-      preserveAspectRatio="xMidYMid slice"
+      aria-label="placeholder"
+      className="w-full h-full block bg-[#111] text-[#444]"
     >
       <defs>
-        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#202225" />
-          <stop offset="1" stopColor="#2a2d31" />
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#1b1b1b" />
+          <stop offset="50%" stopColor="#222" />
+          <stop offset="100%" stopColor="#1b1b1b" />
         </linearGradient>
       </defs>
-      <rect x="0" y="0" width="512" height="512" fill="url(#g)" />
-      <rect x="64" y="80" width="384" height="272" rx="12" fill="#33373c" />
-      <circle cx="164" cy="168" r="32" fill="#3b4046" />
-      <path d="M96 320l88-72 64 48 88-80 80 104H96z" fill="#454a51" />
-      <g fill="#50565f" transform="translate(168,360)">
-        <ellipse cx="24" cy="28" rx="20" ry="16" />
-        <circle cx="0" cy="0" r="10" />
-        <circle cx="24" cy="-6" r="10" />
-        <circle cx="48" cy="0" r="10" />
-        <circle cx="24" cy="16" r="10" />
+      <rect x="0" y="0" width="400" height="400" fill="url(#g)" />
+      <g fill="none" stroke="#333" strokeWidth="2">
+        <rect x="40" y="40" width="320" height="320" rx="8" />
+        <path d="M80 280 L150 210 L210 260 L270 200 L320 260" />
+        <circle cx="150" cy="170" r="24" />
       </g>
     </svg>
   );
 }
 
+/** Light shimmer overlay shown while loading */
+function Shimmer() {
+  return (
+    <div className="absolute inset-0 overflow-hidden rounded-md">
+      <div
+        className="absolute inset-0 animate-pulse"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%)",
+          backgroundSize: "200% 100%",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [resultUrl, setResultUrl] = useState<string>("");
   const [msg, setMsg] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [img, setImg] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<string>("");
+  const abortRef = useRef<AbortController | null>(null);
 
+  // Build a FileReader preview for the uploaded image
   useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] || null;
-    setFile(f);
-    setResultUrl("");
-    setMsg("");
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (f) setPreviewUrl(URL.createObjectURL(f));
-    else setPreviewUrl("");
-  }
+    if (!file) {
+      setPreview("");
+      return;
+    }
+    const rd = new FileReader();
+    rd.onload = () => setPreview(String(rd.result || ""));
+    rd.readAsDataURL(file);
+    return () => rd.abort();
+  }, [file]);
 
   async function onSubmit() {
-    setMsg("");
-    setResultUrl("");
+    setMsg("Starting…");
+    setImg("");
     if (!file) {
       setMsg("Pick a file first.");
       return;
     }
     setLoading(true);
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
 
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("prompt", "Elegant fine-art pet portrait, warm light, 1:1 crop");
+      fd.append("prompt", "Elegant fine‑art pet portrait, warm light");
 
-      const r = await fetch("/api/stylize", { method: "POST", body: fd });
-      const j = await r.json();
-      if (!r.ok || !j?.prediction_id) {
-        setMsg(j?.error || "Create failed");
+      const res = await fetch("/api/stylize", { method: "POST", body: fd, signal });
+      const create = await res.json();
+      if (!res.ok || !create?.prediction_id) {
+        setMsg(create?.error || "Create failed");
         setLoading(false);
         return;
       }
 
-      const id = String(j.prediction_id);
-      setMsg("Generating…");
+      setMsg("Created. Polling…");
+      const id = create.prediction_id as string;
 
       const t0 = Date.now();
-      while (Date.now() - t0 < 120000) {
-        await new Promise((res) => setTimeout(res, 1200));
-        const pr = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
-        const pj = await pr.json();
+      while (!signal.aborted && Date.now() - t0 < 120000) {
+        await new Promise((r) => setTimeout(r, 1200));
+        const g = await fetch(`/api/predictions/${id}`, { cache: "no-store", signal });
+        const j = await g.json();
 
-        const urls: string[] = Array.isArray(pj.urls) ? pj.urls : [];
-        const outArr: string[] = Array.isArray(pj.output) ? pj.output : [];
-        const outStr: string | null =
-          typeof pj.output === "string" ? pj.output : null;
-        const normalized = urls[0] ?? outArr[0] ?? outStr ?? null;
-
-        if (pj.status === "succeeded" || pj.status === "completed") {
-          if (!normalized) setMsg("Done, but no output URL returned.");
-          else setResultUrl(normalized);
+        if (!g.ok) {
+          setMsg(j?.error || "Poll failed");
           setLoading(false);
           return;
         }
-        if (pj.status === "failed" || pj.status === "canceled") {
-          setMsg(`Failed: ${pj.error || "unknown error"}`);
+
+        // extract any output url shape
+        let url: string | null = null;
+        if (Array.isArray(j.urls) && j.urls.length > 0) url = j.urls[0];
+        else if (Array.isArray(j.output) && j.output.length > 0) url = j.output[0];
+        else if (typeof j.output === "string" && j.output) url = j.output;
+
+        if (j.status === "succeeded" || j.status === "completed") {
+          if (!url) {
+            setMsg("Done but no output URL");
+            setLoading(false);
+            return;
+          }
+          setImg(url);
+          setMsg("Done ✔");
           setLoading(false);
           return;
         }
+        if (j.status === "failed" || j.status === "canceled") {
+          setMsg(`Failed: ${j.error || "unknown error"}`);
+          setLoading(false);
+          return;
+        }
+
+        // optional: show progressive preview url if available
+        if (url) setImg(url);
       }
-      setMsg("Timed out while polling.");
+
+      if (!signal.aborted) {
+        setMsg("Timed out while polling.");
+        setLoading(false);
+      }
     } catch (e: any) {
-      setMsg(e?.message || "Unexpected error");
-    } finally {
+      if (e?.name === "AbortError") return;
+      setMsg(e?.message || "Something went wrong");
       setLoading(false);
     }
   }
@@ -118,43 +149,37 @@ export default function Home() {
       <div className="grid gap-3">
         <label className="text-sm font-medium">Upload a pet photo</label>
         <input
+          className="input"
           type="file"
           accept="image/*"
-          onChange={onPick}
-          className="w-full rounded border border-neutral-700 bg-neutral-800 px-3 py-2"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
         <button
           onClick={onSubmit}
-          disabled={loading || !file}
-          className="rounded bg-amber-500 px-4 py-2 font-medium text-black disabled:opacity-60"
+          disabled={!file || loading}
+          className={`btn-primary h-11 ${loading ? "opacity-80" : ""}`}
         >
           {loading ? "Generating…" : "Generate portrait"}
         </button>
       </div>
 
-      <div className="relative w-full aspect-square rounded border border-neutral-700 bg-neutral-900 overflow-hidden">
-        {loading && (
-          <div className="absolute inset-0 animate-pulse bg-neutral-800/40 pointer-events-none" />
-        )}
+      <div className="grid gap-2">
+        <div className="relative w-full aspect-square rounded-md overflow-hidden bg-black/80">
+          {/* placeholder (shows until there is a preview or result) */}
+          {!preview && !img && <Placeholder />}
 
-        {resultUrl ? (
-          <img
-            src={resultUrl}
-            alt="result"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="preview"
-            className={\`absolute inset-0 h-full w-full object-cover \${loading ? "opacity-70" : ""}\`}
-          />
-        ) : (
-          <SvgPlaceholder />
-        )}
+          {/* uploaded preview while waiting */}
+          {preview && !img && (
+            <img src={preview} alt="preview" className="w-full h-full object-cover" />
+          )}
+
+          {/* final or progressive result */}
+          {img && <img src={img} alt="result" className="w-full h-full object-cover" />}
+
+          {loading && <Shimmer />}
+        </div>
+        <div className="text-sm opacity-80">{msg}</div>
       </div>
-
-      <div className="text-sm opacity-80">{msg}</div>
     </main>
   );
 }
