@@ -1,0 +1,20 @@
+
+/* Ratio cards */
+.ratio-card {
+  display: grid;
+  gap: .5rem;
+  justify-items: center;
+  padding: .75rem;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  background: rgba(255,255,255,0.02);
+  transition: transform .12s ease, background-color .12s ease, border-color .12s ease;
+}
+.ratio-card:hover { transform: translateY(-1px); background: rgba(255,255,255,0.04); }
+.ratio-card.active { border-color: var(--brand); background: rgba(240,156,32,0.08); }
+.ratio-box {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+}
+.ratio-label { font-size: .85rem; text-align: center; }
