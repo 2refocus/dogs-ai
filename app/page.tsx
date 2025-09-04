@@ -112,6 +112,7 @@ export default function Home() {
         fd.append("prompt", buildPrompt());
         fd.append("species", subject === "auto" ? "" : subject);
         fd.append("preset_label", presetLabel);
+        fd.append("aspectRatio", "1:1");
 
         const { data } = await supabase.auth.getSession();
         token = data.session?.access_token || null;

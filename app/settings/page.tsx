@@ -7,13 +7,13 @@ type AR = "1:1" | "4:5" | "3:4" | "16:9";
 
 export default function SettingsPage(): JSX.Element {
   const [style, setStyle] = useState<Style>("shimmer");
-  const [speed, setSpeed] = useState<Speed>("normal");
+  const [speed, setSpeed] = useState<Speed>("fast");
   const [ar, setAr] = useState<AR>("1:1");
 
   useEffect(() => {
     try {
       const s = (localStorage.getItem("loadingStyle") as Style) || "shimmer";
-      const p = (localStorage.getItem("loadingSpeed") as Speed) || "normal";
+      const p = (localStorage.getItem("loadingSpeed") as Speed) || "fast";
       const a = (localStorage.getItem("aspectRatio") as AR) || "1:1";
       setStyle(s); setSpeed(p); setAr(a);
       document.documentElement.setAttribute("data-loading-style", s);
