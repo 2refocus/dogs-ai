@@ -64,25 +64,6 @@ export default function SettingsPage(): JSX.Element {
           </select>
         </div>
       </div>
-
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Aspect Ratio</h2>
-        <div className="flex flex-wrap gap-3">
-          {(["1:1","4:5","3:4","16:9"] as AR[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => chooseAR(key)}
-              className={
-                "px-3 py-2 rounded border " +
-                (ar === key ? "bg-yellow-500 text-black" : "bg-gray-800 text-gray-200")
-              }
-            >
-              {key === "1:1" ? "Square" : key === "16:9" ? "Wide 16:9" : `Portrait ${key}`} ({key})
-            </button>
-          ))}
-        </div>
-      </div>
     </main>
   );
 }

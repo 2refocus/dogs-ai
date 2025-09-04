@@ -1,8 +1,10 @@
 "use client";
-import React from "react";
+import * as React from "react";
+
+type AR = "1:1" | "4:5" | "3:4" | "16:9";
 
 type Props = {
-  ar?: "1:1" | "4:5" | "3:4" | "16:9";
+  ar?: AR;
   className?: string;
   children: React.ReactNode;
 };
@@ -14,14 +16,14 @@ type Props = {
  *     <img src={url} alt="result" className="w-full h-full object-contain" />
  *   </ARFrame>
  */
-export default function ARFrame({ ar = "1:1", className = "", children }: Props) {
+export default function ARFrame({ ar = "1:1", className = "", children }: Props): JSX.Element {
   const ratio = ar === "4:5" ? "4 / 5"
               : ar === "3:4" ? "3 / 4"
               : ar === "16:9" ? "16 / 9"
               : "1 / 1";
   return (
     <div
-      className={\`ar-frame \${className}\`}
+      className={`ar-frame ${className}`}
       data-ar={ar}
       style={{ aspectRatio: ratio }}
     >
