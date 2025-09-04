@@ -50,6 +50,7 @@ export default function NavGate() {
       {isOpen && (
         <div className="menu-panel" role="menu">
           <a className="menu-item" href="/">Home</a>
+          <a className="menu-item" href="/dashboard">Dashboard</a>
           <a className="menu-item" href="/history">History</a>
           <a className="menu-item" href="/bundles">Buy bundles</a>
           <a className="menu-item" href="/settings">Settings</a>
