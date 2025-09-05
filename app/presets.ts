@@ -17,6 +17,10 @@ const NEGATIVE =
 /** Style library — only these words change between presets. */
 const STYLES: { label: string; style: string }[] = [
   {
+    label: "DEFAULT Portrait",
+    value: "Dramatic fine-art portrait of a pet inside a grand castle hall, against an ornate background wall, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality."
+  }
+  {
     label: "Classic Oil on Canvas",
     style:
       "classic oil painting on linen canvas, rich brushstrokes, warm amber palette, " +
