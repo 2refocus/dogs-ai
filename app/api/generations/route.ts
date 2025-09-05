@@ -1,10 +1,6 @@
 /* app/api/generations/route.ts
- * Safe insert endpoint (service-role) for public.generations
- * - Does NOT touch your working stylize flow
- * - Expects JSON: { input_url, output_url, prompt?, preset_label?, is_public? }
- * - Requires env:
- *    NEXT_PUBLIC_SUPABASE_URL
- *    SUPABASE_SERVICE_ROLE  (server-only)
+ * Fire-and-forget insert into public.generations using service role.
+ * Safe to call from client after a successful generation.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -12,40 +8,34 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE || "";
 
-function j(body: any, status = 200) { return NextResponse.json(body, { status }); }
+function json(body: any, status = 200) {
+  return NextResponse.json(body, { status });
+}
 
 export async function POST(req: NextRequest) {
   try {
     if (!SUPABASE_URL || !SERVICE_KEY) {
-      return j({ ok:false, error: "Missing Supabase env" }, 500);
+      return json({ ok: false, error: "Service insert not configured" }, 200); // soft-fail
     }
-    const body = await req.json().catch(() => ({}));
-    const input_url: string | null = body?.input_url ?? null;
-    const output_url: string | null = body?.output_url ?? null;
-    const prompt: string | null = (body?.prompt ?? null);
-    const preset_label: string | null = (body?.preset_label ?? null);
-    const is_public: boolean = body?.is_public ?? true;
-
-    if (!output_url || typeof output_url !== "string") {
-      return j({ ok:false, error: "output_url required" }, 400);
-    }
+    const { output_url, input_url, prompt, preset_label, is_public } = await req.json().catch(() => ({}));
+    if (!output_url) return json({ ok: false, error: "Missing output_url" }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { error } = await admin.from("generations").insert({
       user_id: null,
-      input_url,
+      input_url: input_url ?? null,
       output_url,
-      prompt,
-      preset_label,
-      is_public,
+      prompt: typeof prompt === "string" ? prompt : null,
+      preset_label: typeof preset_label === "string" ? preset_label : null,
+      is_public: is_public === undefined ? true : !!is_public,
     });
 
-    if (error) return j({ ok:false, error: error.message }, 500);
-    return j({ ok:true });
-  } catch (e:any) {
-    return j({ ok:false, error: e?.message || "Unknown error" }, 500);
+    if (error) return json({ ok: false, error: error.message }, 500);
+    return json({ ok: true });
+  } catch (e: any) {
+    return json({ ok: false, error: e?.message || "Unknown error" }, 500);
   }
 }
