@@ -1,4 +1,4 @@
-/* app/api/stylize/route.ts — keep old working flow, fix only Replicate's input shape.
+/* app/api/stylize/route.ts — keep old working flow, plus optional Supabase insert for Community
    - Uploads to Supabase Storage using your existing anon client (as before)
    - Creates + polls Replicate prediction
    - Returns { ok, input_url, output_url, prediction_id }
@@ -6,7 +6,7 @@
 */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
+import { supabase } from "@/lib/supabaseClient"; // your existing anon client (works for Storage upload)
 import { createClient as createAdmin } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -58,10 +58,10 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, prompt: string) {
-  // IMPORTANT: image_input as an ARRAY now (fix for 422)
+  // IMPORTANT: image_input as an ARRAY (fix for 422)
   const body = {
     input: {
-      image_input: [imageUrl], // <-- the fix
+      image_input: [imageUrl], // <-- key fix
       prompt,
     },
   };
@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const prompt = (form.get("prompt") || "").toString().trim() ||
+    const prompt =
+      (form.get("prompt") || "").toString().trim() ||
       "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
 
@@ -141,57 +142,42 @@ export async function POST(req: NextRequest) {
       if (status === "failed" || status === "canceled") {
         return json({ ok: false, error: p?.error || "Generation failed" }, 500);
       }
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1200));
     }
 
     if (!outputUrl || !isHttpsUrl(outputUrl)) {
       return json({ ok: false, error: "No output URL returned" }, 500);
     }
 
-// 4) Optional persistence — only if admin envs are present.
-if (!SUPABASE_URL || !SERVICE_ROLE) {
-  console.warn("[stylize] skip insert: missing env", {
-    hasUrl: !!SUPABASE_URL,
-    hasServiceRole: !!SERVICE_ROLE,
-  });
-} else {
-  try {
-    const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-
-    // sanity: confirm we can talk to PostgREST
-    const { error: pingErr } = await admin.from("generations").select("id").limit(1);
-    if (pingErr) {
-      console.error("[stylize] select ping failed:", pingErr.message);
+    // 4) Optional persistence — only if admin envs are present.
+    //    Inserts a *minimal* row for the Community feed (safe across schemas).
+    if (SUPABASE_URL && SERVICE_ROLE) {
+      try {
+        const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
+        await admin.from("generations").insert([
+          {
+            user_id: null,
+            output_url: outputUrl,
+            is_public: true,
+            // add these back only if your table has them as nullable:
+            // input_url: inputUrl,
+            // prompt,
+            // preset_label,
+          },
+        ]);
+      } catch (e) {
+        console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
+      }
     }
 
-    const { error: insErr } = await admin.from("generations").insert({
-      user_id: null,
-      input_url: inputUrl,
-      output_url: outputUrl,
-      prompt,
-      preset_label,
-      is_public: true,
-    });
-
-    if (insErr) {
-      console.error("[stylize] insert failed:", insErr.message);
-    } else {
-      console.log("[stylize] insert OK", { outputUrl });
-    }
-  } catch (e: any) {
-    console.error("[stylize] insert exception:", e?.message || e);
-  }
-}
-
-    // 5) Return success
     return json({
       ok: true,
+      prediction_id,
       input_url: inputUrl,
       output_url: outputUrl,
-      prediction_id,
     });
-  } catch (error: any) {
-    console.error("[stylize] error:", error?.message || error);
-    return json({ ok: false, error: error?.message || "Internal error" }, 500);
+  } catch (e: any) {
+    console.error("[stylize] error:", e?.message || e);
+    return json({ ok: false, error: e?.message || "Unknown error" }, 500);
   }
 }
