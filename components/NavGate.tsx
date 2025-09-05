@@ -44,10 +44,7 @@ export default function NavGate() {
 
       {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
       <header className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="text-lg font-semibold">Pet Portrait Studio <span className="text-amber-400">*</span></div>
-          <div className="text-xs opacity-60">Elegant &amp; cozy portraits of your pets</div>
-        </div>
+        
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <a href="/" className="hover:opacity-80">Home</a>
           <a href="/bundles" className="hover:opacity-80">Bundles</a>
