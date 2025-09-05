@@ -3,10 +3,15 @@
    - 1 free guest generation (reset with button)
    - Upload button centered + full width on small screens
    - Left: small Original preview, Right: large Generated with shimmer
+   - Community block appended at the bottom
 */
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+// Server component that fetches public generations
+const CommunityFeed = dynamic(() => import("./components/CommunityFeed"), { ssr: true });
 
 // ---------- Small helpers ----------
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -37,8 +42,12 @@ const shimmerCss = `
 }
 `;
 
-// ---------- Component ----------
-export default function Home() {
+// A single great default that plays nicely with nano-banana's input contract.
+const DEFAULT_PROMPT =
+  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
+  "fine-art studio quality, dramatic yet elegant lighting, in a cozy environment with a beautiful patterned backdrop, high detail, 1:1 crop";
+
+export default function Page() {
   // generation state
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
@@ -86,20 +95,18 @@ export default function Home() {
       setFreeLeft(left);
       canProceed = true;
     } else {
-      // (keep it simple: require login/credits outside of this demo scope)
       setMsg("Free preview used. Please sign in & buy a bundle to continue.");
       return;
     }
-
     if (!canProceed) return;
 
     setLoading(true);
     try {
+      // create
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("prompt", DEFAULT_PROMPT); // fixed beautiful style
+      fd.append("prompt", DEFAULT_PROMPT);
 
-      // Step 1: create prediction
       const r = await fetch("/api/stylize", { method: "POST", body: fd });
       const j = await r.json();
       if (!r.ok || !j?.prediction_id) {
@@ -108,7 +115,7 @@ export default function Home() {
         return;
       }
 
-      // Step 2: poll status
+      // poll
       const id: string = j.prediction_id;
       setMsg("Generating…");
       const t0 = Date.now();
@@ -123,7 +130,7 @@ export default function Home() {
           return;
         }
 
-        // unify different shapes: {urls:[...]} or {output:""} or {output:[...]}
+        // unify different shapes from the poller
         let url: string | null = null;
         if (Array.isArray(s?.urls) && s.urls.length > 0) url = s.urls[0];
         else if (typeof s?.output === "string") url = s.output;
@@ -135,8 +142,6 @@ export default function Home() {
           setLoading(false);
           return;
         }
-
-        // keep waiting
       }
 
       setMsg("Timed out while polling.");
@@ -148,7 +153,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl p-6">
+    <main className="mx-auto max-w-6xl p-6 grid gap-8">
       {/* inject shimmer CSS once */}
       <style dangerouslySetInnerHTML={{ __html: shimmerCss }} />
 
@@ -185,7 +190,7 @@ export default function Home() {
       </section>
 
       {/* Panels */}
-      <section className="mt-6 grid gap-6 md:grid-cols-[360px_1fr]">
+      <section className="grid gap-6 md:grid-cols-[360px_1fr]">
         {/* original small */}
         <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
           <div className="relative aspect-square rounded-xl overflow-hidden bg-black/20">
@@ -200,10 +205,12 @@ export default function Home() {
 
         {/* generated big with shimmer */}
         <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
-          <div className={cx(
-            "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
-            loading && "shimmer"
-          )}>
+          <div
+            className={cx(
+              "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
+              loading && "shimmer"
+            )}
+          >
             {genUrl ? (
               <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
             ) : (
@@ -226,15 +233,11 @@ export default function Home() {
         </div>
       </section>
 
-    {/*}  <footer className="mt-10 flex items-center justify-between text-xs opacity-60">
-        <div>Made with ❤️</div>
-        <div>build: ui</div>
-      </footer>*/}
+      {/* Community on the homepage */}
+      <div className="mt-4">
+        <hr className="my-6 opacity-20" />
+        <CommunityFeed />
+      </div>
     </main>
   );
 }
-
-// A single great default that plays nicely with nano‑banana's input contract.
-const DEFAULT_PROMPT =
-  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
-  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy enviroment with a beautiful backgroudn pattern, high detail, 1:1 crop";
