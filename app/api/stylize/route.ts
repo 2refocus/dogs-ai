@@ -48,23 +48,14 @@ async function uploadToSupabasePublic(file: File) {
 }
 
 async function replicateCreate(imageUrl: string, prompt: string) {
-  // IMPORTANT: image_input must be an ARRAY for current nano-banana versions
-  const res = await fetch(
-    `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input: {
-          image_input: [imageUrl], // <-- changed from string to array
-          prompt,
-        },
-      }),
-    }
-  );
+  const res = await fetch(`https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ input: { image_input: imageUrl, prompt } }),
+  });
   const text = await res.text();
   if (!res.ok) throw new Error(`replicate create ${res.status}: ${text}`);
   return JSON.parse(text);
@@ -92,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const prompt = (form.get("prompt") || "").toString().trim() || "fine-art pet portrait, dramatic lighting, 1:1";
+    const prompt = (form.get("prompt") || "").toString().trim() || "fine‑art pet portrait, dramatic lighting, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
 
     if (!file) return json({ ok:false, error:"Missing file" }, 400);
