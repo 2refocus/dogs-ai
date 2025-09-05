@@ -1,10 +1,8 @@
-'use client';
-
-// Minimal wrapper that just renders the grid.
-// IMPORTANT: fixed the import path to use "@/components/CommunityGrid"
-// (it previously pointed to "@/app/components/CommunityGrid" which doesn't exist)
+"use client";
 import CommunityGrid from "@/components/CommunityGrid";
 
 export default function CommunityFeed() {
+  // If CommunityGrid already does its own fetching, this just renders it.
+  // Otherwise, replace with a fetch to Supabase and pass items as props.
   return <CommunityGrid />;
 }
