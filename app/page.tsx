@@ -3,6 +3,7 @@
    - 1 free guest generation (Reset free button)
    - Left: small "Original" preview, Right: large "Generated" with shimmer
    - Community section appended at the bottom
+   - NEW: fire‑and‑forget POST to /api/generations to persist to Supabase (service role)
 */
 "use client";
 
@@ -16,7 +17,6 @@ function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-// NOTE: No escaping before backticks!
 const SHIMMER_CSS = `
 @keyframes shimmerMove {
   0% { background-position: -200% 0; }
@@ -43,7 +43,7 @@ const SHIMMER_CSS = `
 
 const DEFAULT_PROMPT =
   "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
-  "fine-art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail, 1:1 crop";
+  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail, 1:1 crop";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -135,7 +135,7 @@ export default function Home() {
           setGenUrl(url);
           setMsg("Done ✓");
 
-          // record to guest history
+          // 1) local guest history (works offline)
           try {
             pushLocal({
               output_url: url,
@@ -144,19 +144,25 @@ export default function Home() {
             });
           } catch {}
 
-          // Fire-and-forget server insert (will no-op if env missing)
+          // 2) fire-and-forget server insert (service role). Never blocks UI.
           try {
+            const body = {
+              input_url: create?.input_url ?? null,
+              output_url: url,
+              prompt: DEFAULT_PROMPT,
+              preset_label: "Auto Default",
+              is_public: true,
+            };
             fetch("/api/generations", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                output_url: url,
-                input_url: create?.input_url ?? null,
-                prompt: DEFAULT_PROMPT,
-                preset_label: "",
-                is_public: true,
-              }),
-            }).catch(() => {});
+              body: JSON.stringify(body),
+            }).then(async (res) => {
+              const j = await res.json().catch(() => ({}));
+              console.log("[/api/generations] response:", res.status, j);
+            }).catch((e) => {
+              console.warn("[/api/generations] failed:", e?.message || e);
+            });
           } catch {}
 
           setLoading(false);
