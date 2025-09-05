@@ -48,29 +48,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="brand-sub">{site.tagline}</div>
               </div>
             </a>
-         {/*}   <NavGate />*/}
-      {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
-      <header className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="text-lg font-semibold">Pet Portrait Studio <span className="text-amber-400">*</span></div>
-          <div className="text-xs opacity-60">Elegant &amp; cozy portraits of your pets</div>
-        </div>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <a href="/" className="hover:opacity-80">Home</a>
-          <a href="/bundles" className="hover:opacity-80">Bundles</a>
-          <a href="/history" className="hover:opacity-80">History</a>
-          <a href="/login" className="hover:opacity-80">Login</a>
-        </nav>
-        {/* mobile burger */}
-        <details className="md:hidden relative">
-          <summary className="list-none cursor-pointer rounded-xl border border-white/10 px-3 py-2">☰</summary>
-          <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-black/80 backdrop-blur p-2 z-50">
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Bundles</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/login">Login</a>
-          </div>
-        </details>
+              <NavGate />
+  
       </header>
           </div>
         </header>
