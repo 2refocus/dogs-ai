@@ -1,13 +1,11 @@
-import CommunityFeed from "@/app/components/CommunityFeed";
+"use client";
 
-export const metadata = {
-  title: "Community",
-};
+import CommunityFeed from "../../components/CommunityFeed";
 
 export default function CommunityPage() {
-  // This page is a thin wrapper around the feed
   return (
-    <main className="mx-auto max-w-6xl p-6">
+    <main className="p-6">
+      <h1 className="text-xl font-bold mb-4">Community</h1>
       <CommunityFeed />
     </main>
   );
