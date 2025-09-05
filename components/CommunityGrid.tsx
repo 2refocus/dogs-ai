@@ -1,35 +1,25 @@
-"use client";
-import Image from "next/image";
 
-type Item = {
-  id: string | number;
-  output_url: string;
-  prompt?: string | null;
-  created_at?: string | null;
-};
+// components/CommunityGrid.tsx
+"use client";
+import React from "react";
+
+export type Item = { id: number | string; output_url: string; created_at?: string };
 
 export default function CommunityGrid({ items }: { items: Item[] }) {
-  if (!items?.length) {
-    return (
-      <div className="text-sm opacity-60">No public images yet.</div>
-    );
+  if (!items || items.length === 0) {
+    return <div className="text-sm opacity-60">No public images yet.</div>;
   }
   return (
-    <ul className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
       {items.map((it) => (
-        <li key={it.id} className="rounded-xl overflow-hidden border border-white/10 bg-white/2">
-          <div className="relative aspect-square">
-            {/* next/image for automatic sizing */}
-            <Image
-              src={it.output_url}
-              alt={it.prompt || "community image"}
-              fill
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
-              className="object-cover"
-            />
-          </div>
-        </li>
+        <div
+          key={String(it.id)}
+          className="rounded-xl overflow-hidden border border-white/10 bg-white/2"
+          title={it.created_at || ""}
+        >
+          <img src={it.output_url} alt="" className="w-full h-full object-cover aspect-square" />
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

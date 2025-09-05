@@ -1,54 +1,32 @@
-/* lib/localHistory.ts
-   - Tiny localStorage helper for guest history
-*/
 
-export type LocalRow = {
-  id: string;
+// lib/localHistory.ts
+// Tiny helper to persist last N generated images for guests
+export type LocalItem = {
   output_url: string;
-  input_url: string | null;
-  prompt: string | null;
-  preset_label: string | null;
+  input_url?: string | null;
   created_at: string;
+  prompt?: string | null;
+  preset_label?: string | null;
 };
 
-const KEY = "guest_history_v1";
+const KEY = "local_generations_v1";
 
-export function readLocal(): LocalRow[] {
+export function readLocal(): LocalItem[] {
   try {
-    const s = typeof window !== "undefined" ? localStorage.getItem(KEY) : null;
-    if (!s) return [];
-    const arr = JSON.parse(s);
-    return Array.isArray(arr) ? (arr as LocalRow[]) : [];
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return arr;
+    return [];
   } catch {
     return [];
   }
 }
 
-export function pushLocal(item: {
-  output_url: string;
-  input_url?: string | null;
-  prompt?: string | null;
-  preset_label?: string | null;
-}) {
+export function pushLocal(item: LocalItem) {
   try {
-    const row: LocalRow = {
-      id: (typeof crypto !== "undefined" && (crypto as any).randomUUID)
-        ? (crypto as any).randomUUID()
-        : String(Date.now()),
-      output_url: item.output_url,
-      input_url: item.input_url ?? null,
-      prompt: item.prompt ?? null,
-      preset_label: item.preset_label ?? null,
-      created_at: new Date().toISOString(),
-    };
     const prev = readLocal();
-    const next = [row, ...prev].slice(0, 50);
+    const next = [item, ...prev].slice(0, 50);
     localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {}
-}
-
-export function clearLocal() {
-  try {
-    localStorage.removeItem(KEY);
   } catch {}
 }
