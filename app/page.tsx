@@ -152,30 +152,6 @@ export default function Home() {
       {/* inject shimmer CSS once */}
       <style dangerouslySetInnerHTML={{ __html: shimmerCss }} />
 
-      {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
-      <header className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="text-lg font-semibold">Pet Portrait Studio <span className="text-amber-400">*</span></div>
-          <div className="text-xs opacity-60">Elegant &amp; cozy portraits of your pets</div>
-        </div>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <a href="/" className="hover:opacity-80">Home</a>
-          <a href="/bundles" className="hover:opacity-80">Bundles</a>
-          <a href="/history" className="hover:opacity-80">History</a>
-          <a href="/login" className="hover:opacity-80">Login</a>
-        </nav>
-        {/* mobile burger */}
-        <details className="md:hidden relative">
-          <summary className="list-none cursor-pointer rounded-xl border border-white/10 px-3 py-2">☰</summary>
-          <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-black/80 backdrop-blur p-2 z-50">
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Bundles</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/login">Login</a>
-          </div>
-        </details>
-      </header>
-
       {/* Uploader */}
       <section className="grid gap-3">
         <label className="text-sm font-medium">Upload a pet photo</label>
@@ -261,4 +237,4 @@ export default function Home() {
 // A single great default that plays nicely with nano‑banana's input contract.
 const DEFAULT_PROMPT =
   "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
-  "fine‑art studio quality, dramatic yet elegant lighting, high detail, 1:1 crop";
+  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy enviroment with a beautiful backgroudn pattern, high detail, 1:1 crop";
