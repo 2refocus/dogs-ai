@@ -1,20 +1,21 @@
 // components/CommunityFeed.tsx
-// Server Component: fetches latest public generations from Supabase and passes to CommunityGrid
+// Server Component that fetches latest public generations and renders CommunityGrid
+// Ensures prop shape matches CommunityGrid's expected { id, output_url, created_at }
 
-import CommunityGrid from "@/components/CommunityGrid";
+import CommunityGrid from "./CommunityGrid";
 
-type Item = {
+type GenRow = {
   id: string;
-  url: string;
+  output_url: string | null;
   created_at: string;
 };
 
-async function getItems(): Promise<Item[]> {
+async function getItems(): Promise<GenRow[]> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anon) {
-    // Return empty on misconfig; prevents build errors
+  if (!url || !key) {
+    // Env missing: render empty grid rather than breaking the build
     return [];
   }
 
@@ -25,32 +26,32 @@ async function getItems(): Promise<Item[]> {
     `&limit=24`;
 
   const res = await fetch(endpoint, {
+    method: "GET",
     headers: {
-      apikey: anon,
-      Authorization: `Bearer ${anon}`,
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Accept: "application/json",
     },
-    // avoid caching so homepage stays fresh after uploads
     cache: "no-store",
   });
 
   if (!res.ok) {
-    // Fail soft: log in server console, return empty list
-    console.error("CommunityFeed fetch failed", res.status, await res.text().catch(() => ""));
+    // Soft-fail: empty list to keep UI working
     return [];
   }
 
-  const rows: { id: string; output_url: string | null; created_at: string }[] = await res.json();
-
+  const rows = (await res.json()) as any[];
   return rows
-    .filter(r => typeof r.output_url === "string" && r.output_url)
+    .filter(r => !!r && typeof r.id === "string")
     .map(r => ({
-      id: r.id,
-      url: r.output_url as string,
-      created_at: r.created_at,
+      id: r.id as string,
+      output_url: (r.output_url ?? null) as string | null,
+      created_at: (r.created_at ?? "") as string,
     }));
 }
 
 export default async function CommunityFeed() {
   const items = await getItems();
+  // CommunityGrid expects a prop named `items` with fields { id, output_url, created_at }
   return <CommunityGrid items={items} />;
 }
