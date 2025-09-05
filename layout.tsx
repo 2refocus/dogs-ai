@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
 
-{/* <header className="container" style={{ paddingTop: '1rem' }}>
+  <header className="container" style={{ paddingTop: '1rem' }}>
           <div className="navbar">
             <a href="/" className="brand" aria-label="Home">
               <LogoDog className="logo-mark" />
@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="container" style={{ paddingBottom: '2rem', opacity:.7, fontSize:'.85rem', display:'flex', justifyContent:'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           <span>Made with ❤️</span>
           <span style={{ opacity:.65 }}>build: <code>{BUILD_TAG}</code></span>
-        </footer> */}
+        </footer>
 
       </body>
     </html>
