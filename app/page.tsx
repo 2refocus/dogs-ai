@@ -1,180 +1,264 @@
-/* app/page.tsx */
+/* app/page.tsx — Single-nav UI, big result panel, working create→poll logic.
+   - Keeps your existing /api/stylize + /api/predictions/[id] flow
+   - 1 free guest generation (reset with button)
+   - Upload button centered + full width on small screens
+   - Left: small Original preview, Right: large Generated with shimmer
+*/
 "use client";
-import { useEffect, useState } from "react";
-import NavBar from "@/components/NavBar";
 
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+// ---------- Small helpers ----------
+function cx(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+const shimmerCss = `
+@keyframes shimmerMove {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmerMove 1.4s linear infinite;
+  mix-blend-mode: screen;
+}
+`;
+
+// ---------- Component ----------
 export default function Home() {
+  // generation state
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
-  const [result, setResult] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [genUrl, setGenUrl] = useState<string>("");
   const [msg, setMsg] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [freeLeft, setFreeLeft] = useState<number>(1);
 
-  // show smaller original, bigger result on notebook/desktop
-  // grid: left 1fr, right 2fr (md+). On mobile stack.
-  const onPick = (f: File | null) => {
+  // ensure 1 free generation persisted
+  useEffect(() => {
+    try {
+      const k = localStorage.getItem("freeGenerationsLeft");
+      if (k == null) localStorage.setItem("freeGenerationsLeft", "1");
+      setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10) || 0);
+    } catch {}
+  }, []);
+
+  const onPick: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const f = e.target.files?.[0] || null;
     setFile(f);
-    setResult("");
-    setMsg("");
-    if (!f) {
-      setPreview("");
-      return;
-    }
+    setGenUrl("");
+    if (!f) { setPreview(""); return; }
     const reader = new FileReader();
     reader.onload = () => setPreview(String(reader.result || ""));
     reader.readAsDataURL(f);
   };
 
-  async function onSubmit() {
-    if (!file) {
-      setMsg("Pick a file first.");
+  function resetFree() {
+    try {
+      localStorage.setItem("freeGenerationsLeft", "1");
+      setFreeLeft(1);
+    } catch {}
+  }
+
+  async function onGenerate() {
+    setMsg("");
+    setGenUrl("");
+    if (!file) { setMsg("Pick a file first."); return; }
+
+    // free credit handling
+    let canProceed = false;
+    const left = Math.max(0, freeLeft - 1);
+    if (freeLeft > 0) {
+      try { localStorage.setItem("freeGenerationsLeft", String(left)); } catch {}
+      setFreeLeft(left);
+      canProceed = true;
+    } else {
+      // (keep it simple: require login/credits outside of this demo scope)
+      setMsg("Free preview used. Please sign in & buy a bundle to continue.");
       return;
     }
+
+    if (!canProceed) return;
+
     setLoading(true);
-    setMsg("Creating…");
-
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append(
-      "prompt",
-      "Dramatic fine-art portrait of a pet inside a grand castle hall, against an ornate background wall, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality., 1:1",
-    );
-
     try {
-      const res = await fetch("/api/stylize", { method: "POST", body: fd });
-      const create = await res.json();
-      if (!res.ok || !create?.prediction_id) {
-        setMsg(create?.error || "Create failed");
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("prompt", DEFAULT_PROMPT); // fixed beautiful style
+
+      // Step 1: create prediction
+      const r = await fetch("/api/stylize", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok || !j?.prediction_id) {
+        setMsg(j?.error || "Create failed");
         setLoading(false);
         return;
       }
 
-      const id = create.prediction_id as string;
+      // Step 2: poll status
+      const id: string = j.prediction_id;
       setMsg("Generating…");
-
       const t0 = Date.now();
-      while (Date.now() - t0 < 120000) {
-        await new Promise((r) => setTimeout(r, 1200));
-        const r2 = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
-        const j = await r2.json();
+      while (Date.now() - t0 < 120_000) { // 2 mins
+        await new Promise((res) => setTimeout(res, 1200));
+        const g = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
+        const s = await g.json();
 
-        const urls: string[] = Array.isArray(j.urls) ? j.urls : [];
-        const out = Array.isArray(j.output)
-          ? j.output
-          : typeof j.output === "string"
-            ? [j.output]
-            : [];
-        const url = (urls[0] || out[0] || "") as string;
+        if (s?.status === "failed" || s?.status === "canceled") {
+          setMsg(`Failed: ${s?.error || "unknown"}`);
+          setLoading(false);
+          return;
+        }
 
-        if (j.status === "succeeded" || j.status === "completed") {
-          if (!url) {
-            setMsg("Done but no output URL");
-            break;
-          }
-          setResult(url);
-          setMsg("Done ✔");
-          break;
+        // unify different shapes: {urls:[...]} or {output:""} or {output:[...]}
+        let url: string | null = null;
+        if (Array.isArray(s?.urls) && s.urls.length > 0) url = s.urls[0];
+        else if (typeof s?.output === "string") url = s.output;
+        else if (Array.isArray(s?.output) && s.output.length > 0) url = s.output[0];
+
+        if ((s?.status === "succeeded" || s?.status === "completed") && url) {
+          setGenUrl(url);
+          setMsg("Done ✓");
+          setLoading(false);
+          return;
         }
-        if (j.status === "failed" || j.status === "canceled") {
-          setMsg(`Failed: ${j.error || "unknown error"}`);
-          break;
-        }
+
+        // keep waiting
       }
-    } catch (e: any) {
-      setMsg(e?.message || "Error");
+
+      setMsg("Timed out while polling.");
+    } catch (err: any) {
+      setMsg(err?.message || "Unexpected error");
     } finally {
       setLoading(false);
     }
   }
 
-  // simple shimmer block
-  function Shimmer() {
-    return (
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#141821]">
-        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,#141821,45%,#1c2230,55%,#141821)] bg-[length:200%_100%]" />
-        <div className="sr-only">Loading…</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#0b0e13] text-white">
-      <NavBar />
+    <main className="mx-auto max-w-6xl p-6">
+      {/* inject shimmer CSS once */}
+      <style dangerouslySetInnerHTML={{ __html: shimmerCss }} />
 
-      <main className="mx-auto max-w-6xl px-4 py-8 grid gap-6">
-        {/* Uploader */}
-        <section className="grid gap-3">
-          <label className="text-sm font-medium">Upload a pet photo</label>
+      {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
+      <header className="mb-6 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="text-lg font-semibold">Pet Portrait Studio <span className="text-amber-400">*</span></div>
+          <div className="text-xs opacity-60">Elegant &amp; cozy portraits of your pets</div>
+        </div>
+        <nav className="hidden md:flex items-center gap-6 text-sm">
+          <a href="/" className="hover:opacity-80">Home</a>
+          <a href="/bundles" className="hover:opacity-80">Bundles</a>
+          <a href="/history" className="hover:opacity-80">History</a>
+          <a href="/login" className="hover:opacity-80">Login</a>
+        </nav>
+        {/* mobile burger */}
+        <details className="md:hidden relative">
+          <summary className="list-none cursor-pointer rounded-xl border border-white/10 px-3 py-2">☰</summary>
+          <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-black/80 backdrop-blur p-2 z-50">
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Bundles</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/login">Login</a>
+          </div>
+        </details>
+      </header>
+
+      {/* Uploader */}
+      <section className="grid gap-3">
+        <label className="text-sm font-medium">Upload a pet photo</label>
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => onPick(e.target.files?.[0] || null)}
-            className="file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:text-white file:hover:bg-white/20
-                       block w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-amber-400/50"
+            onChange={onPick}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
           />
-          <button
-            onClick={onSubmit}
-            disabled={loading || !file}
-            className="rounded-xl bg-amber-500 px-4 py-3 font-semibold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Generating…" : "Generate"}
-          </button>
-        </section>
-
-        {/* Preview + Result */}
-        <section className="grid gap-6 md:grid-cols-[1fr_2fr]">
-          {/* Original (small) */}
-          <div className="rounded-2xl border border-white/10 bg-[#0f131b] p-4">
-            <div className="aspect-square overflow-hidden rounded-xl bg-[#121722]">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Original"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full grid place-items-center text-sm text-white/50">
-                  Original
-                </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onGenerate}
+              disabled={loading || !file}
+              className={cx(
+                "flex-1 sm:flex-none rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
+                loading && "opacity-70 pointer-events-none"
               )}
-            </div>
-            <div className="mt-2 text-xs text-white/60">Original</div>
+            >
+              {loading ? "Generating…" : "Generate"}
+            </button>
+            <button
+              onClick={resetFree}
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
+            >
+              Reset free
+            </button>
           </div>
+        </div>
+        <div className="text-xs opacity-60">Free left: {freeLeft}</div>
+      </section>
 
-          {/* Generated (large) */}
-          <div className="rounded-2xl border border-white/10 bg-[#0f131b] p-4">
-            <div className="aspect-square overflow-hidden rounded-xl bg-[#121722]">
-              {loading ? (
-                <Shimmer />
-              ) : result ? (
-                <img
-                  src={result}
-                  alt="Generated"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full grid place-items-center text-sm text-white/50">
-                  Generated
-                </div>
-              )}
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-white/60">
-              <span>Generated</span>
-              {result && (
-                <a
-                  className="rounded-md border border-white/10 px-2 py-1 text-white/80 hover:bg-white/5"
-                  href={result}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open
-                </a>
-              )}
-            </div>
-            {msg && <div className="mt-2 text-xs text-white/60">{msg}</div>}
+      {/* Panels */}
+      <section className="mt-6 grid gap-6 md:grid-cols-[360px_1fr]">
+        {/* original small */}
+        <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
+          <div className="relative aspect-square rounded-xl overflow-hidden bg-black/20">
+            {preview ? (
+              <img src={preview} alt="Original" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm opacity-60">Original</div>
+            )}
           </div>
-        </section>
-      </main>
-    </div>
+          <div className="mt-2 text-xs opacity-60">Original</div>
+        </div>
+
+        {/* generated big with shimmer */}
+        <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
+          <div className={cx(
+            "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
+            loading && "shimmer"
+          )}>
+            {genUrl ? (
+              <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm opacity-60">Generated</div>
+            )}
+          </div>
+          <div className="mt-2 flex items-center justify-between text-xs opacity-70">
+            <div>{msg || (genUrl ? "Done ✓" : "")}</div>
+            {genUrl && (
+              <a
+                className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
+                href={genUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <footer className="mt-10 flex items-center justify-between text-xs opacity-60">
+        <div>Made with ❤️</div>
+        <div>build: ui</div>
+      </footer>
+    </main>
   );
 }
+
+// A single great default that plays nicely with nano‑banana's input contract.
+const DEFAULT_PROMPT =
+  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
+  "fine‑art studio quality, dramatic yet elegant lighting, high detail, 1:1 crop";
