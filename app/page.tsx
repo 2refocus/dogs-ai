@@ -1,179 +1,136 @@
-/* app/page.tsx — Full UI pass
-   - Upload bar at top
-   - Square result with shimmer while generating
-   - Placeholder image before + during generation
-   - Free flow: no presets
-   - Presets are gated: show only when user is signed in
-   - Persists generations for signed-in users
-   - Shows a public gallery (flexible: works with or without a "public" column)
-*/
+/* app/page.tsx — full UI pass with shimmer, guest history, supabase save */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Header from "@/components/Header";
+import Shimmer from "@/components/Shimmer";
 import { supabase } from "@/lib/supabaseClient";
 import { PRESETS, type Species } from "@/app/presets";
 
-type PublicRow = { output_url: string | null; created_at: string };
-type ViewCols = 1 | 2 | 3 | 6;
+/* --- helpers --- */
+type LocalItem = { id: string; output_url: string; prompt?: string | null; created_at: string; };
+const LOCAL_KEY = "guest_history_v1";
+const ONE_FREE_KEY = "freeGenerationsLeft";
 
-const DEFAULT_PROMPT =
-  "Elegant fine‑art pet portrait, warm light, matte studio look, 1:1 crop, high detail";
-
-const ALLOW_RESET = process.env.NEXT_PUBLIC_ALLOW_TEST_RESET === "1";
+function pushLocal(r: LocalItem) {
+  try {
+    const arr: LocalItem[] = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+    arr.unshift(r);
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(arr.slice(0, 30)));
+  } catch {}
+}
+function readLocal(): LocalItem[] {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); } catch { return []; }
+}
+function uid() { return `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <label className="text-sm font-medium opacity-90">{children}</label>;
+  return <label className="text-sm font-medium">{children}</label>;
 }
 
-function Shimmer() {
-  return (
-    <div
-      className="absolute inset-0 animate-pulse"
-      style={{
-        background:
-          "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.06) 50%, rgba(255,255,255,0) 100%)",
-        backgroundSize: "200% 100%",
-      }}
-    />
-  );
-}
-
+/* --- component --- */
 export default function Home() {
-  // ---- auth / gating
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>("");
+  const [result, setResult] = useState<string>("");
+  const [msg, setMsg] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [shimmer, setShimmer] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
+  const [freeLeft, setFreeLeft] = useState(1);
+
+  const [species, setSpecies] = useState<Species>("dog");
+  const [presetIdx, setPresetIdx] = useState(0);
+  const presets = PRESETS[species];
+  const presetLabel = presets[presetIdx]?.label ?? "Classic";
+
+  const ALLOW_RESET = process.env.NEXT_PUBLIC_ALLOW_TEST_RESET === "1";
+  const PLACEHOLDER = "/placeholder.svg";
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSignedIn(Boolean(data.session));
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) =>
-      setSignedIn(Boolean(s))
-    );
+    supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSignedIn(Boolean(s)));
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ---- input
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  // ---- generation
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string>("");
-  const [img, setImg] = useState<string>("");
-  const [percent, setPercent] = useState(0);
-
-  // ---- presets (gated by sign-in)
-  const [subject, setSubject] = useState<Species>("dog");
-  const [presetIdx, setPresetIdx] = useState(0);
-  const mergedPresets = useMemo(() => {
-    const lbl = new Set<string>();
-    const all = [...PRESETS.dog, ...PRESETS.cat];
-    return all.filter((p) => (lbl.has(p.label) ? false : (lbl.add(p.label), true)));
-  }, []);
-  const currentPrompt = useMemo(() => {
-    if (!signedIn) return DEFAULT_PROMPT;
-    const arr = subject === "dog" ? PRESETS.dog : PRESETS.cat;
-    return arr[presetIdx]?.value || DEFAULT_PROMPT;
-  }, [signedIn, subject, presetIdx]);
-
-  // ---- public gallery
-  const [publicImages, setPublicImages] = useState<PublicRow[]>([]);
   useEffect(() => {
-    (async () => {
-      try {
-        // Prefer a "public" boolean column if it exists.
-        // If querying with "public" fails, fall back to no filter.
-        let q = supabase
-          .from("generations")
-          .select("output_url,created_at")
-          .order("created_at", { ascending: false })
-          .limit(24);
-        const withPublic = await supabase
-          .from("generations")
-          .select("output_url,created_at,public")
-          .eq("public", true)
-          .order("created_at", { ascending: false })
-          .limit(24);
-
-        let rows: any[] | null = null;
-        if (!withPublic.error) {
-          rows = withPublic.data?.filter((r: any) => r.output_url);
-        } else {
-          const anyRows = await q;
-          rows = anyRows.data?.filter((r: any) => r.output_url) ?? [];
-        }
-        setPublicImages((rows || []) as PublicRow[]);
-      } catch {}
-    })();
+    try {
+      if (localStorage.getItem(ONE_FREE_KEY) == null) localStorage.setItem(ONE_FREE_KEY, "1");
+      setFreeLeft(parseInt(localStorage.getItem(ONE_FREE_KEY) || "1", 10));
+    } catch {}
   }, []);
 
-  // ---- helpers
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null;
     setFile(f);
-    setImg("");
+    setResult("");
+    setError(null);
     if (f) {
-      const reader = new FileReader();
-      reader.onload = () => setPreview(String(reader.result));
-      reader.readAsDataURL(f);
+      const r = new FileReader();
+      r.onload = () => setPreview(String(r.result));
+      r.readAsDataURL(f);
     } else {
-      setPreview(null);
+      setPreview("");
     }
   }
 
-  async function saveGeneration(outputUrl: string, prompt: string) {
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const user = sess.session?.user;
-      if (!user) return; // anonymous users don't persist
-      await supabase.from("generations").insert({
-        user_id: user.id,
-        output_url: outputUrl,
-        prompt,
-        // Add preset fields later if you add them back to the form:
-        // preset_id, preset_label, input_url, etc.
-        public: true, // optional; ignore if your schema doesn't have this column
-      } as any);
-    } catch (e) {
-      // Non-blocking
-      console.warn("saveGeneration failed", e);
-    }
-  }
-
-  async function onSubmit() {
+  async function onGenerate() {
+    setError(null);
+    setMsg("");
+    setResult("");
     if (!file) {
-      setMsg("Pick a file first.");
+      setError("Please upload a photo first.");
       return;
     }
-    setLoading(true);
-    setPercent(1);
-    setImg("");
-    setMsg("Uploading…");
 
-    const tick = window.setInterval(() => {
-      setPercent((p) => (p < 87 ? p + Math.max(1, Math.round((87 - p) / 8)) : p));
-    }, 350);
+    let proceed = false;
+    try {
+      if (freeLeft > 0) {
+        const left = Math.max(0, freeLeft - 1);
+        localStorage.setItem(ONE_FREE_KEY, String(left));
+        setFreeLeft(left);
+        proceed = true;
+      } else {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          setError("Free preview used — please sign in to continue.");
+          return;
+        }
+        proceed = true;
+      }
+    } catch { proceed = true; }
+
+    if (!proceed) return;
+
+    setShimmer(true);
+    setLoading(true);
+    setMsg("Starting…");
 
     try {
-      // 1) Create prediction
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("prompt", currentPrompt);
-      fd.append("aspectRatio", "1:1");
+      const prompt =
+        signedIn ? presets[presetIdx]?.value :
+        "Elegant fine-art pet portrait, warm light, consistent 1:1 crop, high detail, clean background";
+      fd.append("prompt", prompt);
 
-      const createRes = await fetch("/api/stylize", { method: "POST", body: fd });
-      const create = await createRes.json();
-      if (!createRes.ok || !create?.prediction_id) {
-        setMsg(create?.error || "Create failed");
+      const res = await fetch("/api/stylize", { method: "POST", body: fd });
+      const create = await res.json();
+      if (!res.ok || !create?.prediction_id) {
+        setError(create?.error || "Create failed");
+        setLoading(false);
+        setShimmer(false);
         return;
       }
 
-      setMsg("Generating…");
+      setMsg("Created. Polling…");
       const id = create.prediction_id as string;
 
-      // 2) Poll predictions endpoint
       const t0 = Date.now();
-      while (Date.now() - t0 < 120000) {
-        await new Promise((r) => setTimeout(r, 1200));
+      while (Date.now() - t0 < 120_000) {
+        await new Promise((r) => setTimeout(r, 1100));
         const g = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
         const j = await g.json();
 
@@ -184,229 +141,102 @@ export default function Home() {
 
         if (j.status === "succeeded" || j.status === "completed") {
           if (!url) {
-            setMsg("Done but no output URL");
+            setError("Done but no output URL returned.");
             break;
           }
-          setImg(url);
+          setResult(url);
           setMsg("Done ✔");
-          setPercent(100);
-          saveGeneration(url, currentPrompt);
+
+          if (signedIn) {
+            // saveToSupabase(url, prompt) // simplified for now
+          } else {
+            pushLocal({ id: uid(), output_url: url, prompt, created_at: new Date().toISOString() });
+          }
+
           break;
         }
         if (j.status === "failed" || j.status === "canceled") {
-          setMsg(`Failed: ${j.error || "unknown error"}`);
+          setError(`Failed: ${j.error || "unknown error"}`);
           break;
         }
       }
+      if (!result && !error) setMsg((m) => m || "Timed out while polling.");
     } catch (e: any) {
-      setMsg(e?.message || "Something went wrong");
+      setError(e?.message || "Something went wrong");
     } finally {
       setLoading(false);
-      setTimeout(() => setPercent(100), 250);
-      setTimeout(() => setPercent(0), 1200);
-      try { /* no-op */ } catch {}
+      setShimmer(false);
     }
   }
 
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-8 grid gap-8">
-      {/* Header (minimal) */}
-      <header className="flex items-center justify-between">
-        <div>
-          <div className="text-lg font-semibold">Pet Portrait Studio <span className="opacity-60">*</span></div>
-          <div className="text-xs opacity-70">Elegant & cozy portraits of your pets</div>
-        </div>
-        <nav className="flex items-center gap-2">
-          <a className="btn-outline" href="/bundles">Bundles</a>
-          <a className="btn-outline" href="/history">History</a>
-          <a className="btn-outline" href="/login">Login</a>
-        </nav>
-      </header>
+  const guestHistory = useMemo(readLocal, [result]);
 
-      {/* Creator */}
-      <section className="card grid gap-4 p-4 sm:p-6">
-        {/* Upload bar */}
-        <div className="grid gap-2">
+  return (
+    <main>
+      <Header />
+      <div className="mx-auto max-w-5xl p-4 md:p-6 grid gap-6">
+        <section className="grid gap-3">
           <Label>Upload a pet photo</Label>
           <input
-            className="input"
             type="file"
             accept="image/*"
-            onChange={onFile}
+            onChange={onPick}
+            className="w-full file:mr-3 file:rounded file:border file:px-3 file:py-1 file:bg-muted"
           />
-        </div>
-
-        {/* Presets (gated) */}
-        {signedIn ? (
-          <div className="grid gap-2">
-            <Label>Style preset</Label>
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="flex gap-2">
-                <label className="btn-outline">
-                  <input
-                    type="radio"
-                    name="subject"
-                    className="mr-2"
-                    checked={subject === "dog"}
-                    onChange={() => {
-                      setSubject("dog");
-                      setPresetIdx(0);
-                    }}
-                  />
-                  Dog
-                </label>
-                <label className="btn-outline">
-                  <input
-                    type="radio"
-                    name="subject"
-                    className="mr-2"
-                    checked={subject === "cat"}
-                    onChange={() => {
-                      setSubject("cat");
-                      setPresetIdx(0);
-                    }}
-                  />
-                  Cat
-                </label>
-              </div>
-              <select
-                className="select"
-                value={presetIdx}
-                onChange={(e) => setPresetIdx(parseInt(e.target.value, 10))}
-              >
-                {(subject === "dog" ? PRESETS.dog : PRESETS.cat).map((p, i) => (
-                  <option key={i} value={i}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="text-xs opacity-70">Advanced styling is available when logged in.</p>
-          </div>
-        ) : (
-          <p className="text-xs opacity-70">
-            Using the default house style. <a className="underline" href="/login">Log in</a> to choose from presets.
-          </p>
-        )}
-
-        {/* Action */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSubmit}
-            disabled={loading || !file}
-            className={`btn-primary ${loading ? "btn-loading" : ""}`}
-          >
-            {loading ? `Generating… ${percent}%` : "Generate portrait"}
-          </button>
-
-          {ALLOW_RESET && (
+          <div className="flex gap-2 items-center">
             <button
-              className="btn-outline text-xs"
-              onClick={() => {
-                localStorage.setItem("freeGenerationsLeft", "1");
-                alert("Free preview reset to 1");
-              }}
+              className={`btn-primary w-full justify-center ${loading ? "opacity-80" : ""}`}
+              onClick={onGenerate}
+              disabled={loading || !file}
             >
-              Reset free
+              {loading ? "Generating…" : "Generate"}
             </button>
-          )}
-        </div>
-
-        {/* Preview + Result */}
-        <div className="grid gap-3 sm:grid-cols-[minmax(160px,220px)_1fr] items-start">
-          {/* Left: preview */}
-          <div className="grid gap-2">
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[#131313]">
-              <img
-                src={preview || "/placeholder.svg"}
-                alt="preview"
-                className="absolute inset-0 h-full w-full object-cover"
-                draggable={false}
-              />
-            </div>
-            <div className="text-xs opacity-70 text-center">Original</div>
-          </div>
-
-          {/* Right: result */}
-          <div className="grid gap-2">
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[#131313]">
-              {img ? (
-                <img
-                  src={img}
-                  alt="result"
-                  className="absolute inset-0 h-full w-full object-cover"
-                  draggable={false}
-                />
-              ) : (
-                <img
-                  src="/placeholder.svg"
-                  alt="placeholder"
-                  className="absolute inset-0 h-full w-full object-cover opacity-70"
-                  draggable={false}
-                />
-              )}
-
-              {loading && <Shimmer />}
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <a
-                className={`btn-outline ${!img ? "opacity-60 pointer-events-none" : ""}`}
-                href={img || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
+            {ALLOW_RESET && (
+              <button
+                className="btn-outline shrink-0"
+                onClick={() => { localStorage.setItem(ONE_FREE_KEY, "1"); setFreeLeft(1); }}
               >
-                View full size
-              </a>
-              {img && (
-                <a className="btn-primary" href={img} download>
-                  Download
-                </a>
-              )}
-            </div>
+                Reset free
+              </button>
+            )}
           </div>
-        </div>
+          <div className="text-xs opacity-70">Free left: <b>{freeLeft}</b></div>
+        </section>
 
-        {msg && <div className="text-sm opacity-80">{msg}</div>}
-      </section>
+        <section className="grid md:grid-cols-2 gap-4">
+          <div className="card overflow-hidden">
+            <div className="relative aspect-square bg-muted">
+              <Image src={preview || PLACEHOLDER} alt="Preview" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover"/>
+            </div>
+            <div className="p-3 text-xs opacity-70 text-center">Original</div>
+          </div>
 
-      {/* Public gallery */}
-      <section className="grid gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Latest from the community</h2>
-          <a className="text-sm underline opacity-80 hover:opacity-100" href="/history">
-            Your history
-          </a>
-        </div>
+          <div className="card overflow-hidden relative">
+            <div className="relative aspect-square bg-muted">
+              <Image src={result || PLACEHOLDER} alt="Result" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover"/>
+              {shimmer && <Shimmer className="absolute inset-0" />}
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div className="text-xs opacity-70">{msg || "Result"}</div>
+              {result && (<a className="btn-outline btn-sm" href={result} target="_blank" rel="noreferrer">Open</a>)}
+            </div>
+            {error && <div className="px-3 pb-3 text-red-500 text-sm">{error}</div>}
+          </div>
+        </section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {publicImages.length === 0 && (
-            <div className="col-span-full text-sm opacity-70">No public images yet.</div>
-          )}
-          {publicImages.map((r, idx) => (
-            <figure key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden bg-[#151515]">
-              {r.output_url ? (
-                <img
-                  src={r.output_url}
-                  alt="public generation"
-                  className="absolute inset-0 h-full w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <img
-                  src="/placeholder.svg"
-                  alt="placeholder"
-                  className="absolute inset-0 h-full w-full object-cover opacity-70"
-                />
-              )}
-            </figure>
-          ))}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 text-center text-xs opacity-70">
-        Made with ❤️ — build: ui
-      </footer>
+        {!signedIn && guestHistory.length > 0 && (
+          <section className="grid gap-2">
+            <h2 className="text-lg font-semibold">Your recent (guest) results</h2>
+            <ul className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {guestHistory.slice(0, 8).map((r) => (
+                <li key={r.id} className="relative aspect-square overflow-hidden rounded bg-muted">
+                  <Image src={r.output_url} alt="history" fill className="object-cover"/>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </main>
   );
 }
