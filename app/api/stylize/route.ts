@@ -148,27 +148,50 @@ export async function POST(req: NextRequest) {
       return json({ ok: false, error: "No output URL returned" }, 500);
     }
 
-    // 4) Optional persistence — only if admin envs are present.
-    //    If not present, we skip silently (keeps your working flow intact).
-    if (SUPABASE_URL && SERVICE_ROLE) {
-      try {
-        const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        await admin.from("generations").insert({
-          user_id: null,
-          input_url: inputUrl,
-          output_url: outputUrl,
-          prompt,
-          preset_label,
-          is_public: true,
-        });
-      } catch (e) {
-        console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
-      }
+// 4) Optional persistence — only if admin envs are present.
+if (!SUPABASE_URL || !SERVICE_ROLE) {
+  console.warn("[stylize] skip insert: missing env", {
+    hasUrl: !!SUPABASE_URL,
+    hasServiceRole: !!SERVICE_ROLE,
+  });
+} else {
+  try {
+    const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
+
+    // sanity: confirm we can talk to PostgREST
+    const { error: pingErr } = await admin.from("generations").select("id").limit(1);
+    if (pingErr) {
+      console.error("[stylize] select ping failed:", pingErr.message);
     }
 
-    return json({ ok: true, prediction_id, input_url: inputUrl, output_url: outputUrl });
+    const { error: insErr } = await admin.from("generations").insert({
+      user_id: null,
+      input_url: inputUrl,
+      output_url: outputUrl,
+      prompt,
+      preset_label,
+      is_public: true,
+    });
+
+    if (insErr) {
+      console.error("[stylize] insert failed:", insErr.message);
+    } else {
+      console.log("[stylize] insert OK", { outputUrl });
+    }
   } catch (e: any) {
-    console.error("[stylize] error:", e?.message || e);
-    return json({ ok: false, error: e?.message || "Unknown error" }, 500);
+    console.error("[stylize] insert exception:", e?.message || e);
+  }
+}
+
+    // 5) Return success
+    return json({
+      ok: true,
+      input_url: inputUrl,
+      output_url: outputUrl,
+      prediction_id,
+    });
+  } catch (error: any) {
+    console.error("[stylize] error:", error?.message || error);
+    return json({ ok: false, error: error?.message || "Internal error" }, 500);
   }
 }
