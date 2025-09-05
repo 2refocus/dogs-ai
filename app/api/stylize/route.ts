@@ -1,115 +1,97 @@
-/* app/api/stylize/route.ts
- * Non-blocking: upload -> create Replicate prediction -> return prediction_id
- * Client should poll /api/predictions/[id] for status/output.
- */
-import { NextRequest } from "next/server";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
+import Replicate from "replicate";
+import { supabase } from "@/lib/supabaseClient";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN || "",
+});
 
-const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN!;
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
-// Prefer hash-only in REPLICATE_VERSION; if not present, you can set NANO_BANANA_VERSION to "google/nano-banana:<hash>"
-const REPLICATE_VERSION = process.env.REPLICATE_VERSION;
-const NANO_BANANA_VERSION = process.env.NANO_BANANA_VERSION;
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
-
-const json = (data: any, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
-const ok = (data: any) => json({ ok: true, ...data }, 200);
-const fail = (msg: string, status = 400, extra: any = {}) => json({ ok: false, error: msg, ...extra }, status);
-
-function isHttpsUrl(s: unknown): s is string {
-  if (typeof s !== "string") return false;
-  try { return new URL(s).protocol === "https:"; } catch { return false; }
-}
-
-async function uploadToSupabasePublic(file: File, supabase: SupabaseClient<any>) {
-  const safe = (file.name || "upload.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
-  const ext = safe.includes(".") ? safe.split(".").pop()!.toLowerCase() : "jpg";
-  const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const buf = Buffer.from(await file.arrayBuffer());
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, buf, {
-    contentType: file.type || "image/jpeg",
-    upsert: false,
-  });
-  if (error) throw new Error("Upload failed: " + error.message);
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  if (!data?.publicUrl) throw new Error("Could not get public URL for upload");
-  return data.publicUrl;
+async function uploadToSupabasePublic(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const filename = `public/inputs/${Date.now()}-${file.name}`;
+  const { data, error } = await supabase.storage
+    .from("generations")
+    .upload(filename, buffer, { contentType: file.type, upsert: false });
+  if (error) throw error;
+  const { data: publicUrl } = supabase.storage
+    .from("generations")
+    .getPublicUrl(filename);
+  return publicUrl.publicUrl;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    if (!REPLICATE_API_TOKEN) return fail("Missing REPLICATE_API_TOKEN", 500);
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return fail("Missing Supabase config", 500);
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) as SupabaseClient<any>;
     const ct = req.headers.get("content-type") || "";
-
+    let file: File | null = null;
     let prompt = "";
-    let imageUrl = "";
+    let preset_label = "";
+    let imageUrl: string | null = null;
 
     if (ct.startsWith("multipart/form-data")) {
       const form = await req.formData();
-      const file = form.get("file") as File | null;
-      prompt = (form.get("prompt") || "").toString().trim();
-      if (!file) return fail("Missing file", 400);
-      imageUrl = await uploadToSupabasePublic(file, supabase);
-    } else if (ct.startsWith("application/json")) {
-      const body = await req.json().catch(() => ({}));
-      prompt = (body?.prompt || "").toString().trim();
-      imageUrl = body?.imageUrl;
-      if (!isHttpsUrl(imageUrl)) return fail("imageUrl must be a public https URL", 400);
+      file = form.get("file") as File | null;
+      prompt = (form.get("prompt") || "").toString();
+      preset_label = (form.get("preset_label") || "").toString();
+      if (!file) return NextResponse.json({ ok: false, error: "Missing file" }, { status: 400 });
+      imageUrl = await uploadToSupabasePublic(file);
     } else {
-      return fail("Unsupported Content-Type", 415);
+      return NextResponse.json({ ok: false, error: "Invalid content-type" }, { status: 400 });
     }
 
-    if (!prompt) prompt = "Fine-art pet portrait, warm light, detailed, elegant, 1:1 crop";
-
-    // Build create body:
-    const createBody: Record<string, any> = {
-      input: { prompt, image_input: [imageUrl] },
-    };
-
-    let endpoint = "https://api.replicate.com/v1/models/" + REPLICATE_MODEL + "/predictions";
-    // If version hash is provided, switch to /v1/predictions and pass {version}
-    const versionHash = (REPLICATE_VERSION && REPLICATE_VERSION.includes(":") ? REPLICATE_VERSION.split(":").pop() : REPLICATE_VERSION) 
-      || (NANO_BANANA_VERSION && NANO_BANANA_VERSION.split(":").pop()) 
-      || null;
-    if (versionHash) {
-      endpoint = "https://api.replicate.com/v1/predictions";
-      createBody.version = versionHash;
+    if (!imageUrl) {
+      return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
     }
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
+    const prediction = await replicate.predictions.create({
+      model: process.env.REPLICATE_MODEL || "google/nano-banana",
+      input: {
+        image_input: imageUrl,
+        prompt,
       },
-      body: JSON.stringify(createBody),
     });
 
-    const text = await res.text();
-    if (!res.ok) {
-      return fail(`Replicate create failed (${res.status})`, res.status, { detail: text });
+    const prediction_id = prediction.id;
+    let outputUrl: string | null = null;
+
+    const deadline = Date.now() + 55000;
+    while (Date.now() < deadline) {
+      const p = await replicate.predictions.get(prediction_id);
+      if (p.error) {
+        return NextResponse.json({ ok: false, error: p.error }, { status: 500 });
+      }
+      if (p.status === "succeeded" || p.status === "completed") {
+        if (Array.isArray(p.output) && p.output.length > 0) outputUrl = p.output[0];
+        else if (Array.isArray((p as any).urls) && (p as any).urls.length > 0)
+          outputUrl = (p as any).urls[0];
+        else if (typeof p.output === "string") outputUrl = p.output;
+        break;
+      }
+      if (p.status === "failed" || p.status === "canceled") {
+        return NextResponse.json({ ok: false, error: "Prediction failed" }, { status: 500 });
+      }
+      await new Promise((r) => setTimeout(r, 2500));
     }
 
-    const created = JSON.parse(text);
-    if (!created?.id) return fail("Replicate did not return a prediction id", 502, { detail: text });
+    if (!outputUrl) {
+      return NextResponse.json({ ok: false, error: "No output URL returned" }, { status: 500 });
+    }
 
-    // Non-blocking return: client will poll
-    return ok({
-      prediction_id: created.id,
-      status: created.status,
-      input_url: imageUrl,
-    });
+    try {
+      await supabase.from("generations").insert({
+        user_id: null,
+        input_url: imageUrl,
+        output_url: outputUrl,
+        prompt,
+        preset_label,
+        is_public: true,
+      });
+    } catch (e) {
+      console.warn("Insert to generations failed:", e);
+    }
+
+    return NextResponse.json({ ok: true, input_url: imageUrl, output_url: outputUrl, prediction_id });
   } catch (e: any) {
-    return fail(e?.message || "Unknown error", 500);
+    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
 }
