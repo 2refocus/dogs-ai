@@ -1,48 +1,33 @@
-// app/components/CommunityGrid.tsx
+"use client";
 import Image from "next/image";
 
-export type CommunityItem = {
-  id: string;
-  url: string;
+type Item = {
+  id: string | number;
+  output_url: string;
   prompt?: string | null;
-  label?: string | null;
-  createdAt?: string | null;
+  created_at?: string | null;
 };
 
-export default function CommunityGrid({ items }: { items: CommunityItem[] }) {
-  if (!items || items.length === 0) {
+export default function CommunityGrid({ items }: { items: Item[] }) {
+  if (!items?.length) {
     return (
-      <div className="text-sm opacity-70">
-        No community images yet. Be the first to generate one!
-      </div>
+      <div className="text-sm opacity-60">No public images yet.</div>
     );
   }
-
   return (
-    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <ul className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
       {items.map((it) => (
         <li key={it.id} className="rounded-xl overflow-hidden border border-white/10 bg-white/2">
           <div className="relative aspect-square">
-            {/* Next/Image keeps layout stable while loading */}
+            {/* next/image for automatic sizing */}
             <Image
-              src={it.url}
-              alt={it.label || it.prompt || "community image"}
+              src={it.output_url}
+              alt={it.prompt || "community image"}
               fill
-              className="object-cover"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
-              unoptimized
+              className="object-cover"
             />
           </div>
-          {(it.label || it.createdAt) && (
-            <div className="p-2 grid gap-1">
-              {it.label && <div className="text-xs font-medium line-clamp-1">{it.label}</div>}
-              {it.createdAt && (
-                <div className="text-[10px] opacity-60">
-                  {new Date(it.createdAt).toLocaleString()}
-                </div>
-              )}
-            </div>
-          )}
         </li>
       ))}
     </ul>

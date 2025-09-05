@@ -1,64 +1,58 @@
-// app/components/CommunityFeed.tsx
-import CommunityGrid, { CommunityItem } from "./CommunityGrid";
+import CommunityGrid from "@/app/components/CommunityGrid";
 import { createClient } from "@supabase/supabase-js";
 
-export const revalidate = 60; // refresh SSG every 60s
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 type Row = {
   id: string;
   output_url: string | null;
   prompt?: string | null;
-  preset_label?: string | null;
+  is_public?: boolean | null;
   created_at?: string | null;
 };
 
-export default async function CommunityFeed({ limit = 24 }: { limit?: number }) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export default async function CommunityFeed() {
   if (!url || !anon) {
-    return (
-      <div className="text-sm opacity-70">
-        Community unavailable (missing Supabase env). Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
-      </div>
-    );
+    return <div className="text-sm opacity-60">Supabase not configured.</div>;
   }
 
-  const supabase = createClient(url, anon);
+  const supabase = createClient(url, anon, { auth: { persistSession: false } });
 
-  // Only public images; tolerate schema differences (older DBs without is_public)
-  let rows: Row[] = [];
-  const q = supabase
-    .from("generations")
-    .select("id, output_url, prompt, preset_label, created_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  const { data, error } = await q.eq("is_public", true);
-  if (error) {
-    // try without is_public if column not present
-    const fallback = await supabase
+  // Prefer is_public = true if column exists; otherwise just select last 24
+  // We can't know columns at runtime easily here, so try is_public and fall back if it errors.
+  let data: Row[] = [];
+  try {
+    const { data: rows, error } = await supabase
       .from("generations")
-      .select("id, output_url, prompt, preset_label, created_at")
+      .select("id, output_url, prompt, is_public, created_at")
+      .eq("is_public", true)
       .order("created_at", { ascending: false })
-      .limit(limit);
-    if (fallback.data) rows = fallback.data as unknown as Row[];
-  } else if (data) {
-    rows = data as unknown as Row[];
+      .limit(24);
+    if (error) throw error;
+    data = rows || [];
+  } catch {
+    const { data: rows2 } = await supabase
+      .from("generations")
+      .select("id, output_url, prompt, created_at")
+      .order("created_at", { ascending: false })
+      .limit(24);
+    data = rows2 || [];
   }
 
-  const items: CommunityItem[] = (rows || [])
-    .filter((r) => r.output_url)
-    .map((r) => ({
-      id: r.id,
-      url: r.output_url as string,
-      prompt: r.prompt ?? null,
-      label: r.preset_label ?? null,
-      createdAt: r.created_at ?? null,
-    }));
+  const items = (data || []).filter((r) => !!r.output_url).map((r) => ({
+    id: r.id,
+    output_url: r.output_url as string,
+    prompt: r.prompt || null,
+    created_at: r.created_at || null,
+  }));
 
   return (
-    <section className="grid gap-3">
-      <h2 className="text-lg font-semibold">Latest from the community</h2>
+    <section className="mt-10">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-lg font-semibold">Community</h2>
+        <a className="text-sm underline opacity-80 hover:opacity-100" href="/community">See all</a>
+      </div>
       <CommunityGrid items={items} />
     </section>
   );
