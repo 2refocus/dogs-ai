@@ -226,10 +226,10 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mt-10 flex items-center justify-between text-xs opacity-60">
+    {/*}  <footer className="mt-10 flex items-center justify-between text-xs opacity-60">
         <div>Made with ❤️</div>
         <div>build: ui</div>
-      </footer>
+      </footer>*/}
     </main>
   );
 }
