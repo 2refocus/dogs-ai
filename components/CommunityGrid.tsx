@@ -1,41 +1,35 @@
 // app/components/CommunityGrid.tsx
-'use client';
-
+// Server component: simple presentational grid for community images
 type Row = {
   id: string;
   output_url: string | null;
-  preset_label?: string | null;
   created_at: string;
+  prompt?: string | null;
+  preset_label?: string | null;
 };
 
-export default function CommunityGrid({ rows }: { rows: Row[] }) {
-  if (!rows?.length) {
-    return (
-      <div className="text-sm opacity-70">
-        No shared portraits yet.
-      </div>
-    );
+export default function CommunityGrid({ items }: { items: Row[] }) {
+  if (!items || items.length === 0) {
+    return <div className="text-sm opacity-60">No community images yet. Be the first to generate one!</div>;
   }
 
   return (
-    <ul className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      {rows.map((r) => (
-        <li key={r.id} className="overflow-hidden rounded-xl border bg-background">
-          <div className="relative w-full" style={{ aspectRatio: '1 / 1' }}>
-            {r.output_url ? (
-              <img
-                src={r.output_url}
-                alt={r.preset_label || 'Community portrait'}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="h-full w-full bg-muted" />
-            )}
-          </div>
-          <div className="px-3 py-2 text-xs opacity-70">
-            {r.preset_label || 'Shared portrait'}
-          </div>
+    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      {items.map((r) => (
+        <li
+          key={r.id}
+          className="rounded-xl overflow-hidden border border-white/10 bg-white/5 aspect-square"
+          title={r.preset_label || r.prompt || ""}
+        >
+          {r.output_url ? (
+            <img
+          src={r.output_url}
+          alt={r.preset_label || r.prompt || "Community image"}
+          className="w-full h-full object-cover"
+        />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xs opacity-60">Processing…</div>
+          )}
         </li>
       ))}
     </ul>
