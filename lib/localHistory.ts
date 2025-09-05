@@ -1,44 +1,44 @@
-// lib/localHistory.ts
-// Small localStorage helper used for guest history on the History page.
-// Safe to import in client components only.
+/* lib/localHistory.ts
+ * Lightweight guest history stored in localStorage.
+ * Types are flexible so app/page.tsx can include optional fields like input_url.
+ */
 
 export type LocalGen = {
-  id: string;
   output_url: string;
-  created_at: string;
-  prompt?: string | null;
+  input_url?: string | null;
   preset_label?: string | null;
+  prompt?: string | null;
+  created_at: string;
 };
 
-const KEY = "local_history_v1";
+const KEY = "guest_history_v1";
 
 export function readLocal(): LocalGen[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
-    return arr.filter(Boolean);
+    // basic shape guard
+    return arr.filter((x: any) => x && typeof x.output_url === "string");
   } catch {
     return [];
   }
 }
 
-export function pushLocal(item: Partial<LocalGen>) {
+export function pushLocal(item: Partial<LocalGen> & { output_url: string }) {
+  if (typeof window === "undefined") return;
   try {
     const row: LocalGen = {
-      id: item.id || crypto.randomUUID(),
-      output_url: String(item.output_url || ""),
-      created_at: item.created_at || new Date().toISOString(),
-      prompt: item.prompt ?? null,
+      output_url: item.output_url,
+      input_url: item.input_url ?? null,
       preset_label: item.preset_label ?? null,
+      prompt: item.prompt ?? null,
+      created_at: item.created_at ?? new Date().toISOString(),
     };
     const prev = readLocal();
     const next = [row, ...prev].slice(0, 50);
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {}
-}
-
-export function clearLocal() {
-  try { localStorage.removeItem(KEY); } catch {}
 }
