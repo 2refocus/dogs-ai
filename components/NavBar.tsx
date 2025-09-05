@@ -16,9 +16,9 @@ export default function NavBar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-[#0d1015]/80 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-4">
-        <Link href="/" className="font-semibold text-lg tracking-tight">
+   {/*     <Link href="/" className="font-semibold text-lg tracking-tight">
           Pet Portrait Studio <span className="text-amber-400">*</span>
-        </Link>
+        </Link>*/}
 
         {/* Spacer */}
         <div className="flex-1" />
