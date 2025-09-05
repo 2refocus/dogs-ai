@@ -22,25 +22,7 @@ export default function NavGate() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', position: 'relative' }}>
-      {/* Quick actions: Settings + Logout (if authed) or Login */}
-     {/*} <a href="/settings" className="icon-btn" title="Settings" aria-label="Settings">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.69 0 1.33-.39 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06c.48.48 1.18.62 1.82.33.61-.18 1-.82 1-1.51V3a2 2 0 1 1 4 0v.09c0 .69.39 1.33 1 1.51.64.29 1.34.15 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.48.48-.62 1.18-.33 1.82.18.61.82 1 1.51 1H21a2 2 0 1 1 0 4h-.09c-.69 0-1.33.39-1.51 1z"/>
-        </svg>
-      </a>*/}
-
-      {userEmail ? (
-        <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      ) : (
-        <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
-      )}
+  
 
       {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
       <header className="mb-6 flex items-center justify-between gap-3">
@@ -58,9 +40,30 @@ export default function NavGate() {
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Bundles</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/login">Login</a>
+         {userEmail ? (
+        <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      ) : (
+        <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
+      )}
+         {/* Quick actions: Settings + Logout (if authed) or Login */}
+     {/*} <a href="/settings" className="icon-btn" title="Settings" aria-label="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.69 0 1.33-.39 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06c.48.48 1.18.62 1.82.33.61-.18 1-.82 1-1.51V3a2 2 0 1 1 4 0v.09c0 .69.39 1.33 1 1.51.64.29 1.34.15 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.48.48-.62 1.18-.33 1.82.18.61.82 1 1.51 1H21a2 2 0 1 1 0 4h-.09c-.69 0-1.33.39-1.51 1z"/>
+        </svg>
+      </a>*/}
           </div>
         </details>
+  
+   
+
+
       </header>
 
       {/* Menu toggle (kept for secondary navigation) */}
