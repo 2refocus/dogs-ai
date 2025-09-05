@@ -1,21 +1,48 @@
-/* app/page.tsx — working generator UI + Community feed (client) */
+/* app/page.tsx — working generator UI + Community feed
+   - Keeps create → poll flow through /api/stylize and /api/predictions/[id]
+   - 1 free guest generation (Reset free button)
+   - Left: small "Original" preview, Right: large "Generated" with shimmer
+   - Community section appended at the bottom
+*/
 "use client";
 
 import React, { useEffect, useState } from "react";
-import CommunityClient from "@/components/CommunityClient";
+import dynamic from "next/dynamic";
+import { pushLocal } from "@/lib/localHistory";
+
+const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
 const SHIMMER_CSS = `
-@keyframes shimmerMove { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-.shimmer{position:relative;overflow:hidden;background:rgba(255,255,255,.04)}
-.shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.07) 50%,rgba(255,255,255,0) 100%);background-size:200% 100%;animation:shimmerMove 1.25s linear infinite;mix-blend-mode:screen}
+@keyframes shimmerMove {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmerMove 1.25s linear infinite;
+  mix-blend-mode: screen;
+}
 `;
 
 const DEFAULT_PROMPT =
-  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; fine-art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail, 1:1 crop";
+  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
+  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail, 1:1 crop";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -37,25 +64,38 @@ export default function Home() {
     const f = e.target.files?.[0] || null;
     setFile(f);
     setGenUrl("");
-    if (!f) { setPreview(""); return; }
+    if (!f) {
+      setPreview("");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setPreview(String(reader.result || ""));
     reader.readAsDataURL(f);
   }
 
   function resetFree() {
-    try { localStorage.setItem("freeGenerationsLeft", "1"); } catch {}
-    setFreeLeft(1);
+    try {
+      localStorage.setItem("freeGenerationsLeft", "1");
+      setFreeLeft(1);
+    } catch {}
   }
 
   async function onGenerate() {
     setMsg("");
     setGenUrl("");
-    if (!file) { setMsg("Pick a file first."); return; }
+    if (!file) {
+      setMsg("Pick a file first.");
+      return;
+    }
 
-    if (freeLeft <= 0) { setMsg("Free preview used. Please sign in & buy a bundle to continue."); return; }
-    try { localStorage.setItem("freeGenerationsLeft", String(Math.max(0, freeLeft - 1))); } catch {}
-    setFreeLeft(n => Math.max(0, n - 1));
+    if (freeLeft <= 0) {
+      setMsg("Free preview used. Please sign in & buy a bundle to continue.");
+      return;
+    }
+    try {
+      localStorage.setItem("freeGenerationsLeft", String(Math.max(0, freeLeft - 1)));
+    } catch {}
+    setFreeLeft((n) => Math.max(0, n - 1));
 
     setLoading(true);
     try {
@@ -75,7 +115,7 @@ export default function Home() {
       setMsg("Generating…");
       const t0 = Date.now();
       while (Date.now() - t0 < 120000) {
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1200));
         const r2 = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
         const s = await r2.json();
 
@@ -93,6 +133,14 @@ export default function Home() {
         if ((s?.status === "succeeded" || s?.status === "completed") && url) {
           setGenUrl(url);
           setMsg("Done ✓");
+          // record to guest history
+          try {
+            pushLocal({
+              output_url: url,
+              input_url: create?.input_url ?? null,
+              created_at: new Date().toISOString(),
+            });
+          } catch {}
           setLoading(false);
           return;
         }
@@ -155,15 +203,16 @@ export default function Home() {
               </div>
             )}
           </div>
-          <div className="mt-2 text-xs opacity-60">Original</div>
         </div>
 
         {/* Generated big with shimmer */}
         <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
-          <div className={cx(
-            "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
-            loading && "shimmer"
-          )}>
+          <div
+            className={cx(
+              "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
+              loading && "shimmer"
+            )}
+          >
             {genUrl ? (
               <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
             ) : (
@@ -188,11 +237,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Community feed (client-rendered) */}
+      {/* Community feed */}
       <div className="mt-10">
         <hr className="my-8 opacity-20" />
         <h2 className="mb-3 text-lg font-semibold">Community</h2>
-        <CommunityClient />
+        <CommunityFeed />
       </div>
     </main>
   );
