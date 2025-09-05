@@ -42,11 +42,8 @@ export default function NavGate() {
         <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
       )}
 
-
-
-
-    {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
-    <header className="mb-6 flex items-center justify-between gap-3">
+      {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
+      <header className="mb-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="text-lg font-semibold">Pet Portrait Studio <span className="text-amber-400">*</span></div>
           <div className="text-xs opacity-60">Elegant &amp; cozy portraits of your pets</div>
@@ -67,14 +64,12 @@ export default function NavGate() {
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/login">Login</a>
           </div>
         </details>
+      </header>
 
-
-
-
-      Menu toggle (kept for secondary navigation) 
-   {/*    <button className="burger" onClick={() => setOpen(v => !v)} aria-expanded={isOpen} aria-haspopup="menu" title="Menu">
+      {/* Menu toggle (kept for secondary navigation) */}
+      {/* <button className="burger" onClick={() => setOpen(v => !v)} aria-expanded={isOpen} aria-haspopup="menu" title="Menu">
         ☰
-      </button>*/}
+      </button> */}
 
       {isOpen && (
         <div className="menu-panel" role="menu">
