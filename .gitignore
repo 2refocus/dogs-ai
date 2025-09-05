@@ -36,3 +36,4 @@ next-env.d.ts
 test-images/output/tmp_dho4yro.jpeg
 test-images/output/tmpl6etnp0f.jpeg
 dogs-community-pack/README-community-pack.md
+app/api/stylize/route-working.ts

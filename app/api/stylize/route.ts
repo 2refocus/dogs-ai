@@ -1,194 +1,149 @@
 /* app/api/stylize/route.ts
-   Old working flow + minimal patch to persist to Supabase after success.
-   - Uses Replicate SDK (no "version" field to avoid 422)
-   - Uploads the input file to Supabase Storage
-   - Polls Replicate until "succeeded"
-   - Then tries a non-blocking insert into public.generations via Service Role
-*/
-
+ * Simple: upload -> replicate -> insert row (service role) -> return JSON
+ * Requires env:
+ *   NEXT_PUBLIC_SUPABASE_URL
+ *   SUPABASE_SERVICE_ROLE           (server-only)
+ *   REPLICATE_API_TOKEN
+ *   REPLICATE_MODEL (default: google/nano-banana)
+ */
 import { NextRequest, NextResponse } from "next/server";
-import Replicate from "replicate";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
-
-// --- Env
-const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE!; // server-only
 const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
-const STORAGE_PREFIX = "public/inputs";
 
-// admin client (server-only; bypasses RLS)
-const supabaseAdmin =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    : null;
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN!;
+const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
-// Replicate client
-const replicate = new Replicate({ auth: REPLICATE_API_TOKEN });
+function json(data: any, status = 200) {
+  return NextResponse.json(data, { status });
+}
 
-async function uploadToSupabasePublic(file: File): Promise<string> {
-  if (!supabaseAdmin) throw new Error("Supabase admin client not configured");
+function isHttpsUrl(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  try { return new URL(s).protocol === "https:"; } catch { return false; }
+}
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+async function uploadToSupabasePublic(file: File) {
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+  const buf = Buffer.from(await file.arrayBuffer());
+  const safe = (file.name || "upload.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const ext = safe.includes(".") ? safe.split(".").pop()!.toLowerCase() : "jpg";
+  const path = `public/inputs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  // sanitize filename
-  const safeName = (file.name || "upload.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${STORAGE_PREFIX}/${Date.now()}-${safeName}`;
+  const { error } = await admin.storage.from(STORAGE_BUCKET).upload(path, buf, {
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw new Error("upload: " + error.message);
 
-  const { error } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, buffer, {
-      contentType: file.type || "image/jpeg",
-      upsert: false,
-    });
-
-  if (error) throw new Error("Upload failed: " + error.message);
-
-  const { data } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  if (!data?.publicUrl) throw new Error("Could not get public URL for upload");
+  const { data } = admin.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error("upload: no public url");
   return data.publicUrl;
+}
+
+async function replicateCreate(imageUrl: string, prompt: string) {
+  // IMPORTANT: image_input must be an ARRAY for current nano-banana versions
+  const res = await fetch(
+    `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: {
+          image_input: [imageUrl], // <-- changed from string to array
+          prompt,
+        },
+      }),
+    }
+  );
+  const text = await res.text();
+  if (!res.ok) throw new Error(`replicate create ${res.status}: ${text}`);
+  return JSON.parse(text);
+}
+
+async function replicateGet(id: string) {
+  const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+    headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
+    cache: "no-store",
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`replicate get ${res.status}: ${text}`);
+  return JSON.parse(text);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    if (!REPLICATE_API_TOKEN) {
-      return NextResponse.json(
-        { ok: false, error: "Missing REPLICATE_API_TOKEN" },
-        { status: 500 }
-      );
-    }
-    if (!SUPABASE_URL) {
-      return NextResponse.json(
-        { ok: false, error: "Missing NEXT_PUBLIC_SUPABASE_URL" },
-        { status: 500 }
-      );
-    }
+    if (!SUPABASE_URL || !SERVICE_KEY) return json({ ok:false, error:"Missing Supabase env" }, 500);
+    if (!REPLICATE_API_TOKEN) return json({ ok:false, error:"Missing Replicate token" }, 500);
 
     const ct = req.headers.get("content-type") || "";
     if (!ct.startsWith("multipart/form-data")) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid content-type" },
-        { status: 400 }
-      );
+      return json({ ok:false, error:"Invalid content-type" }, 400);
     }
 
-    // ---- Parse form
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const prompt = (form.get("prompt") || "").toString();
+    const prompt = (form.get("prompt") || "").toString().trim() || "fine-art pet portrait, dramatic lighting, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
 
-    if (!file) {
-      return NextResponse.json(
-        { ok: false, error: "Missing file" },
-        { status: 400 }
-      );
-    }
+    if (!file) return json({ ok:false, error:"Missing file" }, 400);
 
-    // ---- Upload to Supabase Storage (public URL)
-    let imageUrl = "";
-    try {
-      imageUrl = await uploadToSupabasePublic(file);
-    } catch (e: any) {
-      return NextResponse.json(
-        { ok: false, error: e?.message || "Upload failed" },
-        { status: 500 }
-      );
-    }
+    // 1) upload input
+    const inputUrl = await uploadToSupabasePublic(file);
 
-    // ---- Create Replicate prediction
-    const prediction = await replicate.predictions.create({
-      model: REPLICATE_MODEL, // allow "google/nano-banana" or "google/nano-banana:<hash>"
-      input: {
-        image_input: imageUrl, // single URL or array also works; URL is fine
-        prompt,
-      },
-    });
+    // 2) create prediction
+    const created = await replicateCreate(inputUrl, prompt);
+    const prediction_id: string | undefined = created?.id;
+    if (!prediction_id) return json({ ok:false, error:"No prediction id" }, 502);
 
-    const prediction_id = prediction.id;
+    // 3) poll
+    const t0 = Date.now();
+    const timeoutMs = 55_000;
     let outputUrl: string | null = null;
 
-    // ---- Poll Replicate
-    const deadline = Date.now() + 55_000; // ~55s budget
-    while (Date.now() < deadline) {
-      const p = await replicate.predictions.get(prediction_id);
+    while (Date.now() - t0 < timeoutMs) {
+      const p = await replicateGet(prediction_id);
+      const status = String(p?.status || "");
 
-      if (p.error) {
-        return NextResponse.json(
-          { ok: false, error: p.error },
-          { status: 500 }
-        );
+      // pick first available output url
+      if (Array.isArray(p?.output) && p.output.length > 0) outputUrl = p.output[0];
+      else if (typeof p?.output === "string") outputUrl = p.output;
+      else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) outputUrl = (p as any).urls[0];
+
+      if (status === "succeeded" || status === "completed") break;
+      if (status === "failed" || status === "canceled") {
+        return json({ ok:false, error: p?.error || "Generation failed" }, 500);
       }
-
-      // success?
-      if (p.status === "succeeded") {
-        // normalize different output shapes
-        if (Array.isArray(p.output) && p.output.length > 0) {
-          outputUrl = p.output[0] as string;
-        } else if (typeof (p as any).urls?.[0] === "string") {
-          outputUrl = (p as any).urls[0] as string;
-        } else if (typeof p.output === "string") {
-          outputUrl = p.output as string;
-        }
-        break;
-      }
-
-      // terminal failures
-      if (p.status === "failed" || p.status === "canceled") {
-        return NextResponse.json(
-          { ok: false, error: "Prediction failed" },
-          { status: 500 }
-        );
-      }
-
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 1200));
     }
 
-    if (!outputUrl) {
-      return NextResponse.json(
-        { ok: false, error: "No output URL returned" },
-        { status: 500 }
-      );
+    if (!outputUrl || !isHttpsUrl(outputUrl)) {
+      return json({ ok:false, error:"No output URL returned" }, 500);
     }
 
-    // ---- PATCH: Non-blocking insert into public.generations
-    (async () => {
-      try {
-        if (!supabaseAdmin) {
-          console.warn(
-            "[stylize] Skipping DB insert: missing SUPABASE_SERVICE_ROLE_KEY"
-          );
-          return;
-        }
-        await supabaseAdmin.from("generations").insert({
-          user_id: null,          // keep guest; replace if you attach auth user id
-          input_url: imageUrl,
-          output_url: outputUrl,
-          prompt,
-          preset_label,
-          is_public: true,        // so it can appear in the community feed
-        });
-      } catch (err: any) {
-        console.warn("[stylize] Insert failed:", err?.message || err);
-      }
-    })();
-
-    // ---- Done
-    return NextResponse.json({
-      ok: true,
-      input_url: imageUrl,
+    // 4) persist (service role bypasses RLS)
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    await admin.from("generations").insert({
+      user_id: null,
+      input_url: inputUrl,
       output_url: outputUrl,
-      prediction_id,
+      prompt,
+      preset_label,
+      is_public: true,
     });
+
+    return json({ ok:true, prediction_id, input_url: inputUrl, output_url: outputUrl });
   } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: e?.message || "Unexpected error" },
-      { status: 500 }
-    );
+    console.error("[stylize] error:", e?.message || e);
+    return json({ ok:false, error: e?.message || "Unknown error" }, 500);
   }
 }
