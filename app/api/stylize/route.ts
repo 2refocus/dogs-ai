@@ -60,8 +60,44 @@ export async function POST(req: NextRequest) {
       if (p.error) {
         return NextResponse.json({ ok: false, error: p.error }, { status: 500 });
       }
-      if (p.status === "succeeded" || p.status === "completed") {
-        if (Array.isArray(p.output) && p.output.length > 0) outputUrl = p.output[0];
+      
+// p is the poll response
+const p = (await pollRes.json()) as ReplicatePoll;
+
+// normalize status
+const status = String(p?.status || "");
+
+// pick first available output URL from either shape
+let outputUrl: string | null = null;
+if (Array.isArray(p.output) && p.output.length > 0) {
+  outputUrl = p.output[0]!;
+} else if (typeof p.output === "string") {
+  outputUrl = p.output;
+} else if (Array.isArray(p.urls) && p.urls.length > 0) {
+  outputUrl = p.urls[0]!;
+}
+
+// handle terminal states
+if (status === "succeeded" || status === "completed") {
+  if (!outputUrl) {
+    return NextResponse.json(
+      { ok: false, error: "No output URL returned" },
+      { status: 502 }
+    );
+  }
+  // ...continue with your success flow using `outputUrl`
+}
+
+if (status === "failed" || status === "canceled") {
+  return NextResponse.json(
+    { ok: false, error: p?.error ?? "Generation failed" },
+    { status: 500 }
+  );
+}
+
+// otherwise keep polling…
+
+if (Array.isArray(p.output) && p.output.length > 0) outputUrl = p.output[0];
         else if (Array.isArray((p as any).urls) && (p as any).urls.length > 0)
           outputUrl = (p as any).urls[0];
         else if (typeof p.output === "string") outputUrl = p.output;
