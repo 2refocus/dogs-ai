@@ -1,6 +1,8 @@
-/* app/page.tsx — working generator UI + Community feed + safe Supabase insert
+/* app/page.tsx — working generator UI + Community feed
    - Keeps create → poll flow through /api/stylize and /api/predictions/[id]
-   - Fire-and-forget POST to /api/generations when generation succeeds
+   - 1 free guest generation (Reset free button)
+   - Left: small "Original" preview, Right: large "Generated" with shimmer
+   - Community section appended at the bottom
 */
 "use client";
 
@@ -14,7 +16,7 @@ function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-const SHIMMER_CSS = \`
+const SHIMMER_CSS = `
 @keyframes shimmerMove {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -36,7 +38,7 @@ const SHIMMER_CSS = \`
   animation: shimmerMove 1.25s linear infinite;
   mix-blend-mode: screen;
 }
-\`;
+`;
 
 const DEFAULT_PROMPT =
   "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
@@ -118,7 +120,7 @@ export default function Home() {
         const s = await r2.json();
 
         if (s?.status === "failed" || s?.status === "canceled") {
-          setMsg(\`Failed: \${s?.error || "unknown"}\`);
+          setMsg(`Failed: ${s?.error || "unknown"}`);
           setLoading(false);
           return;
         }
@@ -139,23 +141,6 @@ export default function Home() {
               created_at: new Date().toISOString(),
             });
           } catch {}
-
-          // fire-and-forget insert (safe, won't break UI)
-          try {
-            fetch("/api/generations", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                input_url: create?.input_url ?? null,
-                output_url: url,
-                prompt: DEFAULT_PROMPT,
-                preset_label: "",
-                is_public: true
-              }),
-              keepalive: true
-            }).catch(() => {});
-          } catch {}
-
           setLoading(false);
           return;
         }
