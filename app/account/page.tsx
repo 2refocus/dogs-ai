@@ -107,6 +107,14 @@ export default function AccountPage() {
 
       if (error) throw error;
       console.log("Profile image saved successfully");
+      
+      // Show success message and refresh data
+      setMessage("Profile image updated successfully!");
+      
+      // Refresh the history page if it's open
+      if (window.location.pathname === '/history') {
+        window.location.reload();
+      }
     } catch (error: any) {
       console.error("Error saving profile image:", error);
     }

@@ -90,21 +90,26 @@ export default function HistoryPage() {
       }
     })();
 
-    // load guest history as fallback (only for items not in Supabase)
-    try {
-      const raw = localStorage.getItem("guest_history_v1");
-      if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) {
-          const filtered = arr.filter((x:any)=>x && typeof x.output_url === "string");
-          // Sort local history by created_at descending (newest first)
-          const sorted = filtered.sort((a: any, b: any) => 
-            new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
-          );
-          setLocalItems(sorted);
+    // load guest history as fallback (only for items not in Supabase and only when not logged in)
+    if (!currentUserId) {
+      try {
+        const raw = localStorage.getItem("guest_history_v1");
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            const filtered = arr.filter((x:any)=>x && typeof x.output_url === "string");
+            // Sort local history by created_at descending (newest first)
+            const sorted = filtered.sort((a: any, b: any) => 
+              new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+            );
+            setLocalItems(sorted);
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    } else {
+      // Clear local items when logged in
+      setLocalItems([]);
+    }
   }, [currentUserId, authLoading]); // Re-run when user ID or auth loading state changes
 
   const hasCommunity = community.length > 0;
