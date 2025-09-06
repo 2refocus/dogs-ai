@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ThemeToggle from "./ThemeToggle";
 
 export default function NavGate() {
   const [isOpen, setOpen] = useState(false);
@@ -27,52 +28,57 @@ export default function NavGate() {
       {/* Top bar (single nav). If you already render a global header, you can delete this block. */}
       <header className="mb-6 flex items-center justify-between gap-3">
         
-        <nav className="hidden md:flex items-center gap-6 text-sm">
+        <nav className="hidden md:flex items-center gap-4 text-sm">
           <a href="/" className="hover:opacity-80">Home</a>
           <a href="/history" className="hover:opacity-80">History</a>
           <a href="/dashboard" className="hover:opacity-80">Dashboard</a>
           <a href="/bundles" className="hover:opacity-80">Credits</a>
-
           <a href="/account" className="hover:opacity-80">Account</a>
-          {userEmail ? (
-        <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      ) : (
-        <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
-      )}
+          
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {userEmail ? (
+              <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </button>
+            ) : (
+              <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
+            )}
+          </div>
         </nav>
         {/* mobile burger */}
         <details className="md:hidden relative">
-          <summary className="list-none cursor-pointer rounded-xl border border-white/10 px-3 py-2">☰</summary>
-          <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-black/80 backdrop-blur p-2 z-50">
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Dashboard</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Credits</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/account">Account</a>
-         {userEmail ? (
-        <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      ) : (
-        <a className="btn-outline btn-sm" href="/login" title="Login">Login</a>
-      )}
-         {/* Quick actions: Settings + Logout (if authed) or Login */}
-     {/*} <a href="/settings" className="icon-btn" title="Settings" aria-label="Settings">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.69 0 1.33-.39 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06c.48.48 1.18.62 1.82.33.61-.18 1-.82 1-1.51V3a2 2 0 1 1 4 0v.09c0 .69.39 1.33 1 1.51.64.29 1.34.15 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.48.48-.62 1.18-.33 1.82.18.61.82 1 1.51 1H21a2 2 0 1 1 0 4h-.09c-.69 0-1.33.39-1.51 1z"/>
-        </svg>
-      </a>*/}
+          <summary className="list-none cursor-pointer rounded-xl border border-[var(--line)] px-3 py-2 bg-[var(--muted)] hover:bg-[var(--line)] transition-colors">☰</summary>
+          <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[var(--line)] bg-[var(--muted)] backdrop-blur p-2 z-50 shadow-lg">
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/">Home</a>
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/history">History</a>
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/dashboard">Dashboard</a>
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/bundles">Credits</a>
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/account">Account</a>
+            
+            <div className="border-t border-[var(--line)] my-2"></div>
+            
+            <div className="flex items-center justify-between px-3 py-2">
+              <span className="text-sm opacity-70">Theme</span>
+              <ThemeToggle />
+            </div>
+            
+            {userEmail ? (
+              <button className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" onClick={signOut} title={`Logout ${userEmail}`}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Logout
+              </button>
+            ) : (
+              <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/login">Login</a>
+            )}
           </div>
         </details>
   
