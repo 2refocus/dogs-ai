@@ -15,11 +15,14 @@ export default function CommunityFeed() {
       try {
         const res = await fetch("/api/community", { cache: "no-store" });
         const j = await res.json().catch(() => ({ ok: false }));
+        console.log("Community API response:", j); // Debug log
         if (j?.ok && Array.isArray(j.items) && j.items.length > 0) {
           if (alive) setItems(j.items.filter((x: any) => typeof x.output_url === "string"));
           return;
         }
-      } catch {}
+      } catch (e) {
+        console.error("Community API error:", e); // Debug log
+      }
       // Fallback: show guest local history if community is empty/unavailable
       const loc = readLocal().map((x) => ({
         output_url: x.output_url,
