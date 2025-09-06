@@ -84,14 +84,27 @@ async function replicateCreate(imageUrl: string, prompt: string, options: { crop
     }
   }
 
+  // Calculate dimensions based on crop ratio
+  let width = 1024;
+  let height = Math.round(1024 / aspect_ratio);
+  
+  // Ensure the longer side is always 1024px for consistent quality
+  if (height > width) {
+    height = 1024;
+    width = Math.round(1024 * aspect_ratio);
+  }
+
   const body = {
     input: {
       image_input: [imageUrl],
       prompt,
       num_outputs: options.num_outputs || 1,
-      aspect_ratio,
-      width: 1024, // Higher resolution for better quality
-      height: Math.round(1024 / aspect_ratio),
+      width,
+      height,
+      guidance_scale: 7.5, // Increase quality
+      num_inference_steps: 50, // More steps for better results
+      scheduler: "K_EULER_ANCESTRAL", // Better scheduler for quality
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark",
     },
   };
 
