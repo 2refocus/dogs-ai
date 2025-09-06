@@ -160,34 +160,34 @@ export default function AccountPage() {
         
         <div className="grid gap-6">
           {/* Profile Image Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
             <div className="relative">
               {selectedProfileImage ? (
                 <img
                   src={selectedProfileImage}
                   alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-[var(--line)]"
+                  className="w-24 h-24 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[var(--line)]"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-[var(--muted)] border-2 border-[var(--line)] flex items-center justify-center">
-                  <span className="text-[var(--fg)]/50 text-2xl">👤</span>
+                <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-full bg-[var(--muted)] border-2 border-[var(--line)] flex items-center justify-center">
+                  <span className="text-[var(--fg)]/50 text-3xl sm:text-2xl">👤</span>
                 </div>
               )}
               {userImages.length > 0 && (
                 <button
                   onClick={() => setShowImageSelector(!showImageSelector)}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--brand)] text-[var(--brand-ink)] rounded-full flex items-center justify-center text-xs font-bold hover:bg-[var(--brand)]/90 transition-colors"
+                  className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-6 sm:h-6 bg-[var(--brand)] text-[var(--brand-ink)] rounded-full flex items-center justify-center text-sm sm:text-xs font-bold hover:bg-[var(--brand)]/90 transition-colors"
                   title="Change profile image"
                 >
                   ✏️
                 </button>
               )}
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-[var(--fg)]">
+            <div className="text-center sm:text-left">
+              <h3 className="text-xl sm:text-lg font-semibold text-[var(--fg)] mb-2">
                 {displayName || "Profile Picture"}
               </h3>
-              <p className="text-sm text-[var(--fg)]/70">
+              <p className="text-sm text-[var(--fg)]/70 max-w-sm">
                 {userImages.length > 0 
                   ? "Click the edit button to choose from your generated images"
                   : "Generate some images first to set a profile picture"
@@ -200,7 +200,7 @@ export default function AccountPage() {
           {showImageSelector && userImages.length > 0 && (
             <div className="bg-[var(--muted)]/50 rounded-xl p-4 border border-[var(--line)]">
               <h4 className="text-sm font-semibold text-[var(--fg)] mb-3">Choose Profile Image</h4>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                 {userImages.map((image, index) => (
                   <button
                     key={image.id}
