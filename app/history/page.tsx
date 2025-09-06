@@ -23,6 +23,7 @@ type CommunityRow = {
 export default function HistoryPage() {
   const [community, setCommunity] = useState<CommunityRow[]>([]);
   const [localItems, setLocalItems] = useState<LocalGen[]>([]);
+  const [userHistory, setUserHistory] = useState<CommunityRow[]>([]);
 
   useEffect(() => {
     // load community
@@ -30,11 +31,15 @@ export default function HistoryPage() {
       try {
         const res = await fetch("/api/community", { cache: "no-store" });
         const j = await res.json();
-        if (j?.ok && Array.isArray(j.items)) setCommunity(j.items);
+        if (j?.ok && Array.isArray(j.items)) {
+          setCommunity(j.items);
+          // Use community data as user history since it contains all generated images
+          setUserHistory(j.items);
+        }
       } catch {}
     })();
 
-    // load guest history
+    // load guest history as fallback (only for items not in Supabase)
     try {
       const raw = localStorage.getItem("guest_history_v1");
       if (raw) {
@@ -48,13 +53,29 @@ export default function HistoryPage() {
   }, []);
 
   const hasCommunity = community.length > 0;
+  const hasUserHistory = userHistory.length > 0;
   const hasLocal = localItems.length > 0;
 
   return (
     <main className="mx-auto max-w-5xl p-6 grid gap-10">
       <section className="grid gap-4">
         <h1 className="text-2xl font-bold">Your History</h1>
-        {hasLocal ? (
+        {hasUserHistory ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {userHistory.map((it) => (
+              <div
+                key={it.id}
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/2"
+              >
+                <img
+                  src={it.output_url}
+                  alt=""
+                  className="w-full aspect-square object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        ) : hasLocal ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {localItems.map((it, idx) => (
               <div
