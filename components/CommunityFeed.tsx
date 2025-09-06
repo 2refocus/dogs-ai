@@ -24,7 +24,6 @@ export default function CommunityFeed() {
       try {
         const res = await fetch("/api/community", { cache: "no-store" });
         const j = await res.json().catch(() => ({ ok: false }));
-        console.log("Community API response:", j); // Debug log
         if (j?.ok && Array.isArray(j.items) && j.items.length > 0) {
           if (alive) setItems(j.items.filter((x: any) => typeof x.output_url === "string"));
           return;

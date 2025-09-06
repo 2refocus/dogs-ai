@@ -232,18 +232,28 @@ export async function POST(req: NextRequest) {
     }
 
     // 4) Always save to database for community feed (both anonymous and authenticated users)
+    console.log("[stylize] About to insert into database:", {
+      SUPABASE_URL: !!SUPABASE_URL,
+      SERVICE_ROLE: !!SERVICE_ROLE,
+      outputUrl: !!outputUrl,
+      userId
+    });
+    
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        const { error } = await admin.from("generations").insert({
+        const insertData = {
           output_url: outputUrl,
           high_res_url: highResUrl,
           aspect_ratio: crop_ratio || null,
           preset_label,
           website: user_url || null,
           display_name: display_name || null,
-          user_id: userId,  // Add back user_id for filtering in history
-        });
+          user_id: userId,
+        };
+        console.log("[stylize] Inserting data:", insertData);
+        
+        const { error } = await admin.from("generations").insert(insertData);
         if (error) {
           console.error("[stylize] insert error:", error);
         } else {
