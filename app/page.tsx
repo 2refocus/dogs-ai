@@ -126,8 +126,8 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset for logged-in users, or house style for non-logged-in users
-      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : DEFAULT_PROMPT;
+      // Use selected preset for logged-in users, or first preset for non-logged-in users
+      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
       fd.append("prompt", promptToUse);
       
       // Add premium parameters for logged-in users
@@ -137,7 +137,7 @@ export default function Home() {
       }
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
-      fd.append("preset_label", userToken ? (PRESETS.dog.find(p => p.value === promptToUse)?.label || "") : "House Style");
+      fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
