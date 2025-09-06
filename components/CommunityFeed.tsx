@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import CommunityGrid from "./CommunityGrid";
 import { readLocal } from "@/lib/localHistory";
+import { supabase } from "@/lib/supabaseClient";
 
 type Item = {
   id?: string | number;
@@ -36,13 +37,20 @@ export default function CommunityFeed() {
       } catch (e) {
         console.error("Community API error:", e);
       }
-      // Fallback: show guest local history if community is empty/unavailable
-      console.log("[CommunityFeed] Using local fallback");
-      const loc = readLocal().map((x) => ({
-        output_url: x.output_url,
-        created_at: x.created_at,
-      }));
-      if (alive) setItems(loc);
+      
+      // Fallback: show guest local history ONLY if user is not logged in
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.user) {
+        console.log("[CommunityFeed] Using local fallback (not logged in)");
+        const loc = readLocal().map((x) => ({
+          output_url: x.output_url,
+          created_at: x.created_at,
+        }));
+        if (alive) setItems(loc);
+      } else {
+        console.log("[CommunityFeed] Logged in, not using local fallback");
+        if (alive) setItems([]);
+      }
     })();
     return () => {
       alive = false;

@@ -137,7 +137,9 @@ export default function AccountPage() {
         console.error("Set error:", setError);
         throw setError;
       }
+      
       console.log("Profile image saved successfully");
+      console.log("Updated record with profile_image_url:", imageUrl);
       
       // Show success message and refresh data
       setMessage("Profile image updated successfully!");
