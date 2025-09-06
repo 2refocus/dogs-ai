@@ -10,6 +10,7 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { pushLocal } from "@/lib/localHistory";
+import { supabase } from "@/lib/supabaseClient";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 
@@ -52,6 +53,7 @@ export default function Home() {
   const [msg, setMsg] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [freeLeft, setFreeLeft] = useState<number>(1);
+  const [userToken, setUserToken] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -59,6 +61,19 @@ export default function Home() {
       if (k == null) localStorage.setItem("freeGenerationsLeft", "1");
       setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10) || 0);
     } catch {}
+  }, []);
+
+  // Get user token for authenticated requests
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserToken(data.session?.access_token || null);
+    });
+    
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserToken(session?.access_token || null);
+    });
+    
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -104,7 +119,17 @@ export default function Home() {
       fd.append("file", file);
       fd.append("prompt", DEFAULT_PROMPT);
 
-      const createRes = await fetch("/api/stylize", { method: "POST", body: fd });
+      // Include Authorization header if user is logged in
+      const headers: HeadersInit = {};
+      if (userToken) {
+        headers.Authorization = `Bearer ${userToken}`;
+      }
+      
+      const createRes = await fetch("/api/stylize", { 
+        method: "POST", 
+        body: fd,
+        headers
+      });
       const create = await createRes.json();
       if (!createRes.ok || !create?.prediction_id) {
         setMsg(create?.error || "Create failed");
