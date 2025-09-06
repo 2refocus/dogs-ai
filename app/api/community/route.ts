@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE || "";
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
 
 export async function GET() {

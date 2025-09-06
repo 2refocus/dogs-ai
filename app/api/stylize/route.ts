@@ -19,7 +19,7 @@ const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
 // Optional — ONLY used if present (won’t break if missing)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE || "";
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Small helpers
 function json(body: any, status = 200) {

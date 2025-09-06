@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SRK = process.env.SUPABASE_SERVICE_ROLE || "";
+const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const TABLE = "generations";
 
 function ok(body: any, status = 200) {
