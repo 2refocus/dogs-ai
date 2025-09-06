@@ -133,7 +133,6 @@ export default function Home() {
       if (userToken) {
         fd.append("num_outputs", String(numImages));
         fd.append("crop_ratio", cropRatio);
-        fd.append("detail_level", String(detailLevel));
       }
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
