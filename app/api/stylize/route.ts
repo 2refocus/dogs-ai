@@ -87,31 +87,35 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Calculate dimensions based on crop ratio
-  let width = 1024;
-  let height = 1024;
-  
+  // Set base size and calculate dimensions
+  const baseSize = 1536; // Larger base size
+  let width, height;
+
   if (options.crop_ratio) {
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w > h) {
-      // For wide formats (e.g., 16:9), keep width at 1024 and reduce height
-      height = Math.round((h * 1024) / w);
+      width = baseSize;
+      height = Math.round((h * baseSize) / w);
     } else {
-      // For tall formats (e.g., 4:5), keep height at 1024 and reduce width
-      width = Math.round((w * 1024) / h);
+      height = baseSize;
+      width = Math.round((w * baseSize) / h);
     }
+  } else {
+    width = baseSize;
+    height = baseSize;
   }
 
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio, high resolution output`,
-      width: width * 2,  // Double the dimensions for higher quality
-      height: height * 2,
-      num_inference_steps: 50,
-      guidance_scale: 7.5,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark",
-      scheduler: "DPMSolverMultistep",  // Try a different scheduler
+      prompt: `${prompt}, maintain ${options.crop_ratio || "1:1"} aspect ratio, ultra high quality, detailed`,
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio",
+      width,
+      height,
+      guidance_scale: 8.5, // Slightly higher guidance
+      num_inference_steps: 75, // More steps for better quality
+      scheduler: "DDIM", // Different scheduler that might handle aspect ratios better
+      high_noise_frac: 0.8, // Help maintain composition
     },
   };
 
