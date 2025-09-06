@@ -87,20 +87,37 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Always use square format for consistent quality
-  const size = 2048;  // Large square size for high quality
+  console.log("[stylize] options:", options);
+
+  // Set dimensions based on crop ratio
+  let width = 2048;
+  let height = 2048;
+
+  if (options.crop_ratio) {
+    console.log("[stylize] applying crop ratio:", options.crop_ratio);
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w > h) {
+      width = 2048;  // Keep width max for landscape
+      height = Math.round((h * width) / w);
+    } else if (h > w) {
+      height = 2048;  // Keep height max for portrait
+      width = Math.round((w * height) / h);
+    }
+  }
+
+  console.log("[stylize] final dimensions:", { width, height });
   
   const body = {
     input: {
       image_input: [imageUrl],
       prompt: `${prompt}, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
-      width: size,
-      height: size,
+      width,
+      height,
       guidance_scale: 7.5,
       num_inference_steps: 50,
       scheduler: "DPMSolverMultistep",
-      num_outputs: 1,
+      num_outputs: options.num_outputs || 1,
     },
   };
 
@@ -163,10 +180,16 @@ export async function POST(req: NextRequest) {
     const crop_ratio = form.get("crop_ratio")?.toString();
 
     // Create prediction with options
-    const created = await replicateCreate(inputUrl, prompt, {
-      num_outputs: num_outputs || 1,
-      crop_ratio: crop_ratio || "1:1"
-    });
+    const options: { num_outputs: number; crop_ratio?: string } = {
+      num_outputs: num_outputs || 1
+    };
+    
+    // Only include crop_ratio if explicitly provided
+    if (crop_ratio) {
+      options.crop_ratio = crop_ratio;
+    }
+    
+    const created = await replicateCreate(inputUrl, prompt, options);
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
 
@@ -212,7 +235,7 @@ export async function POST(req: NextRequest) {
         const { error } = await admin.from("generations").insert({
           output_url: outputUrl,
           high_res_url: highResUrl,
-          aspect_ratio: crop_ratio || "1:1",
+          aspect_ratio: crop_ratio || null,
           preset_label,
           website: user_url || null,
           display_name: display_name || null,
