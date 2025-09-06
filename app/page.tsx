@@ -61,7 +61,7 @@ export default function Home() {
   const [numImages, setNumImages] = useState<number>(1);
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [cropRatio, setCropRatio] = useState<string>("1:1");
-  const [detailLevel, setDetailLevel] = useState<number>(50);
+  const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
@@ -179,6 +179,9 @@ export default function Home() {
           setGenUrl(url);
           setMsg("Done ✓");
 
+          // Scroll to generated image
+          generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
+
           // 1) local guest history (works offline)
           try {
             pushLocal({
@@ -213,112 +216,99 @@ export default function Home() {
         <label className="text-sm font-medium">Upload a pet photo</label>
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <div className="grid gap-4">
-            <div className="grid gap-2">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onPick}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-              />
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name (optional)"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-              />
-              <input
-                type="url"
-                value={userUrl}
-                onChange={(e) => setUserUrl(e.target.value)}
-                placeholder="Your website or social media URL (optional)"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={onGenerate}
-                disabled={loading || !file}
-                className={cx(
-                  "flex-1 rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
-                  loading && "opacity-70 pointer-events-none"
-                )}
-              >
-                {loading ? "Generating…" : "Generate"}
-              </button>
-              <button
-                onClick={resetFree}
-                className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
-              >
-                Reset free
-              </button>
-            </div>
-            
-            {/* Premium features for logged-in users */}
-            {userToken && (
-              <div className="grid gap-4 mt-4 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Style Preset</label>
-                  <select
-                    value={selectedPreset}
-                    onChange={(e) => setSelectedPreset(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  >
-                    <option value="">Default Style</option>
-                    {PRESETS.dog.map((preset) => (
-                      <option key={preset.label} value={preset.value}>
-                        {preset.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onPick}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                />
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your name (optional)"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                />
+                <input
+                  type="url"
+                  value={userUrl}
+                  onChange={(e) => setUserUrl(e.target.value)}
+                  placeholder="Your website or social media URL (optional)"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                />
+              </div>
+              
+              {/* Premium features for logged-in users */}
+              {userToken && (
+                <div className="grid gap-4 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Style Preset</label>
+                    <select
+                      value={selectedPreset}
+                      onChange={(e) => setSelectedPreset(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <option value="">Default Style</option>
+                      {PRESETS.dog.map((preset) => (
+                        <option key={preset.label} value={preset.value}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Number of Images (1-4)</label>
-                  <select
-                    value={numImages}
-                    onChange={(e) => setNumImages(Number(e.target.value))}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  >
-                    {[1, 2, 3, 4].map((n) => (
-                      <option key={n} value={n}>
-                        {n} {n === 1 ? "image" : "images"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Number of Images (1-4)</label>
+                    <select
+                      value={numImages}
+                      onChange={(e) => setNumImages(Number(e.target.value))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>
+                          {n} {n === 1 ? "image" : "images"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Crop Ratio</label>
-                  <select
-                    value={cropRatio}
-                    onChange={(e) => setCropRatio(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  >
-                    <option value="1:1">Square (1:1)</option>
-                    <option value="4:5">Portrait (4:5)</option>
-                    <option value="3:2">Landscape (3:2)</option>
-                    <option value="16:9">Wide (16:9)</option>
-                  </select>
-                </div>
-
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Detail Level</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={detailLevel}
-                    onChange={(e) => setDetailLevel(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="text-xs opacity-60 text-center">
-                    {detailLevel < 30 ? "Artistic" : detailLevel < 70 ? "Balanced" : "Ultra-detailed"}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Crop Ratio</label>
+                    <select
+                      value={cropRatio}
+                      onChange={(e) => setCropRatio(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <option value="1:1">Square (1:1)</option>
+                      <option value="4:5">Portrait (4:5)</option>
+                      <option value="3:2">Landscape (3:2)</option>
+                      <option value="16:9">Wide (16:9)</option>
+                    </select>
                   </div>
                 </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={onGenerate}
+                  disabled={loading || !file}
+                  className={cx(
+                    "flex-1 rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
+                    loading && "opacity-70 pointer-events-none"
+                  )}
+                >
+                  {loading ? "Generating…" : "Generate"}
+                </button>
+                <button
+                  onClick={resetFree}
+                  className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
+                >
+                  Reset free
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
         <div className="text-xs opacity-60">Free left: {freeLeft}</div>
@@ -340,7 +330,7 @@ export default function Home() {
         </div>
 
         {/* Generated big with shimmer */}
-        <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
+        <div ref={generatedRef} className="rounded-2xl border border-white/10 bg-white/2 p-3">
           <div
             className={cx(
               "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",

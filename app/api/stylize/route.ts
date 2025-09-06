@@ -87,7 +87,7 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Set dimensions and parameters based on whether we want to force aspect ratio
+  // Always use 1024x1024 base size for consistent quality
   const body = {
     input: {
       image_input: [imageUrl],
@@ -95,10 +95,10 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
       width: 1024,
       height: 1024,
+      num_outputs: options.num_outputs || 1,
       guidance_scale: 7.5,
       num_inference_steps: 50,
-      scheduler: "DPMSolverMultistep",
-      num_outputs: options.num_outputs || 1,
+      scheduler: "DPMSolverMultistep"
     },
   };
 
