@@ -5,6 +5,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Lightbox from "@/components/Lightbox";
 
 type LocalGen = {
   output_url: string;
@@ -18,8 +19,11 @@ type LocalGen = {
 type CommunityRow = {
   id: number;
   output_url: string;
-  created_at: string;
-  user_id: string;
+  social_url?: string | null;
+  display_name?: string | null;
+  website?: string | null;
+  social_handle?: string | null;
+  allow_in_feed: boolean;
 };
 
 export default function HistoryPage() {
@@ -27,6 +31,7 @@ export default function HistoryPage() {
   const [localItems, setLocalItems] = useState<LocalGen[]>([]);
   const [userHistory, setUserHistory] = useState<CommunityRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ image: CommunityRow; index: number } | null>(null);
 
   // Get current user ID
   useEffect(() => {
@@ -82,21 +87,32 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-6 grid gap-10">
+      {selectedImage && (
+        <Lightbox
+          images={userHistory}
+          initialIndex={selectedImage.index}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
       <section className="grid gap-4">
         <h1 className="text-2xl font-bold">Your History</h1>
         {hasUserHistory ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {userHistory.map((it) => (
-              <div
+              <button
                 key={it.id}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2"
+                onClick={() => setSelectedImage({ image: it, index: userHistory.indexOf(it) })}
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
               >
                 <img
                   src={it.output_url}
                   alt=""
                   className="w-full aspect-square object-cover"
                 />
-              </div>
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white">View</span>
+                </div>
+              </button>
             ))}
           </div>
         ) : hasLocal ? (

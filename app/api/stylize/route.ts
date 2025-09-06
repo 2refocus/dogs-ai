@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
     const prompt = (form.get("prompt") || "").toString().trim() ||
       "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
+    const user_url = (form.get("user_url") || "").toString().trim();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
@@ -173,9 +174,10 @@ export async function POST(req: NextRequest) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
-          user_id: userId, // Add user_id back since error shows it has NOT NULL constraint
-          preset_label,
           output_url: outputUrl,
+          preset_label,
+          social_url: user_url || null,
+          allow_in_feed: true,
         });
         if (error) {
           console.error("[stylize] insert error:", error);

@@ -54,6 +54,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [userToken, setUserToken] = useState<string | null>(null);
+  const [userUrl, setUserUrl] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -118,6 +119,7 @@ export default function Home() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("prompt", DEFAULT_PROMPT);
+      fd.append("user_url", userUrl);
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
@@ -193,12 +195,21 @@ export default function Home() {
       <section className="grid gap-3">
         <label className="text-sm font-medium">Upload a pet photo</label>
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onPick}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-          />
+          <div className="grid gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onPick}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            />
+            <input
+              type="url"
+              value={userUrl}
+              onChange={(e) => setUserUrl(e.target.value)}
+              placeholder="Your website or social media URL (optional)"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={onGenerate}
