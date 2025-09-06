@@ -75,14 +75,14 @@ export default function HistoryPage() {
             // Show only user's images if logged in, sorted by created_at ascending (oldest first)
             const userImages = j.items
               .filter((item: CommunityRow) => item.user_id === currentUserId)
-              .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+              .sort((a: CommunityRow, b: CommunityRow) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
             console.log(`[history] Loading ${userImages.length} images for user: ${currentUserId}`);
             setUserHistory(userImages);
           } else {
             // Show anonymous images if not logged in, sorted by created_at ascending (oldest first)
             const anonymousImages = j.items
               .filter((item: CommunityRow) => item.user_id === "00000000-0000-0000-0000-000000000000")
-              .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+              .sort((a: CommunityRow, b: CommunityRow) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
             console.log(`[history] Loading ${anonymousImages.length} anonymous images`);
             setUserHistory(anonymousImages);
           }
