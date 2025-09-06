@@ -218,6 +218,8 @@ export async function POST(req: NextRequest) {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
           output_url: outputUrl,
+          high_res_url: highResUrl,
+          aspect_ratio: crop_ratio || "1:1",
           preset_label,
           website: user_url || null,
           display_name: display_name || null,

@@ -23,7 +23,7 @@ export async function GET() {
     // Try to bypass RLS by using the service role with explicit RLS bypass
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
-      .select("*")
+      .select("id, output_url, high_res_url, aspect_ratio, preset_label, display_name, website, created_at")
       .order("id", { ascending: false });
     
     console.log("All records from database:", allData);

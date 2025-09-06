@@ -3,9 +3,12 @@
 type Item = {
   id?: string | number;
   output_url: string;
+  high_res_url?: string | null;
+  aspect_ratio?: string | null;
   created_at?: string;
   display_name?: string | null;
   website?: string | null;
+  preset_label?: string | null;
 };
 
 import { useState } from "react";
@@ -33,7 +36,7 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               <img
                 src={it.output_url}
                 alt={it.display_name || "community"}
-                className="w-full h-full object-cover aspect-square"
+                className={`w-full h-full object-cover ${it.aspect_ratio ? `aspect-[${it.aspect_ratio.replace(':', '/')}]` : 'aspect-square'}`}
               />
             </button>
           </div>

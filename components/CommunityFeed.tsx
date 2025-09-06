@@ -7,9 +7,12 @@ import { readLocal } from "@/lib/localHistory";
 type Item = {
   id?: string | number;
   output_url: string;
+  high_res_url?: string | null;
+  aspect_ratio?: string | null;
   created_at?: string;
   display_name?: string | null;
   website?: string | null;
+  preset_label?: string | null;
 };
 
 export default function CommunityFeed() {
