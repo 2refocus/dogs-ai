@@ -20,16 +20,23 @@ export default function AccountPage() {
         const creditsJson = await creditsRes.json();
         setCredits(creditsJson?.credits ?? 0);
 
-        // Get user profile
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('display_name, website')
-          .eq('user_id', data.session?.user?.id)
-          .single();
+        // Get user profile from generations table (latest entry)
+        try {
+          const { data: profile } = await supabase
+            .from('generations')
+            .select('display_name, website')
+            .eq('user_id', data.session?.user?.id)
+            .not('display_name', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-        if (profile) {
-          setDisplayName(profile.display_name || "");
-          setWebsite(profile.website || "");
+          if (profile) {
+            setDisplayName(profile.display_name || "");
+            setWebsite(profile.website || "");
+          }
+        } catch (e) {
+          console.log("No profile found, user can set it for the first time");
         }
       }
     });
@@ -43,17 +50,17 @@ export default function AccountPage() {
     setMessage("");
 
     try {
+      // Update all existing generations for this user with the new profile info
       const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          display_name: displayName,
-          website: website,
-          updated_at: new Date().toISOString()
-        });
+        .from('generations')
+        .update({
+          display_name: displayName || null,
+          website: website || null
+        })
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setMessage("Profile saved successfully!");
+      setMessage("Profile saved successfully! Your name will appear in future generations.");
     } catch (error: any) {
       setMessage("Error saving profile: " + (error.message || "Please try again"));
     } finally {

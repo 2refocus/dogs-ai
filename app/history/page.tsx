@@ -36,6 +36,7 @@ export default function HistoryPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedUserImage, setSelectedUserImage] = useState<{ image: CommunityRow; index: number } | null>(null);
   const [selectedCommunityImage, setSelectedCommunityImage] = useState<{ image: CommunityRow; index: number } | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Get current user ID
   useEffect(() => {
@@ -89,6 +90,41 @@ export default function HistoryPage() {
   const hasUserHistory = userHistory.length > 0;
   const hasLocal = localItems.length > 0;
 
+  // Delete image function
+  const deleteImage = async (imageId: number) => {
+    if (!currentUserId) return;
+    
+    setDeletingId(imageId);
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) return;
+
+      const response = await fetch("/api/history/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: imageId })
+      });
+
+      const result = await response.json();
+      
+      if (result.ok) {
+        // Remove from local state
+        setUserHistory(prev => prev.filter(img => img.id !== imageId));
+        setCommunity(prev => prev.filter(img => img.id !== imageId));
+      } else {
+        alert(result.error || "Failed to delete image");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete image");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <main className="mx-auto max-w-5xl p-6 grid gap-10">
       {selectedUserImage && (
@@ -109,22 +145,52 @@ export default function HistoryPage() {
         <h1 className="text-2xl font-bold">Your History</h1>
         {hasUserHistory ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {userHistory.map((it) => (
-              <button
-                key={it.id}
-                onClick={() => setSelectedUserImage({ image: it, index: userHistory.indexOf(it) })}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
-              >
-                <img
-                  src={it.output_url}
-                  alt=""
-                  className="w-full aspect-square object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white">View</span>
+            {userHistory.map((it, index) => {
+              const isFirstImage = index === 0; // First image in chronological order
+              const canDelete = currentUserId && !isFirstImage;
+              
+              return (
+                <div key={it.id} className="relative group">
+                  <button
+                    onClick={() => setSelectedUserImage({ image: it, index: userHistory.indexOf(it) })}
+                    className="w-full rounded-xl overflow-hidden border border-white/10 bg-white/2 relative"
+                  >
+                    <img
+                      src={it.output_url}
+                      alt=""
+                      className="w-full aspect-square object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white">View</span>
+                    </div>
+                  </button>
+                  
+                  {/* First image indicator */}
+                  {isFirstImage && currentUserId && (
+                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                      First
+                    </div>
+                  )}
+                  
+                  {/* Subtle delete button for logged-in users (except first image) */}
+                  {canDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Are you sure you want to delete this image?")) {
+                          deleteImage(it.id);
+                        }
+                      }}
+                      disabled={deletingId === it.id}
+                      className="absolute top-2 right-2 w-5 h-5 bg-black/20 hover:bg-red-500/80 text-white/70 hover:text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 disabled:opacity-50"
+                      title="Delete image"
+                    >
+                      {deletingId === it.id ? "..." : "×"}
+                    </button>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         ) : hasLocal ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
