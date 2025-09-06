@@ -26,7 +26,7 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
         {items.map((it, idx) => (
           <div
             key={String(it.id ?? idx)}
-            className="rounded-lg overflow-hidden border border-white/10 bg-white/2"
+            className={`rounded-lg overflow-hidden border border-white/10 bg-white/2 ${it.aspect_ratio ? `aspect-[${it.aspect_ratio.replace(':', '/')}]` : 'aspect-square'}`}
             title={it.created_at || ""}
           >
             <button
@@ -36,7 +36,7 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               <img
                 src={it.output_url}
                 alt={it.display_name || "community"}
-                className={`w-full h-full object-cover ${it.aspect_ratio ? `aspect-[${it.aspect_ratio.replace(':', '/')}]` : 'aspect-square'}`}
+                className="w-full h-full object-cover"
               />
             </button>
           </div>

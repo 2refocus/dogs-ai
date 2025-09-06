@@ -74,7 +74,10 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 }
 
 // ---- Replicate REST helpers (no SDK; very stable)
-async function replicateCreate(imageUrl: string, prompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
+async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
+  // Add crop ratio to prompt if specified
+  const cropRatioText = options.crop_ratio ? `, ${options.crop_ratio} aspect ratio` : "";
+  const prompt = `${basePrompt}${cropRatioText}`;
   // Parse crop ratio (e.g., "16:9" -> 1.777...)
   let aspect_ratio = 1;
   if (options.crop_ratio) {
@@ -151,7 +154,7 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const prompt = (form.get("prompt") || "").toString().trim() ||
-      "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
+      "fine-art pet portrait, dramatic elegant lighting, high detail";
     const preset_label = (form.get("preset_label") || "").toString();
     const user_url = (form.get("user_url") || "").toString().trim();
     const display_name = (form.get("display_name") || "").toString().trim();
