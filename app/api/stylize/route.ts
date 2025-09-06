@@ -87,35 +87,37 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Set base size and calculate dimensions
-  const baseSize = 1536; // Larger base size
-  let width, height;
+  // Calculate dimensions based on crop ratio
+  let width = 1024;
+  let height = 1024;
 
   if (options.crop_ratio) {
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w > h) {
-      width = baseSize;
-      height = Math.round((h * baseSize) / w);
-    } else {
-      height = baseSize;
-      width = Math.round((w * baseSize) / h);
+      // For wide formats (e.g., 16:9), keep width at max and adjust height
+      height = Math.round((h * width) / w);
+    } else if (h > w) {
+      // For tall formats (e.g., 4:5), keep height at max and adjust width
+      width = Math.round((w * height) / h);
     }
-  } else {
-    width = baseSize;
-    height = baseSize;
   }
+
+  // Scale up dimensions for higher quality
+  width *= 2;
+  height *= 2;
 
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: `${prompt}, maintain ${options.crop_ratio || "1:1"} aspect ratio, ultra high quality, detailed`,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio",
+      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio composition, masterpiece quality, highly detailed`,
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio, stretched, squished",
       width,
       height,
-      guidance_scale: 8.5, // Slightly higher guidance
-      num_inference_steps: 75, // More steps for better quality
-      scheduler: "DDIM", // Different scheduler that might handle aspect ratios better
-      high_noise_frac: 0.8, // Help maintain composition
+      guidance_scale: 7.5,
+      num_inference_steps: 50,
+      scheduler: "DPMSolverMultistep",
+      control_scale: 0.8,  // Helps maintain composition
+      prompt_strength: 0.8,  // Balance between keeping original and following prompt
     },
   };
 
@@ -199,18 +201,15 @@ export async function POST(req: NextRequest) {
       let previewUrl = null;
 
       if (Array.isArray(p?.output) && p.output.length > 0) {
-        // First URL is preview, second is high-res (if available)
-        previewUrl = p.output[0];
-        highResUrl = p.output[1] || p.output[0];
+        outputUrl = p.output[0];
+        highResUrl = p.output[0];  // Same URL for now, since we're generating high quality in one step
       } else if (typeof p?.output === "string") {
-        previewUrl = p.output;
+        outputUrl = p.output;
         highResUrl = p.output;
       } else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) {
-        previewUrl = (p as any).urls[0];
-        highResUrl = (p as any).urls[1] || (p as any).urls[0];
+        outputUrl = (p as any).urls[0];
+        highResUrl = (p as any).urls[0];
       }
-
-      outputUrl = previewUrl;
 
       if (status === "succeeded" || status === "completed") break;
       if (status === "failed" || status === "canceled") {
