@@ -11,6 +11,7 @@ interface LightboxProps {
     social_handle?: string | null;
     preset_label?: string | null;
     high_res_url?: string | null;
+    aspect_ratio?: string | null;
   }>;
   initialIndex?: number;
   onClose: () => void;
