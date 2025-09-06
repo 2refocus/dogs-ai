@@ -173,13 +173,10 @@ export async function POST(req: NextRequest) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
-          user_id: userId, // Either authenticated user ID or "anonymous"
-          input_url: inputUrl,
-          output_url: outputUrl,
-          prompt,
+          text: prompt, // Map prompt to text column
           preset_label,
-          is_public: true, // All images are public for community feed
-          created_at: new Date().toISOString(),
+          output_url: outputUrl,
+          // Note: user_id, input_url, is_public, created_at columns don't exist in current schema
         });
         if (error) {
           console.error("[stylize] insert error:", error);

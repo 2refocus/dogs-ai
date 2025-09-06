@@ -47,12 +47,10 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json().catch(() => ({}));
     const row = {
-      user_id: body?.user_id ?? "00000000-0000-0000-0000-000000000000", // Use provided user_id or default to anonymous UUID
-      input_url: body?.input_url ?? null,
-      output_url: body?.output_url ?? null,
-      prompt: body?.prompt ?? null,
+      text: body?.prompt ?? body?.text ?? null, // Map prompt to text column
       preset_label: body?.preset_label ?? null,
-      is_public: body?.is_public ?? true,
+      output_url: body?.output_url ?? null,
+      // Note: user_id, input_url, is_public, created_at columns don't exist in current schema
     };
 
     if (!row.output_url || typeof row.output_url !== "string") {

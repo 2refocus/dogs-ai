@@ -17,9 +17,9 @@ export async function GET() {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data, error } = await admin
       .from("generations")
-      .select("id, output_url, created_at")
-      .eq("is_public", true)
-      .order("created_at", { ascending: false })
+      .select("id, output_url, preset_label, text")
+      .not("output_url", "is", null) // Only get rows with output_url
+      .order("id", { ascending: false }) // Order by id since created_at doesn't exist
       .limit(24);
     if (error) throw error;
     const items = (data || []).filter((r) => typeof r.output_url === "string" && r.output_url.startsWith("http"));
