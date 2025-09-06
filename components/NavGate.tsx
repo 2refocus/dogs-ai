@@ -50,7 +50,7 @@ export default function NavGate() {
       {/* Mobile burger menu */}
       <details className="md:hidden relative">
         <summary className="list-none cursor-pointer rounded-xl border border-[var(--line)] px-3 py-2 bg-[var(--muted)] hover:bg-[var(--line)] transition-colors">☰</summary>
-        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[var(--line)] bg-[var(--muted)] backdrop-blur p-2 z-50 shadow-lg">
+        <div className="absolute left-0 right-0 mt-2 rounded-xl border border-[var(--line)] bg-[var(--muted)] backdrop-blur p-2 z-50">
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/">Home</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/history">History</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/dashboard">Dashboard</a>

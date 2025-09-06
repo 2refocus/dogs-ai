@@ -316,7 +316,7 @@ export default function Home() {
                   onClick={onGenerate}
                   disabled={loading || !file}
                   className={cx(
-                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
                     loading && "animate-pulse"
                   )}
                 >
@@ -359,7 +359,7 @@ export default function Home() {
         {/* Generated big with shimmer - more prominent */}
         <div ref={generatedRef} className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
           <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Generated Portrait</h3>
-          <div className="relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20 shadow-lg">
+          <div className="relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20">
             {loading ? (
               <Shimmer className="h-full w-full" />
             ) : genUrl ? (
