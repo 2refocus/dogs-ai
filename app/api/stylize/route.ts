@@ -87,18 +87,31 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
+  // Calculate dimensions based on crop ratio
+  let width = 1024;
+  let height = 1024;
+  
+  if (options.crop_ratio) {
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w > h) {
+      // For wide formats (e.g., 16:9), keep width at 1024 and reduce height
+      height = Math.round((h * 1024) / w);
+    } else {
+      // For tall formats (e.g., 4:5), keep height at 1024 and reduce width
+      width = Math.round((w * 1024) / h);
+    }
+  }
+
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt,
-      num_outputs: 1,
-      output_image_size: 2048, // Request larger size
-      target_size: options.crop_ratio ? options.crop_ratio : "1:1", // Use crop ratio directly
-      guidance_scale: 7.5,
+      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio, high resolution output`,
+      width: width * 2,  // Double the dimensions for higher quality
+      height: height * 2,
       num_inference_steps: 50,
-      scheduler: "K_EULER_ANCESTRAL",
+      guidance_scale: 7.5,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark",
-      upscale_factor: 2, // Request upscaling
+      scheduler: "DPMSolverMultistep",  // Try a different scheduler
     },
   };
 
