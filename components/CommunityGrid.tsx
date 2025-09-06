@@ -18,32 +18,34 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
     return <p className="text-sm opacity-60">No public images yet.</p>;
   }
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      {items.map((it, idx) => (
-        <div
-          key={String(it.id ?? idx)}
-          className="rounded-lg overflow-hidden border border-white/10 bg-white/2"
-          title={it.created_at || ""}
-        >
-          <button
-            onClick={() => setSelectedImageIndex(idx)}
-            className="w-full h-full"
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {items.map((it, idx) => (
+          <div
+            key={String(it.id ?? idx)}
+            className="rounded-lg overflow-hidden border border-white/10 bg-white/2"
+            title={it.created_at || ""}
           >
-            <img
-              src={it.output_url}
-              alt={it.display_name || "community"}
-              className="w-full h-full object-cover aspect-square"
-            />
-          </button>
-        </div>
-      ))}
-    </div>
-    {selectedImageIndex !== null && (
-      <Lightbox
-        images={items}
-        initialIndex={selectedImageIndex}
-        onClose={() => setSelectedImageIndex(null)}
-      />
-    )}
+            <button
+              onClick={() => setSelectedImageIndex(idx)}
+              className="w-full h-full"
+            >
+              <img
+                src={it.output_url}
+                alt={it.display_name || "community"}
+                className="w-full h-full object-cover aspect-square"
+              />
+            </button>
+          </div>
+        ))}
+      </div>
+      {selectedImageIndex !== null && (
+        <Lightbox
+          images={items}
+          initialIndex={selectedImageIndex}
+          onClose={() => setSelectedImageIndex(null)}
+        />
+      )}
+    </>
   );
 }
