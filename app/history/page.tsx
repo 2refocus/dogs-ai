@@ -54,10 +54,10 @@ export default function HistoryPage() {
           // Filter history based on user authentication status
           if (currentUserId) {
             // Show only user's images if logged in
-            setUserHistory(j.items.filter(item => item.user_id === currentUserId));
+            setUserHistory(j.items.filter((item: CommunityRow) => item.user_id === currentUserId));
           } else {
             // Show anonymous images if not logged in
-            setUserHistory(j.items.filter(item => item.user_id === "00000000-0000-0000-0000-000000000000"));
+            setUserHistory(j.items.filter((item: CommunityRow) => item.user_id === "00000000-0000-0000-0000-000000000000"));
           }
         }
       } catch {}
