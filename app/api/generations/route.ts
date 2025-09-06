@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json().catch(() => ({}));
     const row = {
-      user_id: body?.user_id ?? "anonymous", // Use provided user_id or default to anonymous
+      user_id: body?.user_id ?? "00000000-0000-0000-0000-000000000000", // Use provided user_id or default to anonymous UUID
       input_url: body?.input_url ?? null,
       output_url: body?.output_url ?? null,
       prompt: body?.prompt ?? null,

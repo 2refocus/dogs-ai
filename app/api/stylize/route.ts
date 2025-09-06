@@ -27,19 +27,19 @@ function json(body: any, status = 200) {
   return NextResponse.json(body, { status });
 }
 
-// Get user ID from Authorization header, fallback to anonymous
+// Get user ID from Authorization header, fallback to anonymous UUID
 async function getUserId(req: NextRequest): Promise<string> {
   try {
     const auth = req.headers.get("authorization") || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    if (!token) return "anonymous";
+    if (!token) return "00000000-0000-0000-0000-000000000000"; // Anonymous UUID
     
     const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !userData?.user) return "anonymous";
+    if (error || !userData?.user) return "00000000-0000-0000-0000-000000000000"; // Anonymous UUID
     
     return userData.user.id;
   } catch {
-    return "anonymous";
+    return "00000000-0000-0000-0000-000000000000"; // Anonymous UUID
   }
 }
 
