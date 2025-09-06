@@ -90,18 +90,40 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
   
-  prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
+  // Only add quality enhancements if not already present in the preset
+  if (!prompt.includes("ultra high quality") && !prompt.includes("high quality")) {
+    prompt += `, ultra high quality, sharp focus`;
+  }
 
-  // For nano-banana, try a simpler approach - focus on prompt-based cropping
-  // and use standard dimensions that work well with the model
+  // Determine dimensions based on crop ratio
+  let width = 1024;
+  let height = 1024;
+  
+  if (options.crop_ratio) {
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w && h) {
+      // Calculate dimensions maintaining aspect ratio
+      const aspectRatio = w / h;
+      if (aspectRatio > 1) {
+        // Landscape
+        width = 1024;
+        height = Math.round(1024 / aspectRatio);
+      } else if (aspectRatio < 1) {
+        // Portrait
+        height = 1024;
+        width = Math.round(1024 * aspectRatio);
+      }
+      // Square stays 1024x1024
+    }
+  }
+
   const body = {
     input: {
       image_input: [imageUrl],
       prompt: prompt,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
-      // Use standard dimensions that nano-banana handles well
-      width: 1024,
-      height: 1024,
+      width: width,
+      height: height,
       num_outputs: options.num_outputs || 1,
       guidance_scale: 7.5,
       num_inference_steps: 50,
