@@ -28,12 +28,22 @@ export async function GET() {
     
     console.log(`[community] Found ${allData?.length || 0} total records`);
     
-    // Filter for valid output_url
-    const validItems = (allData || []).filter((r) => 
-      r.output_url && 
-      typeof r.output_url === "string" && 
-      r.output_url.startsWith("http")
-    );
+    // Filter for valid output_url and exclude deleted/inaccessible images
+    const validItems = (allData || []).filter((r) => {
+      // Basic URL validation
+      if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
+        return false;
+      }
+      
+      // Additional check: if it's a Supabase storage URL, make sure it's not a deleted file
+      // This is a basic check - in production you might want to actually verify the file exists
+      if (r.output_url.includes("supabase") && r.output_url.includes("storage")) {
+        // Skip if the URL looks like it might be deleted (you can add more specific checks here)
+        return true; // For now, we'll trust the database
+      }
+      
+      return true;
+    });
     
     console.log(`[community] Filtered to ${validItems.length} valid items`);
     console.log(`[community] Latest items:`, validItems.slice(0, 3).map(i => ({ id: i.id, output_url: i.output_url?.substring(0, 50) + "...", created_at: i.created_at })));

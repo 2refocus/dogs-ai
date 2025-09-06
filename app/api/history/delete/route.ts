@@ -45,7 +45,19 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    // Delete the image
+    // Get the image record first to get the file paths
+    const { data: imageData, error: fetchImageError } = await supabaseAdmin
+      .from("generations")
+      .select("output_url, high_res_url")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchImageError) {
+      return NextResponse.json({ ok: false, error: "Image not found" }, { status: 404 });
+    }
+
+    // Delete the database record
     const { error: deleteError } = await supabaseAdmin
       .from("generations")
       .delete()
@@ -54,6 +66,42 @@ export async function DELETE(req: NextRequest) {
 
     if (deleteError) {
       return NextResponse.json({ ok: false, error: "Failed to delete image" }, { status: 500 });
+    }
+
+    // Delete the actual image files from storage (optional - don't fail if this fails)
+    try {
+      const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
+      
+      // Extract file paths from URLs
+      const extractPath = (url: string) => {
+        if (!url) return null;
+        const match = url.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
+        return match ? match[1] : null;
+      };
+
+      const outputPath = extractPath(imageData.output_url);
+      const highResPath = extractPath(imageData.high_res_url);
+
+      // Delete files from storage
+      const deletePromises = [];
+      if (outputPath) {
+        deletePromises.push(
+          supabaseAdmin.storage.from(STORAGE_BUCKET).remove([outputPath])
+        );
+      }
+      if (highResPath && highResPath !== outputPath) {
+        deletePromises.push(
+          supabaseAdmin.storage.from(STORAGE_BUCKET).remove([highResPath])
+        );
+      }
+
+      if (deletePromises.length > 0) {
+        await Promise.all(deletePromises);
+        console.log(`[delete] Removed storage files for image ${id}`);
+      }
+    } catch (storageError) {
+      console.warn(`[delete] Failed to delete storage files for image ${id}:`, storageError);
+      // Don't fail the request if storage deletion fails
     }
 
     return NextResponse.json({ ok: true, message: "Image deleted successfully" });
