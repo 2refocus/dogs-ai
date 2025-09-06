@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
           output_url: outputUrl,
           preset_label,
           social_url: user_url || null,
-          allow_in_feed: true,
+          display_in_feed: true,
           user_id: userId,  // Add back user_id for filtering in history
         });
         if (error) {

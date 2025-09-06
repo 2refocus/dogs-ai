@@ -23,7 +23,7 @@ type CommunityRow = {
   display_name?: string | null;
   website?: string | null;
   social_handle?: string | null;
-  allow_in_feed: boolean;
+  display_in_feed: boolean;
   user_id: string;  // Add back user_id as it's needed for filtering
 };
 
