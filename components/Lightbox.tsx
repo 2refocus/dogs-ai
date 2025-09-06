@@ -89,11 +89,15 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
 
         {/* Image */}
         <div className="relative">
-          <img
-            src={currentImage.high_res_url || currentImage.output_url}
-            alt="Pet portrait"
-            className={`max-h-[90vh] mx-auto rounded-lg ${currentImage.aspect_ratio ? `aspect-[${currentImage.aspect_ratio.replace(':', '/')}]` : ''}`}
-          />
+          <div className="flex items-center justify-center">
+            <div className={`relative ${currentImage.aspect_ratio ? `aspect-[${currentImage.aspect_ratio.replace(':', '/')}]` : ''} max-w-full max-h-[90vh]`}>
+              <img
+                src={currentImage.high_res_url || currentImage.output_url}
+                alt="Pet portrait"
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+          </div>
           
           {/* Bottom toolbar */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent flex justify-between items-center">

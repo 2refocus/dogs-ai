@@ -26,7 +26,7 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
         {items.map((it, idx) => (
           <div
             key={String(it.id ?? idx)}
-            className={`rounded-lg overflow-hidden border border-white/10 bg-white/2 ${it.aspect_ratio ? `aspect-[${it.aspect_ratio.replace(':', '/')}]` : 'aspect-square'}`}
+            className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square"
             title={it.created_at || ""}
           >
             <button
