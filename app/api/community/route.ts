@@ -26,14 +26,8 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: allError.message, items: [] }, { status: 500 });
     }
     
-    // Filter for valid output_url
-    const items = (allData || []).filter((r) => 
-      r.output_url && 
-      typeof r.output_url === "string" && 
-      r.output_url.startsWith("http")
-    );
-    
-    return NextResponse.json({ ok: true, items });
+    // Return all data without filtering - let the frontend handle it
+    return NextResponse.json({ ok: true, items: allData || [] });
   } catch (e: any) {
     console.error("Community API error:", e);
     return NextResponse.json({ ok: false, error: e?.message || "Community fetch failed", items: [] }, { status: 500 });

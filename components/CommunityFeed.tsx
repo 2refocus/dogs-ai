@@ -24,12 +24,18 @@ export default function CommunityFeed() {
       try {
         const res = await fetch("/api/community", { cache: "no-store" });
         const j = await res.json().catch(() => ({ ok: false }));
-        if (j?.ok && Array.isArray(j.items) && j.items.length > 0) {
-          if (alive) setItems(j.items.filter((x: any) => typeof x.output_url === "string"));
+        if (j?.ok && Array.isArray(j.items)) {
+          // Filter for valid output_url on frontend
+          const validItems = j.items.filter((x: any) => 
+            x.output_url && 
+            typeof x.output_url === "string" && 
+            x.output_url.startsWith("http")
+          );
+          if (alive) setItems(validItems);
           return;
         }
       } catch (e) {
-        console.error("Community API error:", e); // Debug log
+        console.error("Community API error:", e);
       }
       // Fallback: show guest local history if community is empty/unavailable
       const loc = readLocal().map((x) => ({
