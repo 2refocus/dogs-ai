@@ -314,11 +314,16 @@ export default function Home() {
                   onClick={onGenerate}
                   disabled={loading || !file}
                   className={cx(
-                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed",
-                    loading && "opacity-70 pointer-events-none"
+                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+                    loading && "animate-pulse"
                   )}
                 >
-                  {loading ? "Generating…" : "Generate"}
+                  {loading && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite] transform -skew-x-12" />
+                  )}
+                  <span className="relative z-10">
+                    {loading ? "Creating your pet's portrait…" : "Generate"}
+                  </span>
                 </button>
                 <button
                   onClick={resetFree}
