@@ -24,6 +24,7 @@ type CommunityRow = {
   website?: string | null;
   social_handle?: string | null;
   allow_in_feed: boolean;
+  user_id: string;  // Add back user_id as it's needed for filtering
 };
 
 export default function HistoryPage() {

@@ -178,6 +178,7 @@ export async function POST(req: NextRequest) {
           preset_label,
           social_url: user_url || null,
           allow_in_feed: true,
+          user_id: userId,  // Add back user_id for filtering in history
         });
         if (error) {
           console.error("[stylize] insert error:", error);
