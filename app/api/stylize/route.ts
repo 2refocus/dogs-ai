@@ -87,30 +87,18 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Set dimensions for both preview and high-res
-  const previewSize = 768; // Preview size
-  const highResSize = 1536; // High-res size (2x)
-
-  // Calculate dimensions for both sizes
-  const previewDims = aspect_ratio >= 1 
-    ? { width: previewSize, height: Math.round(previewSize / aspect_ratio) }
-    : { width: Math.round(previewSize * aspect_ratio), height: previewSize };
-
-  const highResDims = aspect_ratio >= 1
-    ? { width: highResSize, height: Math.round(highResSize / aspect_ratio) }
-    : { width: Math.round(highResSize * aspect_ratio), height: highResSize };
-
   const body = {
     input: {
       image_input: [imageUrl],
       prompt,
-      num_outputs: 2, // Generate both preview and high-res
-      width: [previewDims.width, highResDims.width],
-      height: [previewDims.height, highResDims.height],
+      num_outputs: 1,
+      output_image_size: 2048, // Request larger size
+      target_size: options.crop_ratio ? options.crop_ratio : "1:1", // Use crop ratio directly
       guidance_scale: 7.5,
-      num_inference_steps: [30, 50], // Faster for preview, more steps for high-res
+      num_inference_steps: 50,
       scheduler: "K_EULER_ANCESTRAL",
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark",
+      upscale_factor: 2, // Request upscaling
     },
   };
 
