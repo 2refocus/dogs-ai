@@ -144,26 +144,8 @@ export default function Home() {
             });
           } catch {}
 
-          // 2) fire-and-forget server insert (service role). Never blocks UI.
-          try {
-            const body = {
-              input_url: create?.input_url ?? null,
-              output_url: url,
-              prompt: DEFAULT_PROMPT,
-              preset_label: "Auto Default",
-              is_public: true,
-            };
-            fetch("/api/generations", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            }).then(async (res) => {
-              const j = await res.json().catch(() => ({}));
-              console.log("[/api/generations] response:", res.status, j);
-            }).catch((e) => {
-              console.warn("[/api/generations] failed:", e?.message || e);
-            });
-          } catch {}
+          // Note: Database insert is already handled by /api/stylize route
+          // No need for duplicate /api/generations call
 
           setLoading(false);
           return;

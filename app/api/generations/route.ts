@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json().catch(() => ({}));
     const row = {
+      user_id: body?.user_id ?? "00000000-0000-0000-0000-000000000000", // Add user_id back since error shows it has NOT NULL constraint
       preset_label: body?.preset_label ?? null,
       output_url: body?.output_url ?? null,
-      // Only insert columns that actually exist in the table schema
     };
 
     if (!row.output_url || typeof row.output_url !== "string") {

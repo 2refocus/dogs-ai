@@ -17,7 +17,7 @@ export async function GET() {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data, error } = await admin
       .from("generations")
-      .select("id, output_url, preset_label, species")
+      .select("id, output_url, preset_label, species, user_id")
       .not("output_url", "is", null) // Only get rows with output_url
       .order("id", { ascending: false }) // Order by id since created_at doesn't exist
       .limit(24);
