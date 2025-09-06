@@ -87,37 +87,34 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Calculate dimensions based on crop ratio
+  // Set dimensions based on crop ratio
   let width = 1024;
   let height = 1024;
 
   if (options.crop_ratio) {
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w > h) {
-      // For wide formats (e.g., 16:9), keep width at max and adjust height
+      width = 1920;  // Standard 16:9 width
       height = Math.round((h * width) / w);
     } else if (h > w) {
-      // For tall formats (e.g., 4:5), keep height at max and adjust width
+      height = 1920;  // Keep height max for portrait
       width = Math.round((w * height) / h);
     }
   }
 
-  // Scale up dimensions for higher quality
-  width *= 2;
-  height *= 2;
-
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio composition, masterpiece quality, highly detailed`,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio, stretched, squished",
+      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio, stretched, squished, pixelated, jpeg artifacts, oversaturated",
       width,
       height,
-      guidance_scale: 7.5,
-      num_inference_steps: 50,
-      scheduler: "DPMSolverMultistep",
-      control_scale: 0.8,  // Helps maintain composition
-      prompt_strength: 0.8,  // Balance between keeping original and following prompt
+      guidance_scale: 9,  // Increased for better prompt following
+      num_inference_steps: 100,  // More steps for higher quality
+      scheduler: "UniPC",  // Different scheduler that might work better
+      num_outputs: 1,
+      clip_guidance_preset: "fast_blue",  // Try to maintain quality
+      prompt_strength: 0.9,  // Stronger style application
     },
   };
 
