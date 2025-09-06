@@ -46,7 +46,7 @@ const SHIMMER_CSS = `
 
 const DEFAULT_PROMPT =
   "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
-  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail, 1:1 crop";
+  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);

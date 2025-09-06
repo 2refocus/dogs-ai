@@ -87,34 +87,20 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  // Set dimensions based on crop ratio
-  let width = 1024;
-  let height = 1024;
-
-  if (options.crop_ratio) {
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w > h) {
-      width = 1920;  // Standard 16:9 width
-      height = Math.round((h * width) / w);
-    } else if (h > w) {
-      height = 1920;  // Keep height max for portrait
-      width = Math.round((w * height) / h);
-    }
-  }
-
+  // Always use square format for consistent quality
+  const size = 2048;  // Large square size for high quality
+  
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: `${prompt}, ${options.crop_ratio || "1:1"} aspect ratio, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, wrong aspect ratio, stretched, squished, pixelated, jpeg artifacts, oversaturated",
-      width,
-      height,
-      guidance_scale: 9,  // Increased for better prompt following
-      num_inference_steps: 100,  // More steps for higher quality
-      scheduler: "UniPC",  // Different scheduler that might work better
+      prompt: `${prompt}, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
+      width: size,
+      height: size,
+      guidance_scale: 7.5,
+      num_inference_steps: 50,
+      scheduler: "DPMSolverMultistep",
       num_outputs: 1,
-      clip_guidance_preset: "fast_blue",  // Try to maintain quality
-      prompt_strength: 0.9,  // Stronger style application
     },
   };
 
