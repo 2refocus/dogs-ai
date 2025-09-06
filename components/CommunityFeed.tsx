@@ -22,22 +22,22 @@ export default function CommunityFeed() {
     let alive = true;
     (async () => {
       try {
+        console.log("[CommunityFeed] Fetching community data...");
         const res = await fetch("/api/community", { cache: "no-store" });
         const j = await res.json().catch(() => ({ ok: false }));
+        console.log("[CommunityFeed] API response:", { ok: j?.ok, itemsCount: j?.items?.length });
+        
         if (j?.ok && Array.isArray(j.items)) {
-          // Filter for valid output_url on frontend
-          const validItems = j.items.filter((x: any) => 
-            x.output_url && 
-            typeof x.output_url === "string" && 
-            x.output_url.startsWith("http")
-          );
-          if (alive) setItems(validItems);
+          console.log("[CommunityFeed] Raw items:", j.items.slice(0, 2));
+          // Items are already filtered by the API, so use them directly
+          if (alive) setItems(j.items);
           return;
         }
       } catch (e) {
         console.error("Community API error:", e);
       }
       // Fallback: show guest local history if community is empty/unavailable
+      console.log("[CommunityFeed] Using local fallback");
       const loc = readLocal().map((x) => ({
         output_url: x.output_url,
         created_at: x.created_at,

@@ -18,7 +18,7 @@ export async function GET() {
     
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
-      .select("id, user_id, output_url, high_res_url, aspect_ratio, preset_label, display_name, website, created_at")
+      .select("id, user_id, output_url, high_res_url, aspect_ratio, preset_label, display_name, website, profile_image_url, created_at")
       .order("id", { ascending: false });
     
     if (allError) {
@@ -26,8 +26,19 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: allError.message, items: [] }, { status: 500 });
     }
     
-    // Return all data without filtering - let the frontend handle it
-    return NextResponse.json({ ok: true, items: allData || [] });
+    console.log(`[community] Found ${allData?.length || 0} total records`);
+    
+    // Filter for valid output_url
+    const validItems = (allData || []).filter((r) => 
+      r.output_url && 
+      typeof r.output_url === "string" && 
+      r.output_url.startsWith("http")
+    );
+    
+    console.log(`[community] Filtered to ${validItems.length} valid items`);
+    console.log(`[community] Latest items:`, validItems.slice(0, 3).map(i => ({ id: i.id, output_url: i.output_url?.substring(0, 50) + "...", created_at: i.created_at })));
+    
+    return NextResponse.json({ ok: true, items: validItems });
   } catch (e: any) {
     console.error("Community API error:", e);
     return NextResponse.json({ ok: false, error: e?.message || "Community fetch failed", items: [] }, { status: 500 });
