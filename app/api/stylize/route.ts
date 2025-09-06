@@ -87,39 +87,42 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     }
   }
 
-  console.log("[stylize] options:", options);
-
-  // Set dimensions based on crop ratio
-  let width = 2048;
-  let height = 2048;
-
-  if (options.crop_ratio) {
-    console.log("[stylize] applying crop ratio:", options.crop_ratio);
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w > h) {
-      width = 2048;  // Keep width max for landscape
-      height = Math.round((h * width) / w);
-    } else if (h > w) {
-      height = 2048;  // Keep height max for portrait
-      width = Math.round((w * height) / h);
-    }
-  }
-
-  console.log("[stylize] final dimensions:", { width, height });
-  
+  // Set dimensions and parameters based on whether we want to force aspect ratio
   const body = {
     input: {
       image_input: [imageUrl],
       prompt: `${prompt}, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
-      width,
-      height,
+      width: 1024,
+      height: 1024,
       guidance_scale: 7.5,
       num_inference_steps: 50,
       scheduler: "DPMSolverMultistep",
       num_outputs: options.num_outputs || 1,
     },
   };
+
+  // Only modify dimensions if crop ratio is explicitly requested
+  if (options.crop_ratio) {
+    console.log("[stylize] applying crop ratio:", options.crop_ratio);
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w && h) {
+      if (w > h) {
+        body.input.width = 1536;  // Larger width for landscape
+        body.input.height = Math.round((h * 1536) / w);
+      } else if (h > w) {
+        body.input.height = 1536;  // Larger height for portrait
+        body.input.width = Math.round((w * 1536) / h);
+      } else {
+        body.input.width = 1536;  // Square
+        body.input.height = 1536;
+      }
+      // Add aspect ratio to prompt
+      body.input.prompt = `${body.input.prompt}, ${options.crop_ratio} aspect ratio`;
+    }
+  }
+
+  console.log("[stylize] final request:", body);
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,

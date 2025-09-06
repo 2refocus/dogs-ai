@@ -53,12 +53,8 @@ export async function GET() {
       });
     }
     
-    // Filter for valid output_url
-    const items = (allData || []).filter((r) => 
-      r.output_url && 
-      typeof r.output_url === "string" && 
-      r.output_url.startsWith("http")
-    );
+    // Use all data, no filtering
+    const items = allData || [];
     
     console.log("Filtered items for community feed:", items);
     console.log(`Total records: ${allData?.length || 0}, Valid items: ${items.length}`);
