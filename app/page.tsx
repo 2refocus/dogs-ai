@@ -261,7 +261,7 @@ export default function Home() {
               
               {/* Premium features for logged-in users */}
               {userToken && (
-                <div className="grid gap-4 p-6 rounded-xl border border-[var(--brand)]/20 bg-[var(--muted)]/5">
+                <div className="grid gap-4 p-6 rounded-xl bg-[var(--muted)]/5">
                   <div className="grid gap-3">
                     <label className="text-sm font-semibold text-[var(--fg)]">Style Preset</label>
                     <select
