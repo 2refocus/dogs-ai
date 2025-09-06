@@ -9,7 +9,6 @@ export default function LoginPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [email, setEmail] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,21 +47,13 @@ export default function LoginPage() {
     if (!email) return;
     setEmailLoading(true);
     try {
-      if (isSignUp) {
-        await supabase.auth.signUp({
-          email,
-          options: {
-            emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined
-          }
-        });
-      } else {
-        await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined
-          }
-        });
-      }
+      // Use signInWithOtp for both sign-in and sign-up (magic link)
+      await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: typeof window !== "undefined" ? window.location.origin + "/dashboard" : undefined
+        }
+      });
     } finally {
       setEmailLoading(false);
     }
@@ -119,7 +110,7 @@ export default function LoginPage() {
             disabled={emailLoading || !email}
             className="w-full rounded-xl bg-white hover:bg-gray-50 text-black px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-6"
           >
-            {emailLoading ? "Sending..." : "Continue"}
+            {emailLoading ? "Sending magic link..." : "Continue"}
           </button>
 
           {/* Separator */}
@@ -174,12 +165,9 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <span className="text-[var(--fg)]/70">Don't have an account? </span>
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-[var(--brand)] hover:text-[var(--brand)]/80 font-medium transition-colors"
-            >
-              Sign up
-            </button>
+            <span className="text-[var(--brand)] font-medium">
+              Use the same email above
+            </span>
           </div>
         </div>
       </div>
