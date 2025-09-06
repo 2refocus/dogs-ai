@@ -45,8 +45,7 @@ const SHIMMER_CSS = `
 `;
 
 const DEFAULT_PROMPT =
-  "single pet portrait of the exact same animal from the photo, realistic breed, markings and anatomy preserved; " +
-  "fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail";
+  "transform this into a single pet portrait, convert any human or other subject into a realistic dog or cat, preserve the pose and composition but change the subject to a pet animal, realistic breed, fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -270,7 +269,6 @@ export default function Home() {
                       onChange={(e) => setSelectedPreset(e.target.value)}
                       className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
-                      <option value="">Default Style</option>
                       {PRESETS.dog.map((preset) => (
                         <option key={preset.label} value={preset.value}>
                           {preset.label}

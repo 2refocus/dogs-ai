@@ -2,8 +2,9 @@ export type Species = "dog" | "cat";
 export type Preset = { label: string; value: string };
 
 const IDENTITY =
-  "single {{subject}} head-and-shoulders portrait, centered, looking at camera; " +
-  "keep the original breed, unique markings, fur texture and eye color; " +
+  "transform this into a single {{subject}} head-and-shoulders portrait, centered, looking at camera; " +
+  "convert any human or other subject into a realistic {{subject}}, preserve the original pose and composition; " +
+  "realistic breed, unique markings, fur texture and eye color; " +
   "respect the original pose and proportions; no changes to anatomy";
 
 const CAMERA =
@@ -12,7 +13,7 @@ const CAMERA =
 
 const NEGATIVE =
   "no text, no watermark, no frame, no hands, no extra limbs, no second animal, " +
-  "no distortion, no over-saturation";
+  "no distortion, no over-saturation, no human, no person, no people";
 
 /** Style library — only these words change between presets. */
 const STYLES: { label: string; style: string }[] = [

@@ -75,36 +75,51 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
-  // Nano-banana model uses different parameter structure
-  // Based on research, nano-banana focuses on text-guided editing rather than traditional generation parameters
-  
   // Build the prompt with crop ratio instructions if specified
   let prompt = basePrompt;
   if (options.crop_ratio) {
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w && h) {
       if (w > h) {
-        prompt += `, crop to landscape ${options.crop_ratio} aspect ratio, wide format`;
+        prompt += `, ${options.crop_ratio} aspect ratio, landscape format, wide composition`;
       } else if (h > w) {
-        prompt += `, crop to portrait ${options.crop_ratio} aspect ratio, tall format`;
+        prompt += `, ${options.crop_ratio} aspect ratio, portrait format, tall composition`;
       } else {
-        prompt += `, crop to square ${options.crop_ratio} aspect ratio`;
+        prompt += `, ${options.crop_ratio} aspect ratio, square format`;
       }
     }
   }
   
   prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
 
-  // Nano-banana model input structure (based on research)
+  // Calculate dimensions based on crop ratio
+  let width = 1024;
+  let height = 1024;
+  
+  if (options.crop_ratio) {
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w && h) {
+      const baseSize = 1024;
+      if (w > h) {
+        width = baseSize;
+        height = Math.round((h * baseSize) / w);
+      } else if (h > w) {
+        height = baseSize;
+        width = Math.round((w * baseSize) / h);
+      } else {
+        width = baseSize;
+        height = baseSize;
+      }
+    }
+  }
+
   const body = {
     input: {
       image_input: [imageUrl],
       prompt: prompt,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
-      // Note: nano-banana may not support width/height/num_outputs in the same way as other models
-      // We'll try to include them but they might be ignored
-      width: 1024,
-      height: 1024,
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
+      width: width,
+      height: height,
       num_outputs: options.num_outputs || 1,
       guidance_scale: 7.5,
       num_inference_steps: 50,
@@ -112,7 +127,7 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     },
   };
 
-  console.log("[stylize] nano-banana request:", body);
+  console.log("[stylize] request with dimensions:", { width, height, crop_ratio: options.crop_ratio, num_outputs: options.num_outputs });
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
