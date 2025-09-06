@@ -96,16 +96,47 @@ export default function AccountPage() {
   async function saveProfileImage(imageUrl: string) {
     if (!user) return;
     
+    // Get fresh session to ensure we have the correct user ID
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentUserId = sessionData.session?.user?.id;
+    
+    // Validate user ID format
+    if (!currentUserId || typeof currentUserId !== 'string') {
+      console.error("Invalid user ID:", currentUserId);
+      setMessage("Error: Invalid user ID");
+      return;
+    }
+    
     try {
-      // Update all existing generations for this user with the new profile image
-      const { error } = await supabase
+      console.log("Saving profile image for user:", currentUserId);
+      console.log("Image URL:", imageUrl);
+      
+      // First, clear all existing profile image URLs for this user
+      const { error: clearError } = await supabase
+        .from('generations')
+        .update({
+          profile_image_url: null
+        })
+        .eq('user_id', currentUserId);
+
+      if (clearError) {
+        console.error("Clear error:", clearError);
+        throw clearError;
+      }
+
+      // Then, set the profile image URL only on the record that matches the selected image
+      const { error: setError } = await supabase
         .from('generations')
         .update({
           profile_image_url: imageUrl
         })
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId)
+        .eq('output_url', imageUrl);
 
-      if (error) throw error;
+      if (setError) {
+        console.error("Set error:", setError);
+        throw setError;
+      }
       console.log("Profile image saved successfully");
       
       // Show success message and refresh data
