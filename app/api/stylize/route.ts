@@ -253,7 +253,6 @@ export async function POST(req: NextRequest) {
           preset_label,
           website: user_url || null,
           display_name: display_name || null,
-          profile_image_url: null, // Will be set by user in account page
           user_id: userId,
         };
         console.log("[stylize] Inserting data:", insertData);
