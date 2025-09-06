@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { PRESETS } from "./presets";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
+const Lightbox = dynamic(() => import("@/components/Lightbox"), { ssr: false });
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -61,6 +62,7 @@ export default function Home() {
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [cropRatio, setCropRatio] = useState<string>("1:1");
   const [detailLevel, setDetailLevel] = useState<number>(50);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   useEffect(() => {
     try {
@@ -210,27 +212,48 @@ export default function Home() {
       <section className="grid gap-3">
         <label className="text-sm font-medium">Upload a pet photo</label>
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-          <div className="grid gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onPick}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-            />
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your name (optional)"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-            />
-            <input
-              type="url"
-              value={userUrl}
-              onChange={(e) => setUserUrl(e.target.value)}
-              placeholder="Your website or social media URL (optional)"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-            />
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onPick}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              />
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name (optional)"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              />
+              <input
+                type="url"
+                value={userUrl}
+                onChange={(e) => setUserUrl(e.target.value)}
+                placeholder="Your website or social media URL (optional)"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={onGenerate}
+                disabled={loading || !file}
+                className={cx(
+                  "flex-1 rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
+                  loading && "opacity-70 pointer-events-none"
+                )}
+              >
+                {loading ? "Generating…" : "Generate"}
+              </button>
+              <button
+                onClick={resetFree}
+                className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
+              >
+                Reset free
+              </button>
+            </div>
             
             {/* Premium features for logged-in users */}
             {userToken && (
@@ -297,24 +320,6 @@ export default function Home() {
               </div>
             )}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onGenerate}
-              disabled={loading || !file}
-              className={cx(
-                "flex-1 sm:flex-none rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
-                loading && "opacity-70 pointer-events-none"
-              )}
-            >
-              {loading ? "Generating…" : "Generate"}
-            </button>
-            <button
-              onClick={resetFree}
-              className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
-            >
-              Reset free
-            </button>
-          </div>
         </div>
         <div className="text-xs opacity-60">Free left: {freeLeft}</div>
       </section>
@@ -343,7 +348,12 @@ export default function Home() {
             )}
           >
             {genUrl ? (
-              <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
+              <button
+                onClick={() => setShowLightbox(true)}
+                className="w-full h-full"
+              >
+                <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
+              </button>
             ) : (
               <div className="h-full w-full flex items-center justify-center text-sm opacity-60">
                 Generated
@@ -352,17 +362,42 @@ export default function Home() {
           </div>
           <div className="mt-2 flex items-center justify-between text-xs opacity-70">
             <div>{msg || (genUrl ? "Done ✓" : "")}</div>
-            {genUrl && (
-              <a
-                className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
-                href={genUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open
-              </a>
-            )}
+            <div className="flex gap-2">
+              {genUrl && (
+                <>
+                  <button
+                    onClick={() => setShowLightbox(true)}
+                    className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
+                  >
+                    View
+                  </button>
+                  <a
+                    className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
+                    href={genUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open
+                  </a>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* Lightbox */}
+          {showLightbox && genUrl && (
+            <Lightbox
+              images={[{
+                id: Date.now(),
+                output_url: genUrl,
+                display_name: displayName || null,
+                website: userUrl || null,
+                preset_label: PRESETS.dog.find(p => p.value === selectedPreset)?.label || null
+              }]}
+              initialIndex={0}
+              onClose={() => setShowLightbox(false)}
+            />
+          )}
         </div>
       </section>
 
