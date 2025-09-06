@@ -47,10 +47,9 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json().catch(() => ({}));
     const row = {
-      text: body?.prompt ?? body?.text ?? null, // Map prompt to text column
       preset_label: body?.preset_label ?? null,
       output_url: body?.output_url ?? null,
-      // Note: user_id, input_url, is_public, created_at columns don't exist in current schema
+      // Only insert columns that definitely exist in the current schema
     };
 
     if (!row.output_url || typeof row.output_url !== "string") {
