@@ -261,13 +261,13 @@ export default function Home() {
               
               {/* Premium features for logged-in users */}
               {userToken && (
-                <div className="grid gap-4 p-6 rounded-xl border border-[var(--brand)]/20 bg-[var(--brand)]/5">
+                <div className="grid gap-4 p-6 rounded-xl border border-[var(--brand)]/20 bg-[var(--muted)]/5">
                   <div className="grid gap-3">
                     <label className="text-sm font-semibold text-[var(--fg)]">Style Preset</label>
                     <select
                       value={selectedPreset}
                       onChange={(e) => setSelectedPreset(e.target.value)}
-                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+                      className="w-full rounded-xl bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] transition-all"
                     >
                       {PRESETS.dog.map((preset) => (
                         <option key={preset.label} value={preset.value}>

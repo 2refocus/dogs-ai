@@ -63,7 +63,7 @@ export default function AccountPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <section className="card">
+      <section className="bg-[var(--muted)] rounded-xl p-6">
         <h2 className="text-xl font-semibold mb-6 text-[var(--fg)]">Your Account</h2>
         
         <div className="grid gap-6">
