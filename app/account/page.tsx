@@ -35,7 +35,7 @@ export default function AccountPage() {
     });
   }, []);
 
-  if (!user) return <main className="card">Please <a className="link" href="/login">sign in</a>.</main>;
+  if (!user) return <main className="card"><p className="text-[var(--fg)]">Please <a className="link text-[var(--brand)] hover:text-[var(--brand)]/80" href="/login">sign in</a>.</p></main>;
 
   async function saveProfile() {
     if (!user) return;
@@ -63,43 +63,43 @@ export default function AccountPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold mb-6">Your Account</h2>
+      <section className="card">
+        <h2 className="text-xl font-semibold mb-6 text-[var(--fg)]">Your Account</h2>
         
         <div className="grid gap-6">
           <div>
-            <p className="mb-1">Email</p>
-            <p className="text-lg font-medium">{user.email}</p>
+            <p className="mb-1 text-[var(--fg)]/70">Email</p>
+            <p className="text-lg font-medium text-[var(--fg)]">{user.email}</p>
           </div>
 
           <div>
-            <p className="mb-1">Credits Available</p>
-            <p className="text-lg font-medium">{credits ?? "…"}</p>
+            <p className="mb-1 text-[var(--fg)]/70">Credits Available</p>
+            <p className="text-lg font-medium text-[var(--fg)]">{credits ?? "…"}</p>
           </div>
 
-          <hr className="border-white/10" />
+          <hr className="border-[var(--line)]" />
 
           <div className="grid gap-4">
-            <h3 className="text-lg font-medium">Profile Settings</h3>
+            <h3 className="text-lg font-medium text-[var(--fg)]">Profile Settings</h3>
             
             <div className="grid gap-2">
-              <label className="text-sm">Display Name</label>
+              <label className="text-sm font-medium text-[var(--fg)]">Display Name</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] placeholder:text-[var(--fg)]/50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                 placeholder="How you'll appear in the community"
               />
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm">Website or Social Media</label>
+              <label className="text-sm font-medium text-[var(--fg)]">Website or Social Media</label>
               <input
                 type="url"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] placeholder:text-[var(--fg)]/50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                 placeholder="https://..."
               />
             </div>
@@ -108,7 +108,7 @@ export default function AccountPage() {
               <button
                 onClick={saveProfile}
                 disabled={saving}
-                className="rounded-lg bg-amber-500 px-4 py-2 font-medium text-black disabled:opacity-50"
+                className="rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>

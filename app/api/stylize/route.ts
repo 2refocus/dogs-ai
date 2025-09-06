@@ -81,45 +81,27 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w && h) {
       if (w > h) {
-        prompt += `, ${options.crop_ratio} aspect ratio, landscape format, wide composition`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, landscape orientation, wide format, horizontal composition`;
       } else if (h > w) {
-        prompt += `, ${options.crop_ratio} aspect ratio, portrait format, tall composition`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, portrait orientation, tall format, vertical composition`;
       } else {
-        prompt += `, ${options.crop_ratio} aspect ratio, square format`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, square format, centered composition`;
       }
     }
   }
   
   prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
 
-  // Calculate dimensions based on crop ratio
-  let width = 1024;
-  let height = 1024;
-  
-  if (options.crop_ratio) {
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w && h) {
-      const baseSize = 1024;
-      if (w > h) {
-        width = baseSize;
-        height = Math.round((h * baseSize) / w);
-      } else if (h > w) {
-        height = baseSize;
-        width = Math.round((w * baseSize) / h);
-      } else {
-        width = baseSize;
-        height = baseSize;
-      }
-    }
-  }
-
+  // For nano-banana, try a simpler approach - focus on prompt-based cropping
+  // and use standard dimensions that work well with the model
   const body = {
     input: {
       image_input: [imageUrl],
       prompt: prompt,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
-      width: width,
-      height: height,
+      // Use standard dimensions that nano-banana handles well
+      width: 1024,
+      height: 1024,
       num_outputs: options.num_outputs || 1,
       guidance_scale: 7.5,
       num_inference_steps: 50,
@@ -127,7 +109,12 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     },
   };
 
-  console.log("[stylize] request with dimensions:", { width, height, crop_ratio: options.crop_ratio, num_outputs: options.num_outputs });
+  console.log("[stylize] nano-banana request:", { 
+    prompt: prompt.substring(0, 200) + "...", 
+    crop_ratio: options.crop_ratio, 
+    num_outputs: options.num_outputs,
+    has_crop_instructions: prompt.includes("aspect ratio")
+  });
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
