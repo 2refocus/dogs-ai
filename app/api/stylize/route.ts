@@ -75,24 +75,34 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
-  // Add crop ratio to prompt if specified
-  const cropRatioText = options.crop_ratio ? `, ${options.crop_ratio} aspect ratio` : "";
-  const prompt = `${basePrompt}${cropRatioText}`;
-  // Parse crop ratio (e.g., "16:9" -> 1.777...)
-  let aspect_ratio = 1;
+  // Nano-banana model uses different parameter structure
+  // Based on research, nano-banana focuses on text-guided editing rather than traditional generation parameters
+  
+  // Build the prompt with crop ratio instructions if specified
+  let prompt = basePrompt;
   if (options.crop_ratio) {
-    const [width, height] = options.crop_ratio.split(":").map(Number);
-    if (width && height) {
-      aspect_ratio = width / height;
+    const [w, h] = options.crop_ratio.split(":").map(Number);
+    if (w && h) {
+      if (w > h) {
+        prompt += `, crop to landscape ${options.crop_ratio} aspect ratio, wide format`;
+      } else if (h > w) {
+        prompt += `, crop to portrait ${options.crop_ratio} aspect ratio, tall format`;
+      } else {
+        prompt += `, crop to square ${options.crop_ratio} aspect ratio`;
+      }
     }
   }
+  
+  prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
 
-  // Always use 1024x1024 base size for consistent quality
+  // Nano-banana model input structure (based on research)
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: `${prompt}, professional studio portrait, ultra high quality, sharp focus, 8k uhd`,
+      prompt: prompt,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated",
+      // Note: nano-banana may not support width/height/num_outputs in the same way as other models
+      // We'll try to include them but they might be ignored
       width: 1024,
       height: 1024,
       num_outputs: options.num_outputs || 1,
@@ -102,27 +112,7 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     },
   };
 
-  // Only modify dimensions if crop ratio is explicitly requested
-  if (options.crop_ratio) {
-    console.log("[stylize] applying crop ratio:", options.crop_ratio);
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w && h) {
-      if (w > h) {
-        body.input.width = 1536;  // Larger width for landscape
-        body.input.height = Math.round((h * 1536) / w);
-      } else if (h > w) {
-        body.input.height = 1536;  // Larger height for portrait
-        body.input.width = Math.round((w * 1536) / h);
-      } else {
-        body.input.width = 1536;  // Square
-        body.input.height = 1536;
-      }
-      // Add aspect ratio to prompt
-      body.input.prompt = `${body.input.prompt}, ${options.crop_ratio} aspect ratio`;
-    }
-  }
-
-  console.log("[stylize] final request:", body);
+  console.log("[stylize] nano-banana request:", body);
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
@@ -208,16 +198,28 @@ export async function POST(req: NextRequest) {
 
       // Normalize output - now handling both preview and high-res URLs
       let previewUrl = null;
+      
+      console.log("[stylize] prediction output structure:", {
+        status: p?.status,
+        output: p?.output,
+        outputType: typeof p?.output,
+        isArray: Array.isArray(p?.output),
+        length: Array.isArray(p?.output) ? p.output.length : 'N/A',
+        urls: (p as any)?.urls
+      });
 
       if (Array.isArray(p?.output) && p.output.length > 0) {
         outputUrl = p.output[0];
         highResUrl = p.output[0];  // Same URL for now, since we're generating high quality in one step
+        console.log("[stylize] using array output, first item:", outputUrl);
       } else if (typeof p?.output === "string") {
         outputUrl = p.output;
         highResUrl = p.output;
+        console.log("[stylize] using string output:", outputUrl);
       } else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) {
         outputUrl = (p as any).urls[0];
         highResUrl = (p as any).urls[0];
+        console.log("[stylize] using urls array, first item:", outputUrl);
       }
 
       if (status === "succeeded" || status === "completed") break;
