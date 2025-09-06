@@ -29,8 +29,10 @@ export default function NavGate() {
         
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <a href="/" className="hover:opacity-80">Home</a>
-          <a href="/bundles" className="hover:opacity-80">Credits</a>
           <a href="/history" className="hover:opacity-80">History</a>
+          <a href="/dashboard" className="hover:opacity-80">Dashboard</a>
+          <a href="/bundles" className="hover:opacity-80">Credits</a>
+
           <a href="/account" className="hover:opacity-80">Account</a>
           {userEmail ? (
         <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
@@ -49,8 +51,9 @@ export default function NavGate() {
           <summary className="list-none cursor-pointer rounded-xl border border-white/10 px-3 py-2">☰</summary>
           <div className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-black/80 backdrop-blur p-2 z-50">
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
-            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Credits</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Dashboard</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Credits</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/account">Account</a>
          {userEmail ? (
         <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
