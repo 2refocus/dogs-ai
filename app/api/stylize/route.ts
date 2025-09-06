@@ -165,6 +165,7 @@ export async function POST(req: NextRequest) {
     const t0 = Date.now();
     const timeoutMs = 55_000;
     let outputUrl: string | null = null;
+    let highResUrl: string | null = null;
 
     while (Date.now() - t0 < timeoutMs) {
       const p = await replicateGet(prediction_id);
@@ -172,7 +173,6 @@ export async function POST(req: NextRequest) {
 
       // Normalize output - now handling both preview and high-res URLs
       let previewUrl = null;
-      let highResUrl = null;
 
       if (Array.isArray(p?.output) && p.output.length > 0) {
         // First URL is preview, second is high-res (if available)
@@ -223,7 +223,13 @@ export async function POST(req: NextRequest) {
       console.warn("[stylize] skipped insert — missing SUPABASE_SERVICE_ROLE or URL");
     }
 
-    return json({ ok: true, prediction_id, input_url: inputUrl, output_url: outputUrl });
+    return json({ 
+      ok: true, 
+      prediction_id, 
+      input_url: inputUrl, 
+      output_url: outputUrl,
+      high_res_url: highResUrl
+    });
   } catch (e: any) {
     console.error("[stylize] error:", e?.message || e);
     return json({ ok: false, error: e?.message || "Unknown error" }, 500);
