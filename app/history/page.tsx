@@ -73,10 +73,10 @@ export default function HistoryPage() {
           
           // Filter history based on user authentication status
           if (currentUserId) {
-            // Show only user's images if logged in, sorted by created_at ascending (oldest first)
+            // Show only user's images if logged in, sorted by created_at descending (newest first)
             const userImages = j.items
               .filter((item: CommunityRow) => item.user_id === currentUserId)
-              .sort((a: CommunityRow, b: CommunityRow) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+              .sort((a: CommunityRow, b: CommunityRow) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
             console.log(`[history] Loading ${userImages.length} images for user: ${currentUserId}`);
             setUserHistory(userImages);
           } else {
@@ -97,7 +97,11 @@ export default function HistoryPage() {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr)) {
           const filtered = arr.filter((x:any)=>x && typeof x.output_url === "string");
-          setLocalItems(filtered);
+          // Sort local history by created_at descending (newest first)
+          const sorted = filtered.sort((a: any, b: any) => 
+            new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          );
+          setLocalItems(sorted);
         }
       }
     } catch {}
@@ -174,7 +178,8 @@ export default function HistoryPage() {
         ) : hasUserHistory ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {userHistory.map((it, index) => {
-              const isFirstImage = index === 0; // First image in chronological order
+              // Find the chronologically oldest image (last in the sorted array)
+              const isFirstImage = index === userHistory.length - 1; // Last image in descending order = first chronologically
               // Double-check that this image belongs to the current user
               const isOwner = currentUserId && it.user_id === currentUserId;
               const canDelete = isOwner && !isFirstImage;
