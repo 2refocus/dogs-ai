@@ -311,12 +311,12 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="space-y-3">
                 <button
                   onClick={onGenerate}
                   disabled={loading || !file}
                   className={cx(
-                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+                    "w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
                     loading && "animate-pulse"
                   )}
                 >
@@ -329,7 +329,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={resetFree}
-                  className="rounded-xl border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-4 py-4 text-sm font-medium transition-all"
+                  className="text-sm text-[var(--fg)]/70 hover:text-[var(--fg)] transition-colors underline"
                 >
                   Reset free
                 </button>
