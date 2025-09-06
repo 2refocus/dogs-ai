@@ -37,22 +37,31 @@ export default function HistoryPage() {
   const [selectedUserImage, setSelectedUserImage] = useState<{ image: CommunityRow; index: number } | null>(null);
   const [selectedCommunityImage, setSelectedCommunityImage] = useState<{ image: CommunityRow; index: number } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
 
   // Get current user ID
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const userId = data.session?.user?.id || null;
       setCurrentUserId(userId);
+      setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setCurrentUserId(session?.user?.id || null);
+      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
+    // Only load data when we have a definitive user state
+    if (authLoading || currentUserId === null) {
+      // Still loading user state, don't load data yet
+      return;
+    }
+
     // load community
     (async () => {
       try {
@@ -64,13 +73,19 @@ export default function HistoryPage() {
           // Filter history based on user authentication status
           if (currentUserId) {
             // Show only user's images if logged in
-            setUserHistory(j.items.filter((item: CommunityRow) => item.user_id === currentUserId));
+            const userImages = j.items.filter((item: CommunityRow) => item.user_id === currentUserId);
+            console.log(`[history] Loading ${userImages.length} images for user: ${currentUserId}`);
+            setUserHistory(userImages);
           } else {
             // Show anonymous images if not logged in
-            setUserHistory(j.items.filter((item: CommunityRow) => item.user_id === "00000000-0000-0000-0000-000000000000"));
+            const anonymousImages = j.items.filter((item: CommunityRow) => item.user_id === "00000000-0000-0000-0000-000000000000");
+            console.log(`[history] Loading ${anonymousImages.length} anonymous images`);
+            setUserHistory(anonymousImages);
           }
         }
-      } catch {}
+      } catch (e) {
+        console.error("[history] Error loading community data:", e);
+      }
     })();
 
     // load guest history as fallback (only for items not in Supabase)
@@ -84,7 +99,7 @@ export default function HistoryPage() {
         }
       }
     } catch {}
-  }, [currentUserId]); // Re-run when user ID changes
+  }, [currentUserId, authLoading]); // Re-run when user ID or auth loading state changes
 
   const hasCommunity = community.length > 0;
   const hasUserHistory = userHistory.length > 0;
@@ -143,11 +158,15 @@ export default function HistoryPage() {
       )}
       <section className="grid gap-4">
         <h1 className="text-2xl font-bold">Your History</h1>
-        {hasUserHistory ? (
+        {authLoading ? (
+          <p className="text-sm opacity-60">Loading your history...</p>
+        ) : hasUserHistory ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {userHistory.map((it, index) => {
               const isFirstImage = index === 0; // First image in chronological order
-              const canDelete = currentUserId && !isFirstImage;
+              // Double-check that this image belongs to the current user
+              const isOwner = currentUserId && it.user_id === currentUserId;
+              const canDelete = isOwner && !isFirstImage;
               
               return (
                 <div key={it.id} className="relative group">
@@ -166,7 +185,7 @@ export default function HistoryPage() {
                   </button>
                   
                   {/* First image indicator */}
-                  {isFirstImage && currentUserId && (
+                  {isFirstImage && isOwner && (
                     <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                       First
                     </div>
@@ -240,3 +259,4 @@ export default function HistoryPage() {
     </main>
   );
 }
+
