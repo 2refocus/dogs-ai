@@ -4,6 +4,7 @@
 */
 "use client";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type LocalGen = {
   output_url: string;
@@ -18,12 +19,28 @@ type CommunityRow = {
   id: number;
   output_url: string;
   created_at: string;
+  user_id: string;
 };
 
 export default function HistoryPage() {
   const [community, setCommunity] = useState<CommunityRow[]>([]);
   const [localItems, setLocalItems] = useState<LocalGen[]>([]);
   const [userHistory, setUserHistory] = useState<CommunityRow[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const userId = data.session?.user?.id || null;
+      setCurrentUserId(userId);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     // load community
@@ -33,8 +50,15 @@ export default function HistoryPage() {
         const j = await res.json();
         if (j?.ok && Array.isArray(j.items)) {
           setCommunity(j.items);
-          // Use community data as user history since it contains all generated images
-          setUserHistory(j.items);
+          
+          // Filter history based on user authentication status
+          if (currentUserId) {
+            // Show only user's images if logged in
+            setUserHistory(j.items.filter(item => item.user_id === currentUserId));
+          } else {
+            // Show anonymous images if not logged in
+            setUserHistory(j.items.filter(item => item.user_id === "00000000-0000-0000-0000-000000000000"));
+          }
         }
       } catch {}
     })();
@@ -50,7 +74,7 @@ export default function HistoryPage() {
         }
       }
     } catch {}
-  }, []);
+  }, [currentUserId]); // Re-run when user ID changes
 
   const hasCommunity = community.length > 0;
   const hasUserHistory = userHistory.length > 0;
