@@ -269,17 +269,17 @@ export default function AccountPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between mt-2">
+            <div className="mt-2">
               <button
                 onClick={saveProfile}
                 disabled={saving}
-                className="rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
 
               {message && (
-                <p className={message.includes("Error") ? "text-red-400" : "text-green-400"}>
+                <p className={`mt-2 text-center ${message.includes("Error") ? "text-red-400" : "text-green-400"}`}>
                   {message}
                 </p>
               )}

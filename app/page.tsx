@@ -279,11 +279,12 @@ export default function Home() {
                   </div>
 
                   <div className="grid gap-3">
-                    <label className="text-sm font-semibold text-[var(--fg)]">Number of Images (1-4)</label>
+                    <label className="text-sm font-semibold text-[var(--fg)] opacity-50">Number of Images (1-4) - Coming Soon</label>
                     <select
                       value={numImages}
                       onChange={(e) => setNumImages(Number(e.target.value))}
-                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+                      disabled
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all opacity-50 cursor-not-allowed"
                     >
                       {[1, 2, 3, 4].map((n) => (
                         <option key={n} value={n}>
@@ -294,11 +295,12 @@ export default function Home() {
                   </div>
 
                   <div className="grid gap-3">
-                    <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
+                    <label className="text-sm font-semibold text-[var(--fg)] opacity-50">Crop Ratio - Coming Soon</label>
                     <select
                       value={cropRatio}
                       onChange={(e) => setCropRatio(e.target.value)}
-                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+                      disabled
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all opacity-50 cursor-not-allowed"
                     >
                       <option value="1:1">Square (1:1)</option>
                       <option value="4:5">Portrait (4:5)</option>
