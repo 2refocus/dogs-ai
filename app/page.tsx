@@ -311,33 +311,33 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="space-y-3">
-                <button
-                  onClick={onGenerate}
-                  disabled={loading || !file}
-                  className={cx(
-                    "w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
-                    loading && "animate-pulse"
-                  )}
-                >
-                  {loading && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite] transform -skew-x-12" />
-                  )}
-                  <span className="relative z-10">
-                    {loading ? "Creating your pet's portrait…" : "Generate"}
-                  </span>
-                </button>
-                <button
-                  onClick={resetFree}
-                  className="text-sm text-[var(--fg)]/70 hover:text-[var(--fg)] transition-colors underline"
-                >
-                  Reset free
-                </button>
-              </div>
+              <button
+                onClick={onGenerate}
+                disabled={loading || !file}
+                className={cx(
+                  "w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+                  loading && "animate-pulse"
+                )}
+              >
+                {loading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_infinite] transform -skew-x-12" />
+                )}
+                <span className="relative z-10">
+                  {loading ? "Creating your pet's portrait…" : "Generate"}
+                </span>
+              </button>
             </div>
           </div>
         </div>
-        <div className="text-sm text-[var(--fg)]/70 font-medium">Free generations left: {freeLeft}</div>
+        <div className="flex justify-between items-center text-sm text-[var(--fg)]/70 font-medium">
+          <span>Free generations left: {freeLeft}</span>
+          <button
+            onClick={resetFree}
+            className="text-sm text-[var(--fg)]/70 hover:text-[var(--fg)] transition-colors"
+          >
+            Reset free
+          </button>
+        </div>
       </section>
 
       {/* Panels */}
