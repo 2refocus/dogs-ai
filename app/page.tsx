@@ -55,6 +55,7 @@ export default function Home() {
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [userUrl, setUserUrl] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -120,6 +121,7 @@ export default function Home() {
       fd.append("file", file);
       fd.append("prompt", DEFAULT_PROMPT);
       fd.append("user_url", userUrl);
+      fd.append("display_name", displayName);
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
@@ -200,6 +202,13 @@ export default function Home() {
               type="file"
               accept="image/*"
               onChange={onPick}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            />
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name (optional)"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
             />
             <input

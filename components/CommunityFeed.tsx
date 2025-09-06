@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import CommunityGrid from "./CommunityGrid";
 import { readLocal } from "@/lib/localHistory";
 
-type Item = { id?: string | number; output_url: string; created_at?: string };
+type Item = {
+  id?: string | number;
+  output_url: string;
+  created_at?: string;
+  display_name?: string | null;
+  website?: string | null;
+};
 
 export default function CommunityFeed() {
   const [items, setItems] = useState<Item[]>([]);

@@ -129,6 +129,7 @@ export async function POST(req: NextRequest) {
       "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
     const user_url = (form.get("user_url") || "").toString().trim();
+    const display_name = (form.get("display_name") || "").toString().trim();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
@@ -177,6 +178,7 @@ export async function POST(req: NextRequest) {
           output_url: outputUrl,
           preset_label,
           website: user_url || null,
+          display_name: display_name || null,
           user_id: userId,  // Add back user_id for filtering in history
         });
         if (error) {
