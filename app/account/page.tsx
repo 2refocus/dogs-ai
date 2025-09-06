@@ -79,8 +79,7 @@ export default function AccountPage() {
         .from('generations')
         .update({
           display_name: displayName || null,
-          website: website || null,
-          profile_image_url: selectedProfileImage || null
+          website: website || null
         })
         .eq('user_id', user.id);
 
@@ -90,6 +89,26 @@ export default function AccountPage() {
       setMessage("Error saving profile: " + (error.message || "Please try again"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Separate function to save profile image
+  async function saveProfileImage(imageUrl: string) {
+    if (!user) return;
+    
+    try {
+      // Update all existing generations for this user with the new profile image
+      const { error } = await supabase
+        .from('generations')
+        .update({
+          profile_image_url: imageUrl
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      console.log("Profile image saved successfully");
+    } catch (error: any) {
+      console.error("Error saving profile image:", error);
     }
   }
 
@@ -147,6 +166,8 @@ export default function AccountPage() {
                     onClick={() => {
                       setSelectedProfileImage(image.output_url);
                       setShowImageSelector(false);
+                      // Save the profile image immediately
+                      saveProfileImage(image.output_url);
                     }}
                     className={`relative rounded-lg overflow-hidden border-2 transition-all ${
                       selectedProfileImage === image.output_url
