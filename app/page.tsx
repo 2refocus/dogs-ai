@@ -7,7 +7,7 @@
 */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { pushLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
