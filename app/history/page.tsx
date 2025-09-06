@@ -19,11 +19,14 @@ type LocalGen = {
 type CommunityRow = {
   id: number;
   output_url: string;
+  high_res_url?: string | null;
+  aspect_ratio?: string | null;
   display_name?: string | null;
   website?: string | null;
   social_handle?: string | null;
-  allow_in_feed?: boolean;
+  preset_label?: string | null;
   user_id: string;  // Add back user_id as it's needed for filtering
+  created_at?: string;
 };
 
 export default function HistoryPage() {
@@ -31,7 +34,8 @@ export default function HistoryPage() {
   const [localItems, setLocalItems] = useState<LocalGen[]>([]);
   const [userHistory, setUserHistory] = useState<CommunityRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<{ image: CommunityRow; index: number } | null>(null);
+  const [selectedUserImage, setSelectedUserImage] = useState<{ image: CommunityRow; index: number } | null>(null);
+  const [selectedCommunityImage, setSelectedCommunityImage] = useState<{ image: CommunityRow; index: number } | null>(null);
 
   // Get current user ID
   useEffect(() => {
@@ -87,11 +91,18 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-6 grid gap-10">
-      {selectedImage && (
+      {selectedUserImage && (
         <Lightbox
           images={userHistory}
-          initialIndex={selectedImage.index}
-          onClose={() => setSelectedImage(null)}
+          initialIndex={selectedUserImage.index}
+          onClose={() => setSelectedUserImage(null)}
+        />
+      )}
+      {selectedCommunityImage && (
+        <Lightbox
+          images={community}
+          initialIndex={selectedCommunityImage.index}
+          onClose={() => setSelectedCommunityImage(null)}
         />
       )}
       <section className="grid gap-4">
@@ -101,7 +112,7 @@ export default function HistoryPage() {
             {userHistory.map((it) => (
               <button
                 key={it.id}
-                onClick={() => setSelectedImage({ image: it, index: userHistory.indexOf(it) })}
+                onClick={() => setSelectedUserImage({ image: it, index: userHistory.indexOf(it) })}
                 className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
               >
                 <img
@@ -140,16 +151,20 @@ export default function HistoryPage() {
         {hasCommunity ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {community.map((it) => (
-              <div
+              <button
                 key={it.id}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2"
+                onClick={() => setSelectedCommunityImage({ image: it, index: community.indexOf(it) })}
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
               >
                 <img
                   src={it.output_url}
                   alt=""
                   className="w-full aspect-square object-cover"
                 />
-              </div>
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white">View</span>
+                </div>
+              </button>
             ))}
           </div>
         ) : (
