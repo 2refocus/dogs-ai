@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 interface LightboxProps {
   images: Array<{
-    id: number;
+    id?: string | number;
     output_url: string;
     display_name?: string | null;
     website?: string | null;
@@ -39,7 +39,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pet-portrait-${currentImage.id}.jpg`;
+      a.download = `pet-portrait-${currentImage.id || 'download'}.jpg`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
