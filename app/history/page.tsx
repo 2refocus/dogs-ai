@@ -36,6 +36,7 @@ export default function HistoryPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedUserImage, setSelectedUserImage] = useState<{ image: CommunityRow; index: number } | null>(null);
   const [selectedCommunityImage, setSelectedCommunityImage] = useState<{ image: CommunityRow; index: number } | null>(null);
+  const [selectedLocalImage, setSelectedLocalImage] = useState<{ image: LocalGen; index: number } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
 
@@ -57,7 +58,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     // Only load data when we have a definitive user state
-    if (authLoading || currentUserId === null) {
+    if (authLoading) {
       // Still loading user state, don't load data yet
       return;
     }
@@ -79,12 +80,9 @@ export default function HistoryPage() {
             console.log(`[history] Loading ${userImages.length} images for user: ${currentUserId}`);
             setUserHistory(userImages);
           } else {
-            // Show anonymous images if not logged in, sorted by created_at ascending (oldest first)
-            const anonymousImages = j.items
-              .filter((item: CommunityRow) => item.user_id === "00000000-0000-0000-0000-000000000000")
-              .sort((a: CommunityRow, b: CommunityRow) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-            console.log(`[history] Loading ${anonymousImages.length} anonymous images`);
-            setUserHistory(anonymousImages);
+            // When not logged in, don't set userHistory - we'll show local history instead
+            console.log(`[history] Not logged in, will show local history instead`);
+            setUserHistory([]);
           }
         }
       } catch (e) {
@@ -160,8 +158,17 @@ export default function HistoryPage() {
           onClose={() => setSelectedCommunityImage(null)}
         />
       )}
+      {selectedLocalImage && (
+        <Lightbox
+          images={localItems}
+          initialIndex={selectedLocalImage.index}
+          onClose={() => setSelectedLocalImage(null)}
+        />
+      )}
       <section className="grid gap-4">
-        <h1 className="text-2xl font-bold">Your History</h1>
+        <h1 className="text-2xl font-bold">
+          {currentUserId ? "Your History" : "Your Local History"}
+        </h1>
         {authLoading ? (
           <p className="text-sm opacity-60">Loading your history...</p>
         ) : hasUserHistory ? (
@@ -218,16 +225,22 @@ export default function HistoryPage() {
         ) : hasLocal ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {localItems.map((it, idx) => (
-              <div
+              <button
                 key={`${it.created_at || idx}-${it.output_url}`}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2"
+                onClick={() => setSelectedLocalImage({ image: it, index: idx })}
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
               >
                 <img
                   src={it.output_url}
                   alt=""
                   className="w-full aspect-square object-cover"
                 />
-              </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+                    View
+                  </div>
+                </div>
+              </button>
             ))}
           </div>
         ) : (
