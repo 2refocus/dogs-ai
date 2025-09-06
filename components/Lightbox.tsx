@@ -6,7 +6,6 @@ interface LightboxProps {
   images: Array<{
     id: number;
     output_url: string;
-    website_url?: string | null;
     display_name?: string | null;
     website?: string | null;
     social_handle?: string | null;
@@ -93,9 +92,9 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
               {currentImage.social_handle && (
                 <span>{currentImage.social_handle}</span>
               )}
-              {(currentImage.website || currentImage.website_url) && (
+              {currentImage.website && (
                 <a
-                  href={currentImage.website || currentImage.website_url || "#"}
+                  href={currentImage.website || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"

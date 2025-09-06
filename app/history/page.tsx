@@ -19,7 +19,6 @@ type LocalGen = {
 type CommunityRow = {
   id: number;
   output_url: string;
-  website_url?: string | null;
   display_name?: string | null;
   website?: string | null;
   social_handle?: string | null;

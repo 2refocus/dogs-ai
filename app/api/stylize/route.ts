@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
         const { error } = await admin.from("generations").insert({
           output_url: outputUrl,
           preset_label,
-          website_url: user_url || null,
+          website: user_url || null,
           user_id: userId,  // Add back user_id for filtering in history
         });
         if (error) {
