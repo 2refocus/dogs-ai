@@ -31,6 +31,7 @@ export default function NavGate() {
           <a href="/" className="hover:opacity-80">Home</a>
           <a href="/bundles" className="hover:opacity-80">Credits</a>
           <a href="/history" className="hover:opacity-80">History</a>
+          <a href="/account" className="hover:opacity-80">Account</a>
           {userEmail ? (
         <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -50,6 +51,7 @@ export default function NavGate() {
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/">Home</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/bundles">Credits</a>
             <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/history">History</a>
+            <a className="block px-3 py-2 hover:bg-white/5 rounded" href="/account">Account</a>
          {userEmail ? (
         <button className="icon-btn" onClick={signOut} title={`Logout ${userEmail}`} aria-label="Logout">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
