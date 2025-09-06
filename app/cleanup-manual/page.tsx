@@ -168,6 +168,20 @@ export default function ManualCleanupPage() {
                   className="mt-1"
                 />
                 
+                {/* Image thumbnail */}
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-[var(--line)] bg-[var(--muted)] flex-shrink-0">
+                  <img
+                    src={record.output_url}
+                    alt={`Record ${record.id}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs opacity-50">No Image</div>';
+                    }}
+                  />
+                </div>
+                
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <div>
