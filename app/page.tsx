@@ -11,6 +11,7 @@ import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { pushLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
+import { PRESETS } from "./presets";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 
@@ -56,6 +57,10 @@ export default function Home() {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [userUrl, setUserUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
+  const [numImages, setNumImages] = useState<number>(1);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [cropRatio, setCropRatio] = useState<string>("1:1");
+  const [detailLevel, setDetailLevel] = useState<number>(50);
 
   useEffect(() => {
     try {
@@ -119,7 +124,15 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("prompt", DEFAULT_PROMPT);
+      // Use selected preset or default prompt
+      fd.append("prompt", selectedPreset || DEFAULT_PROMPT);
+      
+      // Add premium parameters for logged-in users
+      if (userToken) {
+        fd.append("num_outputs", String(numImages));
+        fd.append("crop_ratio", cropRatio);
+        fd.append("detail_level", String(detailLevel));
+      }
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
 
@@ -218,6 +231,71 @@ export default function Home() {
               placeholder="Your website or social media URL (optional)"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
             />
+            
+            {/* Premium features for logged-in users */}
+            {userToken && (
+              <div className="grid gap-4 mt-4 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Style Preset</label>
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => setSelectedPreset(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  >
+                    <option value="">Default Style</option>
+                    {PRESETS.dog.map((preset) => (
+                      <option key={preset.label} value={preset.value}>
+                        {preset.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Number of Images (1-4)</label>
+                  <select
+                    value={numImages}
+                    onChange={(e) => setNumImages(Number(e.target.value))}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  >
+                    {[1, 2, 3, 4].map((n) => (
+                      <option key={n} value={n}>
+                        {n} {n === 1 ? "image" : "images"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Crop Ratio</label>
+                  <select
+                    value={cropRatio}
+                    onChange={(e) => setCropRatio(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  >
+                    <option value="1:1">Square (1:1)</option>
+                    <option value="4:5">Portrait (4:5)</option>
+                    <option value="3:2">Landscape (3:2)</option>
+                    <option value="16:9">Wide (16:9)</option>
+                  </select>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Detail Level</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={detailLevel}
+                    onChange={(e) => setDetailLevel(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="text-xs opacity-60 text-center">
+                    {detailLevel < 30 ? "Artistic" : detailLevel < 70 ? "Balanced" : "Ultra-detailed"}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <button
