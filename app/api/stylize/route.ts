@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
 import { createClient as createAdmin } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,22 @@ const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 // Small helpers
 function json(body: any, status = 200) {
   return NextResponse.json(body, { status });
+}
+
+// Get user ID from Authorization header, fallback to anonymous
+async function getUserId(req: NextRequest): Promise<string> {
+  try {
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    if (!token) return "anonymous";
+    
+    const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !userData?.user) return "anonymous";
+    
+    return userData.user.id;
+  } catch {
+    return "anonymous";
+  }
 }
 
 function isHttpsUrl(s: unknown): s is string {
@@ -103,6 +120,9 @@ export async function POST(req: NextRequest) {
       return json({ ok: false, error: "Invalid content-type" }, 400);
     }
 
+    // Get user ID (authenticated user or "anonymous" for free users)
+    const userId = await getUserId(req);
+
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const prompt = (form.get("prompt") || "").toString().trim() ||
@@ -148,23 +168,23 @@ export async function POST(req: NextRequest) {
       return json({ ok: false, error: "No output URL returned" }, 500);
     }
 
-    // 4) Optional persistence — only if admin envs are present.
+    // 4) Always save to database for community feed (both anonymous and authenticated users)
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
-          user_id: null,
+          user_id: userId, // Either authenticated user ID or "anonymous"
           input_url: inputUrl,
           output_url: outputUrl,
           prompt,
           preset_label,
-          is_public: true,
+          is_public: true, // All images are public for community feed
           created_at: new Date().toISOString(),
         });
         if (error) {
           console.error("[stylize] insert error:", error);
         } else {
-          console.log("[stylize] inserted row into generations ✅");
+          console.log(`[stylize] inserted row into generations for user: ${userId} ✅`);
         }
       } catch (e) {
         console.error("[stylize] insert exception:", e);
