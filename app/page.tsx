@@ -15,6 +15,7 @@ import { PRESETS } from "./presets";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 const Lightbox = dynamic(() => import("@/components/Lightbox"), { ssr: false });
+const Shimmer = dynamic(() => import("@/components/Shimmer"), { ssr: false });
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -351,13 +352,10 @@ export default function Home() {
         {/* Generated big with shimmer - more prominent */}
         <div ref={generatedRef} className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
           <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Generated Portrait</h3>
-          <div
-            className={cx(
-              "relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20 shadow-lg",
-              loading && "shimmer"
-            )}
-          >
-            {genUrl ? (
+          <div className="relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20 shadow-lg">
+            {loading ? (
+              <Shimmer className="h-full w-full" />
+            ) : genUrl ? (
               <button
                 onClick={() => setShowLightbox(true)}
                 className="w-full h-full group"
@@ -366,7 +364,7 @@ export default function Home() {
               </button>
             ) : (
               <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
-                {loading ? "Generating..." : "Generated image will appear here"}
+                Generated image will appear here
               </div>
             )}
           </div>
