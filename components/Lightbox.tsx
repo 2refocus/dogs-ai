@@ -9,6 +9,8 @@ interface LightboxProps {
     display_name?: string | null;
     website?: string | null;
     social_handle?: string | null;
+    preset_label?: string | null;
+    high_res_url?: string | null;
   }>;
   initialIndex?: number;
   onClose: () => void;
@@ -34,7 +36,9 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
 
   const download = async () => {
     try {
-      const response = await fetch(currentImage.output_url);
+      // Use high-res URL if available, otherwise fallback to regular URL
+      const downloadUrl = currentImage.high_res_url || currentImage.output_url;
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -74,6 +78,13 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
         >
           →
         </button>
+
+        {/* Style label */}
+        {currentImage.preset_label && (
+          <div className="absolute top-4 left-4 text-white/60 text-sm bg-black/30 px-3 py-1 rounded-full">
+            {currentImage.preset_label}
+          </div>
+        )}
 
         {/* Image */}
         <div className="relative">

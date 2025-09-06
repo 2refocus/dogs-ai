@@ -74,12 +74,24 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 }
 
 // ---- Replicate REST helpers (no SDK; very stable)
-async function replicateCreate(imageUrl: string, prompt: string) {
-  // IMPORTANT: image_input as an ARRAY now (fix for 422)
+async function replicateCreate(imageUrl: string, prompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
+  // Parse crop ratio (e.g., "16:9" -> 1.777...)
+  let aspect_ratio = 1;
+  if (options.crop_ratio) {
+    const [width, height] = options.crop_ratio.split(":").map(Number);
+    if (width && height) {
+      aspect_ratio = width / height;
+    }
+  }
+
   const body = {
     input: {
-      image_input: [imageUrl], // <-- the fix
+      image_input: [imageUrl],
       prompt,
+      num_outputs: options.num_outputs || 1,
+      aspect_ratio,
+      width: 1024, // Higher resolution for better quality
+      height: Math.round(1024 / aspect_ratio),
     },
   };
 
@@ -137,7 +149,15 @@ export async function POST(req: NextRequest) {
     const inputUrl = await uploadToSupabasePublic(file);
 
     // 2) Create prediction
-    const created = await replicateCreate(inputUrl, prompt);
+    // Get premium parameters
+    const num_outputs = parseInt(form.get("num_outputs")?.toString() || "1", 10);
+    const crop_ratio = form.get("crop_ratio")?.toString();
+
+    // Create prediction with options
+    const created = await replicateCreate(inputUrl, prompt, {
+      num_outputs: num_outputs || 1,
+      crop_ratio: crop_ratio || "1:1"
+    });
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
 
@@ -150,14 +170,23 @@ export async function POST(req: NextRequest) {
       const p = await replicateGet(prediction_id);
       const status = String(p?.status || "");
 
-      // Normalize output
+      // Normalize output - now handling both preview and high-res URLs
+      let previewUrl = null;
+      let highResUrl = null;
+
       if (Array.isArray(p?.output) && p.output.length > 0) {
-        outputUrl = p.output[0]!;
+        // First URL is preview, second is high-res (if available)
+        previewUrl = p.output[0];
+        highResUrl = p.output[1] || p.output[0];
       } else if (typeof p?.output === "string") {
-        outputUrl = p.output;
+        previewUrl = p.output;
+        highResUrl = p.output;
       } else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) {
-        outputUrl = (p as any).urls[0]!;
+        previewUrl = (p as any).urls[0];
+        highResUrl = (p as any).urls[1] || (p as any).urls[0];
       }
+
+      outputUrl = previewUrl;
 
       if (status === "succeeded" || status === "completed") break;
       if (status === "failed" || status === "canceled") {
@@ -176,6 +205,7 @@ export async function POST(req: NextRequest) {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
           output_url: outputUrl,
+          high_res_url: highResUrl,
           preset_label,
           website: user_url || null,
           display_name: display_name || null,
