@@ -1,4 +1,4 @@
-/* app/api/stylize/route.ts — keep old working flow, plus optional Supabase insert for Community
+/* app/api/stylize/route.ts — keep old working flow, fix only Replicate's input shape.
    - Uploads to Supabase Storage using your existing anon client (as before)
    - Creates + polls Replicate prediction
    - Returns { ok, input_url, output_url, prediction_id }
@@ -6,7 +6,7 @@
 */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient"; // your existing anon client (works for Storage upload)
+import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
 import { createClient as createAdmin } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -58,10 +58,10 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, prompt: string) {
-  // IMPORTANT: image_input as an ARRAY (fix for 422)
+  // IMPORTANT: image_input as an ARRAY now (fix for 422)
   const body = {
     input: {
-      image_input: [imageUrl], // <-- key fix
+      image_input: [imageUrl], // <-- the fix
       prompt,
     },
   };
@@ -105,8 +105,7 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const prompt =
-      (form.get("prompt") || "").toString().trim() ||
+    const prompt = (form.get("prompt") || "").toString().trim() ||
       "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
 
@@ -142,7 +141,7 @@ export async function POST(req: NextRequest) {
       if (status === "failed" || status === "canceled") {
         return json({ ok: false, error: p?.error || "Generation failed" }, 500);
       }
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 1200));
     }
 
     if (!outputUrl || !isHttpsUrl(outputUrl)) {
@@ -150,32 +149,31 @@ export async function POST(req: NextRequest) {
     }
 
     // 4) Optional persistence — only if admin envs are present.
-    //    Inserts a *minimal* row for the Community feed (safe across schemas).
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        await admin.from("generations").insert([
-          {
-            user_id: null,
-            output_url: outputUrl,
-            is_public: true,
-            // add these back only if your table has them as nullable:
-            // input_url: inputUrl,
-            // prompt,
-            // preset_label,
-          },
-        ]);
+        const { error } = await admin.from("generations").insert({
+          user_id: null,
+          input_url: inputUrl,
+          output_url: outputUrl,
+          prompt,
+          preset_label,
+          is_public: true,
+          created_at: new Date().toISOString(),
+        });
+        if (error) {
+          console.error("[stylize] insert error:", error);
+        } else {
+          console.log("[stylize] inserted row into generations ✅");
+        }
       } catch (e) {
-        console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
+        console.error("[stylize] insert exception:", e);
       }
+    } else {
+      console.warn("[stylize] skipped insert — missing SUPABASE_SERVICE_ROLE or URL");
     }
 
-    return json({
-      ok: true,
-      prediction_id,
-      input_url: inputUrl,
-      output_url: outputUrl,
-    });
+    return json({ ok: true, prediction_id, input_url: inputUrl, output_url: outputUrl });
   } catch (e: any) {
     console.error("[stylize] error:", e?.message || e);
     return json({ ok: false, error: e?.message || "Unknown error" }, 500);
