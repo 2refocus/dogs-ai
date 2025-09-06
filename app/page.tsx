@@ -211,43 +211,64 @@ export default function Home() {
       <style dangerouslySetInnerHTML={{ __html: SHIMMER_CSS }} />
 
       {/* Uploader */}
-      <section className="grid gap-3">
-        <label className="text-sm font-medium">Upload a pet photo</label>
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+      <section className="grid gap-4">
+        <label className="text-lg font-semibold text-[var(--fg)]">Upload a pet photo</label>
+        <div className="grid gap-4">
           <div className="grid gap-4">
             <div className="grid gap-4">
-              <div className="grid gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onPick}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                />
+              <div className="grid gap-4">
+                {/* Enhanced file upload */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={onPick}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="flex items-center justify-center gap-3 w-full rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--muted)] hover:border-[var(--brand)] hover:bg-[var(--brand)]/5 transition-all duration-200 px-6 py-8 cursor-pointer group"
+                  >
+                    <svg className="w-8 h-8 text-[var(--brand)] group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-[var(--fg)]">
+                        {file ? file.name : "Choose a photo"}
+                      </div>
+                      <div className="text-xs text-[var(--fg)]/60 mt-1">
+                        {file ? "Click to change" : "Click to browse or drag and drop"}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your pet name (optional)"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] placeholder:text-[var(--fg)]/50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                 />
                 <input
                   type="url"
                   value={userUrl}
                   onChange={(e) => setUserUrl(e.target.value)}
                   placeholder="Your website or social media URL (optional)"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] placeholder:text-[var(--fg)]/50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                 />
               </div>
               
               {/* Premium features for logged-in users */}
               {userToken && (
-                <div className="grid gap-4 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Style Preset</label>
+                <div className="grid gap-4 p-6 rounded-xl border border-[var(--brand)]/20 bg-[var(--brand)]/5">
+                  <div className="grid gap-3">
+                    <label className="text-sm font-semibold text-[var(--fg)]">Style Preset</label>
                     <select
                       value={selectedPreset}
                       onChange={(e) => setSelectedPreset(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
                       <option value="">Default Style</option>
                       {PRESETS.dog.map((preset) => (
@@ -258,12 +279,12 @@ export default function Home() {
                     </select>
                   </div>
 
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Number of Images (1-4)</label>
+                  <div className="grid gap-3">
+                    <label className="text-sm font-semibold text-[var(--fg)]">Number of Images (1-4)</label>
                     <select
                       value={numImages}
                       onChange={(e) => setNumImages(Number(e.target.value))}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
                       {[1, 2, 3, 4].map((n) => (
                         <option key={n} value={n}>
@@ -273,12 +294,12 @@ export default function Home() {
                     </select>
                   </div>
 
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Crop Ratio</label>
+                  <div className="grid gap-3">
+                    <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
                     <select
                       value={cropRatio}
                       onChange={(e) => setCropRatio(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
                       <option value="1:1">Square (1:1)</option>
                       <option value="4:5">Portrait (4:5)</option>
@@ -289,12 +310,12 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={onGenerate}
                   disabled={loading || !file}
                   className={cx(
-                    "flex-1 rounded-lg bg-amber-500 px-6 py-2 font-semibold text-black",
+                    "flex-1 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed",
                     loading && "opacity-70 pointer-events-none"
                   )}
                 >
@@ -302,7 +323,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={resetFree}
-                  className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5"
+                  className="rounded-xl border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-4 py-4 text-sm font-medium transition-all"
                 >
                   Reset free
                 </button>
@@ -310,58 +331,62 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="text-xs opacity-60">Free left: {freeLeft}</div>
+        <div className="text-sm text-[var(--fg)]/70 font-medium">Free generations left: {freeLeft}</div>
       </section>
 
       {/* Panels */}
-      <section className="mt-6 grid gap-6 md:grid-cols-[360px_1fr]">
+      <section className="mt-8 grid gap-6 lg:grid-cols-[300px_1fr]">
         {/* Original small */}
-        <div className="rounded-2xl border border-white/10 bg-white/2 p-3">
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
+          <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Original</h3>
           <div className="relative aspect-square rounded-xl overflow-hidden bg-black/20">
             {preview ? (
               <img src={preview} alt="Original" className="h-full w-full object-cover" />
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-sm opacity-60">
-                Original
+              <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
+                No image selected
               </div>
             )}
           </div>
         </div>
 
-        {/* Generated big with shimmer */}
-        <div ref={generatedRef} className="rounded-2xl border border-white/10 bg-white/2 p-3">
+        {/* Generated big with shimmer - more prominent */}
+        <div ref={generatedRef} className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
+          <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Generated Portrait</h3>
           <div
             className={cx(
-              "relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden bg-black/20",
+              "relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20 shadow-lg",
               loading && "shimmer"
             )}
           >
             {genUrl ? (
               <button
                 onClick={() => setShowLightbox(true)}
-                className="w-full h-full"
+                className="w-full h-full group"
               >
-                <img src={genUrl} alt="Generated" className="h-full w-full object-contain" />
+                <img src={genUrl} alt="Generated" className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" />
               </button>
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-sm opacity-60">
-                Generated
+              <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
+                {loading ? "Generating..." : "Generated image will appear here"}
               </div>
             )}
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs opacity-70">
-            <div>{msg || (genUrl ? "Done ✓" : "")}</div>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm font-medium text-[var(--fg)]">
+              {msg || (genUrl ? "✓ Generation complete" : "")}
+            </div>
             <div className="flex gap-2">
               {genUrl && (
                 <>
                   <button
                     onClick={() => setShowLightbox(true)}
-                    className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
+                    className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                   >
                     View
                   </button>
                   <a
-                    className="rounded border border-white/15 px-2 py-1 hover:bg-white/5"
+                    className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                     href={genUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -391,9 +416,9 @@ export default function Home() {
       </section>
 
       {/* Community feed */}
-      <div className="mt-10">
-        <hr className="my-8 opacity-20" />
-        <h2 className="mb-3 text-lg font-semibold">Community</h2>
+      <div className="mt-12">
+        <hr className="my-8 border-[var(--line)]" />
+        <h2 className="mb-6 text-xl font-bold text-[var(--fg)]">Community Gallery</h2>
         <CommunityFeed />
       </div>
     </main>
