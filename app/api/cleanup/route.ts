@@ -23,11 +23,40 @@ export async function GET(req: NextRequest) {
 
     for (const record of allGenerations || []) {
       try {
-        // Try to fetch the image to see if it exists
-        const response = await fetch(record.output_url, { method: 'HEAD' });
+        // For Replicate delivery URLs, we need to be more careful
+        // They might return 403/404 even for valid images due to CDN behavior
+        const response = await fetch(record.output_url, { 
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; cleanup-bot/1.0)'
+          }
+        });
         
-        if (response.ok) {
+        // Consider 200, 301, 302 as valid (redirects are common for CDNs)
+        if (response.ok || response.status === 301 || response.status === 302) {
           validRecords.push(record);
+        } else if (response.status === 403) {
+          // 403 might mean the image exists but access is restricted
+          // Let's try a GET request to be more sure
+          try {
+            const getResponse = await fetch(record.output_url, { method: 'GET' });
+            if (getResponse.ok) {
+              validRecords.push(record);
+            } else {
+              orphanedRecords.push({
+                ...record,
+                status: getResponse.status,
+                statusText: getResponse.statusText
+              });
+            }
+          } catch {
+            // If GET also fails, consider it orphaned
+            orphanedRecords.push({
+              ...record,
+              status: response.status,
+              statusText: response.statusText
+            });
+          }
         } else {
           orphanedRecords.push({
             ...record,
@@ -80,10 +109,32 @@ export async function DELETE(req: NextRequest) {
     // Check which images are actually accessible
     for (const record of allGenerations || []) {
       try {
-        // Try to fetch the image to see if it exists
-        const response = await fetch(record.output_url, { method: 'HEAD' });
+        // For Replicate delivery URLs, we need to be more careful
+        const response = await fetch(record.output_url, { 
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; cleanup-bot/1.0)'
+          }
+        });
         
-        if (!response.ok) {
+        // Consider 200, 301, 302 as valid (redirects are common for CDNs)
+        if (response.ok || response.status === 301 || response.status === 302) {
+          // Valid record, don't add to orphaned
+        } else if (response.status === 403) {
+          // 403 might mean the image exists but access is restricted
+          // Let's try a GET request to be more sure
+          try {
+            const getResponse = await fetch(record.output_url, { method: 'GET' });
+            if (!getResponse.ok) {
+              orphanedIds.push(record.id);
+              console.log(`[cleanup] Orphaned record ${record.id}: ${getResponse.status} ${getResponse.statusText}`);
+            }
+          } catch {
+            // If GET also fails, consider it orphaned
+            orphanedIds.push(record.id);
+            console.log(`[cleanup] Orphaned record ${record.id}: ${response.status} ${response.statusText}`);
+          }
+        } else {
           orphanedIds.push(record.id);
           console.log(`[cleanup] Orphaned record ${record.id}: ${response.status} ${response.statusText}`);
         }

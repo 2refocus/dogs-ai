@@ -35,7 +35,7 @@ export default function CleanupPage() {
       if (data.ok) {
         setSummary(data.summary);
         setOrphaned(data.orphaned);
-        setMessage(`Found ${data.summary.orphaned} orphaned records out of ${data.summary.total} total records`);
+        setMessage(`Found ${data.summary.orphaned} potentially orphaned records out of ${data.summary.total} total records. Please review carefully before deleting.`);
       } else {
         setMessage("Error: " + data.error);
       }
@@ -80,6 +80,12 @@ export default function CleanupPage() {
         <p className="text-sm opacity-70 mb-4">
           This tool checks for database records that point to deleted or inaccessible image files.
         </p>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
+          <p className="text-sm text-yellow-400">
+            ⚠️ <strong>Warning:</strong> The detection may not be 100% accurate for Replicate URLs due to CDN behavior. 
+            Please review the results carefully before deleting any records.
+          </p>
+        </div>
         
         <div className="flex gap-4 mb-4">
           <button
