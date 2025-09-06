@@ -173,9 +173,9 @@ export async function POST(req: NextRequest) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const { error } = await admin.from("generations").insert({
+          user_id: userId, // Add back user_id since it has NOT NULL constraint
           preset_label,
           output_url: outputUrl,
-          // Only insert columns that definitely exist in the current schema
         });
         if (error) {
           console.error("[stylize] insert error:", error);
