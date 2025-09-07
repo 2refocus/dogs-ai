@@ -75,22 +75,22 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
-  // For nano-banana, try a simpler approach - use the base prompt as-is
+  // Build the prompt with crop ratio instructions if specified
   let prompt = basePrompt;
-  
-  // Only add crop ratio instructions if specified
   if (options.crop_ratio) {
     const [w, h] = options.crop_ratio.split(":").map(Number);
     if (w && h) {
       if (w > h) {
-        prompt += `, landscape orientation, wide format`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, landscape orientation, wide format, horizontal composition`;
       } else if (h > w) {
-        prompt += `, portrait orientation, tall format`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, portrait orientation, tall format, vertical composition`;
       } else {
-        prompt += `, square format, centered`;
+        prompt += `, crop to ${options.crop_ratio} aspect ratio, square format, centered composition`;
       }
     }
   }
+  
+  prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
 
   // Determine dimensions based on crop ratio
   let width = 1024;
@@ -118,8 +118,7 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
     input: {
       image_input: [imageUrl],
       prompt: prompt,
-      // Simplified negative prompt for nano-banana
-      negative_prompt: "blurry, low quality, distorted, human, person, people",
+      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
       width: width,
       height: height,
       num_outputs: options.num_outputs || 1,
