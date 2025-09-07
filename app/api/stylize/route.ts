@@ -5,7 +5,7 @@
    - OPTIONAL: if SUPABASE_SERVICE_ROLE is set, inserts a row into public.generations
 */
 
-import { NextRequest, NextResponse, json } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
