@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4) Optional persistence — only if admin envs are present.
-    //    Inserts a *minimal* row for the Community feed (safe across schemas).
+    //    Inserts a row for the Community feed.
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
@@ -175,13 +175,14 @@ export async function POST(req: NextRequest) {
           {
             user_id: null,
             output_url: outputUrl,
-            is_public: true,
-            // add these back only if your table has them as nullable:
-            // input_url: inputUrl,
-            // prompt,
-            // preset_label,
+            high_res_url: outputUrl,
+            preset_label: preset_label || "DEFAULT Portrait",
+            display_name: null,
+            website: null,
+            profile_image_url: null,
           },
         ]);
+        console.log("[stylize] Successfully inserted into database");
       } catch (e) {
         console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
       }
