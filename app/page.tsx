@@ -302,26 +302,28 @@ export default function Home() {
                     </select>
                   </div>
 
-                  <div className="grid gap-3">
-                    <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
-                    <select
-                      value={cropRatio}
-                      onChange={(e) => setCropRatio(e.target.value)}
-                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
-                    >
-                      <option value="1_1">Square (1:1)</option>
-                      <option value="4_5">Portrait (4:5)</option>
-                      <option value="3_4">Portrait (3:4)</option>
-                      <option value="2_3">Portrait (2:3)</option>
-                      <option value="4_3">Landscape (4:3)</option>
-                      <option value="3_2">Landscape (3:2)</option>
-                      <option value="16_9">Wide (16:9)</option>
-                      <option value="21_9">Ultra-Wide (21:9)</option>
-                      <option value="9_16">Vertical (9:16)</option>
-                    </select>
-                  </div>
                 </div>
               )}
+
+              {/* Crop Ratio - Available for all users */}
+              <div className="grid gap-3">
+                <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
+                <select
+                  value={cropRatio}
+                  onChange={(e) => setCropRatio(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+                >
+                  <option value="1_1">Square (1:1) - Instagram Square</option>
+                  <option value="4_5">Portrait (4:5) - Instagram Post</option>
+                  <option value="3_4">Portrait (3:4) - Classic Portrait</option>
+                  <option value="2_3">Portrait (2:3) - Photo Portrait</option>
+                  <option value="4_3">Landscape (4:3) - Classic Landscape</option>
+                  <option value="3_2">Landscape (3:2) - Photo Landscape</option>
+                  <option value="16_9">Wide (16:9) - YouTube Thumbnail</option>
+                  <option value="21_9">Ultra-Wide (21:9) - Cinematic</option>
+                  <option value="9_16">Vertical (9:16) - Instagram Story/TikTok</option>
+                </select>
+              </div>
 
               <button
                 onClick={onGenerate}
