@@ -302,12 +302,11 @@ export default function Home() {
                   </div>
 
                   <div className="grid gap-3">
-                    <label className="text-sm font-semibold text-[var(--fg)] opacity-50">Crop Ratio - Coming Soon</label>
+                    <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
                     <select
                       value={cropRatio}
                       onChange={(e) => setCropRatio(e.target.value)}
-                      disabled
-                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all opacity-50 cursor-not-allowed"
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
                       <option value="1:1">Square (1:1)</option>
                       <option value="4:5">Portrait (4:5)</option>
