@@ -139,6 +139,7 @@ export default function Home() {
       }
       // Always send crop_ratio (available for all users)
       fd.append("crop_ratio", cropRatio);
+      console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
       fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");

@@ -125,11 +125,9 @@ async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: str
     },
   };
   
-  // Add crop_ratio if provided
-  if (cropRatio) {
-    body.input.crop_ratio = cropRatio;
-    console.log(`[stylize] Adding crop_ratio parameter: ${cropRatio}`);
-  }
+  // Note: We're using prompt-based aspect ratio control instead of API parameter
+  // The cropRatio is embedded in the prompt via composePrompt function
+  console.log(`[stylize] Using prompt-based aspect ratio control (cropRatio: ${cropRatio})`);
   
   console.log(`[stylize] Complete request body to Replicate:`, JSON.stringify(body, null, 2));
 
@@ -186,8 +184,9 @@ export async function POST(req: NextRequest) {
     const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
-    console.log(`[stylize] Crop ratio: ${crop_ratio}`);
+    console.log(`[stylize] Crop ratio received: ${crop_ratio}`);
     console.log(`[stylize] Final composed prompt: ${finalPrompt}`);
+    console.log(`[stylize] Prompt length: ${finalPrompt.length} characters`);
     
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 

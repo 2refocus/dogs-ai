@@ -26,25 +26,13 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: allError.message, items: [] }, { status: 500 });
     }
     
-    console.log(`[community] Found ${allData?.length || 0} total records`);
-    console.log(`[community] Latest 3 records:`, allData?.slice(0, 3).map(r => ({ 
-      id: r.id, 
-      created_at: r.created_at, 
-      output_url: r.output_url?.substring(0, 50) + "...",
-      preset_label: r.preset_label,
-      time_ago: r.created_at ? Math.round((Date.now() - new Date(r.created_at).getTime()) / 1000) + "s ago" : "unknown"
-    })));
+    // Debug logs removed for cleaner console output
     
     // Filter for valid output_url and exclude deleted/inaccessible images
     const validItems = (allData || []).filter((r) => {
       // Basic URL validation
       if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
-        console.log(`[community] Filtering out record ${r.id}:`, {
-          has_url: !!r.output_url,
-          url_type: typeof r.output_url,
-          url_starts_http: r.output_url?.startsWith("http"),
-          url_preview: r.output_url?.substring(0, 50)
-        });
+        // Filtering out invalid record
         return false;
       }
       
@@ -58,27 +46,7 @@ export async function GET() {
       return true;
     });
     
-    console.log(`[community] Filtered to ${validItems.length} valid items`);
-    console.log(`[community] Latest valid items:`, validItems.slice(0, 3).map(i => ({ 
-      id: i.id, 
-      output_url: i.output_url?.substring(0, 50) + "...", 
-      created_at: i.created_at,
-      time_ago: i.created_at ? Math.round((Date.now() - new Date(i.created_at).getTime()) / 1000) + "s ago" : "unknown"
-    })));
-    
-    // Check if any recent images (last 2 minutes) are missing
-    const recentImages = allData?.filter(r => {
-      if (!r.created_at) return false;
-      const age = Date.now() - new Date(r.created_at).getTime();
-      return age < 120000; // 2 minutes
-    }) || [];
-    console.log(`[community] Recent images (last 2 min):`, recentImages.length, recentImages.map(r => ({ id: r.id, time_ago: Math.round((Date.now() - new Date(r.created_at).getTime()) / 1000) + "s ago" })));
-    
-    console.log(`[community] Sample items with preset_label:`, validItems.slice(0, 3).map(item => ({
-      id: item.id,
-      preset_label: item.preset_label,
-      has_preset: !!item.preset_label
-    })));
+    // Debug logs removed for cleaner console output
     
     return NextResponse.json({ ok: true, items: validItems });
   } catch (e: any) {
