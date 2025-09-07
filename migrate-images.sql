@@ -37,3 +37,20 @@ SELECT
 FROM generations 
 WHERE output_url IS NOT NULL AND high_res_url IS NOT NULL
 ORDER BY created_at DESC;
+
+-- 4. Find very old Replicate URLs (likely expired)
+SELECT 
+  id,
+  output_url,
+  created_at,
+  EXTRACT(EPOCH FROM (NOW() - created_at))/3600 as hours_old
+FROM generations 
+WHERE output_url LIKE '%replicate.delivery%'
+  AND created_at < NOW() - INTERVAL '24 hours'
+ORDER BY created_at ASC;
+
+-- 5. Optional: Delete expired records (BE CAREFUL!)
+-- Uncomment and run only if you want to clean up expired records
+-- DELETE FROM generations 
+-- WHERE output_url LIKE '%replicate.delivery%'
+--   AND created_at < NOW() - INTERVAL '7 days';

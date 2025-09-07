@@ -15,7 +15,11 @@ async function downloadAndStoreImage(imageUrl: string, filename: string): Promis
     // Download the image
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      console.error(`[migrate] Failed to download image: ${response.status}`);
+      if (response.status === 404) {
+        console.warn(`[migrate] Image expired (404): ${imageUrl}`);
+      } else {
+        console.error(`[migrate] Failed to download image: ${response.status}`);
+      }
       return null;
     }
     
@@ -118,7 +122,7 @@ export async function POST(req: NextRequest) {
             results.push({ id: row.id, status: 'success', new_url: permanentUrl });
           }
         } else {
-          results.push({ id: row.id, status: 'failed', error: 'Failed to download/store image' });
+          results.push({ id: row.id, status: 'expired', error: 'Image URL expired (404) - cannot migrate' });
         }
       } catch (error: any) {
         console.error(`[migrate] Error processing row ${row.id}:`, error);

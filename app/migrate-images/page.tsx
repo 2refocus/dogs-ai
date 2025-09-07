@@ -39,12 +39,12 @@ export default function MigrateImagesPage() {
 
   return (
     <main className="mx-auto max-w-4xl p-6">
-      <h1 className="text-3xl font-bold mb-6">Image Migration Tool</h1>
+      <h1 className="text-3xl font-bold mb-6 text-[var(--fg)]">Image Migration Tool</h1>
       
       <div className="grid gap-6">
         {/* Check Migration Status */}
         <div className="card p-6">
-          <h2 className="text-xl font-semibold mb-4">Check Migration Status</h2>
+          <h2 className="text-xl font-semibold mb-4 text-[var(--fg)]">Check Migration Status</h2>
           <button
             onClick={checkMigration}
             disabled={loading}
@@ -54,13 +54,13 @@ export default function MigrateImagesPage() {
           </button>
           
           {preview && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Migration Status:</h3>
-              <p>Total rows needing migration: <strong>{preview.count}</strong></p>
+            <div className="mt-4 p-4 bg-[var(--muted)]/10 rounded-lg border border-[var(--border)]">
+              <h3 className="font-semibold text-[var(--fg)]">Migration Status:</h3>
+              <p className="text-[var(--fg)]">Total rows needing migration: <strong>{preview.count}</strong></p>
               {preview.rows && preview.rows.length > 0 && (
                 <div className="mt-2">
-                  <h4 className="font-medium">Sample rows:</h4>
-                  <ul className="text-sm">
+                  <h4 className="font-medium text-[var(--fg)]">Sample rows:</h4>
+                  <ul className="text-sm text-[var(--muted-foreground)]">
                     {preview.rows.map((row: any) => (
                       <li key={row.id}>
                         ID {row.id}: {row.output_url?.substring(0, 50)}...
@@ -75,8 +75,8 @@ export default function MigrateImagesPage() {
 
         {/* Run Migration */}
         <div className="card p-6">
-          <h2 className="text-xl font-semibold mb-4">Run Migration</h2>
-          <p className="text-gray-600 mb-4">
+          <h2 className="text-xl font-semibold mb-4 text-[var(--fg)]">Run Migration</h2>
+          <p className="text-[var(--muted-foreground)] mb-4">
             This will download images from Replicate CDN and store them permanently in Supabase Storage.
           </p>
           
@@ -105,15 +105,19 @@ export default function MigrateImagesPage() {
           </div>
           
           {results && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-              <h3 className="font-semibold">Migration Results:</h3>
-              <p>Processed: <strong>{results.processed}</strong> images</p>
+            <div className="mt-4 p-4 bg-[var(--muted)]/10 rounded-lg border border-[var(--border)]">
+              <h3 className="font-semibold text-[var(--fg)]">Migration Results:</h3>
+              <p className="text-[var(--fg)]">Processed: <strong>{results.processed}</strong> images</p>
               {results.results && (
                 <div className="mt-2">
-                  <h4 className="font-medium">Details:</h4>
+                  <h4 className="font-medium text-[var(--fg)]">Details:</h4>
                   <ul className="text-sm">
                     {results.results.map((result: any) => (
-                      <li key={result.id} className={result.status === 'success' ? 'text-green-600' : 'text-red-600'}>
+                      <li key={result.id} className={
+                        result.status === 'success' ? 'text-green-600' : 
+                        result.status === 'expired' ? 'text-yellow-600' : 
+                        'text-red-600'
+                      }>
                         ID {result.id}: {result.status} {result.error && `(${result.error})`}
                       </li>
                     ))}
@@ -126,8 +130,8 @@ export default function MigrateImagesPage() {
 
         {/* Instructions */}
         <div className="card p-6">
-          <h2 className="text-xl font-semibold mb-4">Instructions</h2>
-          <ol className="list-decimal list-inside space-y-2 text-gray-600">
+          <h2 className="text-xl font-semibold mb-4 text-[var(--fg)]">Instructions</h2>
+          <ol className="list-decimal list-inside space-y-2 text-[var(--muted-foreground)]">
             <li>First, click "Check Status" to see how many images need migration</li>
             <li>Start with "Migrate 1 Image" to test the process</li>
             <li>If successful, migrate in small batches (5-10 images at a time)</li>
