@@ -18,8 +18,10 @@ type Item = {
 
 export default function CommunityFeed() {
   const [items, setItems] = useState<Item[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchCommunityData = async () => {
+  const fetchCommunityData = async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
     try {
       console.log("[CommunityFeed] Fetching community data...");
       const res = await fetch("/api/community", { cache: "no-store" });
@@ -49,6 +51,7 @@ export default function CommunityFeed() {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
     }
+    if (showRefresh) setRefreshing(false);
   };
 
   useEffect(() => {
@@ -62,5 +65,19 @@ export default function CommunityFeed() {
     };
   }, []);
 
-  return <CommunityGrid items={items} />;
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-[var(--fg)]">Community Gallery</h2>
+        <button
+          onClick={() => fetchCommunityData(true)}
+          disabled={refreshing}
+          className="px-3 py-1 text-sm bg-[var(--brand)] text-[var(--brand-ink)] rounded-lg hover:bg-[var(--brand)]/90 disabled:opacity-50"
+        >
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+      <CommunityGrid items={items} />
+    </div>
+  );
 }

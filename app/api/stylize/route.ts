@@ -20,7 +20,7 @@ const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
 // Optional — ONLY used if present (won’t break if missing)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE || "";
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Small helpers
 function json(body: any, status = 200) {
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const file = form.get("file") as File | null;
     const prompt =
       (form.get("prompt") || "").toString().trim() ||
-      "transform this into a single pet head-and-shoulders portrait, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
+      "transform this into a single pet portrait, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
     const preset_label = (form.get("preset_label") || "").toString();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
