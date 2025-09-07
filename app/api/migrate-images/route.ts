@@ -137,19 +137,36 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     console.log(`[migrate] Blob size: ${imageBlob.size} bytes`);
     console.log(`[migrate] Content-Type: ${response.headers.get('content-type')}`);
     
-    // Check if the response is actually an image
+    // Check if the response is actually a valid image
     if (imageBuffer.byteLength === 0) {
       console.error(`[migrate] Downloaded file is empty! Response might be HTML error page`);
+      return null;
+    }
+    
+    // Check if it's a valid image by looking at the first few bytes
+    const firstBytes = new Uint8Array(imageBuffer.slice(0, 4));
+    const isValidImage = (
+      // JPEG signature: FF D8 FF
+      (firstBytes[0] === 0xFF && firstBytes[1] === 0xD8 && firstBytes[2] === 0xFF) ||
+      // PNG signature: 89 50 4E 47
+      (firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47) ||
+      // WebP signature: 52 49 46 46
+      (firstBytes[0] === 0x52 && firstBytes[1] === 0x49 && firstBytes[2] === 0x46 && firstBytes[3] === 0x46)
+    );
+    
+    if (!isValidImage) {
+      console.error(`[migrate] Downloaded content is not a valid image! First bytes: ${Array.from(firstBytes).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
       // Try to get the response as text to see what we actually got
       try {
-        const textResponse = await fetch(response.url);
-        const text = await textResponse.text();
-        console.log(`[migrate] Empty response content (first 200 chars): ${text.substring(0, 200)}`);
+        const text = new TextDecoder().decode(imageBuffer.slice(0, 200));
+        console.log(`[migrate] Invalid response content (first 200 chars): ${text}`);
       } catch (e) {
-        console.log(`[migrate] Could not get response text:`, e);
+        console.log(`[migrate] Could not decode response text:`, e);
       }
       return null;
     }
+    
+    console.log(`[migrate] Valid image detected! Size: ${imageBuffer.byteLength} bytes`);
     
     // Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage

@@ -9,7 +9,7 @@ const IDENTITY =
 
 const CAMERA =
   "fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), " +
-  "soft key + subtle rim light, gentle bokeh, 4:5 portrait crop, high detail, crisp facial features";
+  "soft key + subtle rim light, gentle bokeh, high detail, crisp facial features";
 
 const NEGATIVE =
   "no text, no watermark, no frame, no hands, no extra limbs, no second animal, " +

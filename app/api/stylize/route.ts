@@ -115,14 +115,20 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 }
 
 // ---- Replicate REST helpers (no SDK; very stable)
-async function replicateCreate(imageUrl: string, prompt: string) {
+async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: string) {
   // IMPORTANT: image_input as an ARRAY (fix for 422)
-  const body = {
+  const body: any = {
     input: {
       image_input: [imageUrl], // <-- key fix
       prompt,
     },
   };
+  
+  // Add crop_ratio if provided
+  if (cropRatio) {
+    body.input.crop_ratio = cropRatio;
+    console.log(`[stylize] Adding crop_ratio parameter: ${cropRatio}`);
+  }
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
@@ -168,6 +174,7 @@ export async function POST(req: NextRequest) {
       "transform this into a single pet portrait, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. elegant, intricate details, warm and cozy, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
     const preset_label = (form.get("preset_label") || "").toString();
     const user_id = (form.get("user_id") || "").toString();
+    const crop_ratio = (form.get("crop_ratio") || "").toString();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
@@ -175,7 +182,7 @@ export async function POST(req: NextRequest) {
     const inputUrl = await uploadToSupabasePublic(file);
 
     // 2) Create prediction
-    const created = await replicateCreate(inputUrl, prompt);
+    const created = await replicateCreate(inputUrl, prompt, crop_ratio);
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
 
