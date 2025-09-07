@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const file = form.get("file") as File | null;
     const prompt =
       (form.get("prompt") || "").toString().trim() ||
-      "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
+      "transform this into a single pet head-and-shoulders portrait, centered, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, 4:5 portrait crop, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background wall, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
     const preset_label = (form.get("preset_label") || "").toString();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
