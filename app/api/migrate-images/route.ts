@@ -52,22 +52,39 @@ async function downloadAndStoreImage(imageUrl: string, filename: string): Promis
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // Find all rows with Replicate URLs that need migration
-    const { data: rows, error } = await supabaseAdmin
+    const url = new URL(req.url);
+    const showAll = url.searchParams.get('all') === 'true';
+    
+    let query = supabaseAdmin
       .from('generations')
       .select('id, output_url, high_res_url, preset_label, created_at')
       .like('output_url', '%replicate.delivery%')
       .order('created_at', { ascending: false });
 
+    // Only filter by recent if not showing all
+    if (!showAll) {
+      query = query.gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()); // Last 6 hours
+    }
+
+    const { data: rows, error } = await query;
+
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
+    // Get total count for comparison
+    const { count: totalCount } = await supabaseAdmin
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .like('output_url', '%replicate.delivery%');
+
     return NextResponse.json({ 
       ok: true, 
       count: rows?.length || 0,
+      totalCount: totalCount || 0,
+      filter: showAll ? 'all' : 'recent (last 6 hours)',
       rows: rows?.slice(0, 10) // Show first 10 for preview
     });
   } catch (error: any) {
@@ -79,11 +96,12 @@ export async function POST(req: NextRequest) {
   try {
     const { limit = 5 } = await req.json().catch(() => ({}));
     
-    // Find rows that need migration
+    // Find only recent rows that might still be available for migration
     const { data: rows, error } = await supabaseAdmin
       .from('generations')
       .select('id, output_url, high_res_url, preset_label, created_at')
       .like('output_url', '%replicate.delivery%')
+      .gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()) // Last 6 hours
       .order('created_at', { ascending: false })
       .limit(limit);
 

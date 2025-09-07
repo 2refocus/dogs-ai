@@ -7,10 +7,11 @@ export default function MigrateImagesPage() {
   const [results, setResults] = useState<any>(null);
   const [preview, setPreview] = useState<any>(null);
 
-  const checkMigration = async () => {
+  const checkMigration = async (showAll = false) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/migrate-images");
+      const url = showAll ? "/api/migrate-images?all=true" : "/api/migrate-images";
+      const res = await fetch(url);
       const data = await res.json();
       setPreview(data);
     } catch (error) {
@@ -45,18 +46,33 @@ export default function MigrateImagesPage() {
         {/* Check Migration Status */}
         <div className="card p-6">
           <h2 className="text-xl font-semibold mb-4 text-[var(--fg)]">Check Migration Status</h2>
-          <button
-            onClick={checkMigration}
-            disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-          >
-            {loading ? "Checking..." : "Check Status"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => checkMigration(false)}
+              disabled={loading}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+            >
+              {loading ? "Checking..." : "Check Recent (6h)"}
+            </button>
+            <button
+              onClick={() => checkMigration(true)}
+              disabled={loading}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 disabled:opacity-50"
+            >
+              {loading ? "Checking..." : "Check All"}
+            </button>
+          </div>
           
           {preview && (
             <div className="mt-4 p-4 bg-[var(--muted)]/10 rounded-lg border border-[var(--border)]">
               <h3 className="font-semibold text-[var(--fg)]">Migration Status:</h3>
-              <p className="text-[var(--fg)]">Total rows needing migration: <strong>{preview.count}</strong></p>
+              <p className="text-[var(--fg)]">
+                {preview.filter === 'all' ? 'All' : 'Recent'} rows: <strong>{preview.count}</strong>
+                {preview.totalCount && preview.totalCount !== preview.count && (
+                  <span className="text-[var(--muted-foreground)]"> (Total: {preview.totalCount})</span>
+                )}
+              </p>
+              <p className="text-sm text-[var(--muted-foreground)]">Filter: {preview.filter}</p>
               {preview.rows && preview.rows.length > 0 && (
                 <div className="mt-2">
                   <h4 className="font-medium text-[var(--fg)]">Sample rows:</h4>
