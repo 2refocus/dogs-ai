@@ -17,10 +17,16 @@ async function isImageAccessible(imageUrl: string): Promise<boolean> {
   }
 }
 
-// Download and store image in Supabase Storage
-async function downloadAndStoreImage(imageUrl: string, filename: string): Promise<string | null> {
+// Copy image from high_res_url to permanent Supabase Storage
+async function copyImageToStorage(imageUrl: string, filename: string): Promise<string | null> {
   try {
-    console.log(`[migrate] Downloading image from: ${imageUrl}`);
+    console.log(`[migrate] Copying image from: ${imageUrl}`);
+    
+    // If it's already a Supabase URL, just return it
+    if (imageUrl.includes('supabase')) {
+      console.log(`[migrate] Already a Supabase URL, skipping copy`);
+      return imageUrl;
+    }
     
     // Download the image
     const response = await fetch(imageUrl);
@@ -57,7 +63,7 @@ async function downloadAndStoreImage(imageUrl: string, filename: string): Promis
     console.log(`[migrate] Successfully stored image: ${urlData.publicUrl}`);
     return urlData.publicUrl;
   } catch (error) {
-    console.error(`[migrate] Error downloading/storing image:`, error);
+    console.error(`[migrate] Error copying/storing image:`, error);
     return null;
   }
 }
@@ -95,13 +101,18 @@ export async function GET(req: NextRequest) {
         rows.map(async (row) => {
           const sourceUrl = row.high_res_url || row.output_url;
           const isAccessible = await isImageAccessible(sourceUrl);
-          return { ...row, isAccessible };
+          console.log(`[migrate] ID ${row.id}: ${isAccessible ? 'ACCESSIBLE' : 'EXPIRED'} - ${sourceUrl}`);
+          return { ...row, isAccessible, sourceUrl };
         })
       );
       
       // Filter to only accessible images
       accessibleRows = accessibilityChecks.filter(row => row.isAccessible);
       console.log(`[migrate] Found ${accessibleRows.length} accessible images out of ${rows.length} total`);
+      
+      // Also return the failed ones for debugging
+      const failedRows = accessibilityChecks.filter(row => !row.isAccessible);
+      console.log(`[migrate] Failed images:`, failedRows.map(row => ({ id: row.id, url: row.sourceUrl })));
     }
 
     // Get total count for comparison
@@ -124,16 +135,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { limit = 5 } = await req.json().catch(() => ({}));
+    const { limit = 5, ids } = await req.json().catch(() => ({}));
     
-    // Find only recent rows that might still be available for migration
-    const { data: rows, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('generations')
       .select('id, output_url, high_res_url, preset_label, created_at')
       .like('output_url', '%replicate.delivery%')
-      .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()) // Last 48 hours
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    // If specific IDs are provided, use those
+    if (ids && Array.isArray(ids) && ids.length > 0) {
+      query = query.in('id', ids);
+    } else {
+      // Otherwise use the time-based filter
+      query = query.gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+    }
+
+    const { data: rows, error } = await query.limit(limit);
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -149,8 +167,8 @@ export async function POST(req: NextRequest) {
         
         console.log(`[migrate] Processing row ${row.id}: ${sourceUrl}`);
         
-        // Download and store the image
-        const permanentUrl = await downloadAndStoreImage(sourceUrl, filename);
+        // Copy the image to permanent storage
+        const permanentUrl = await copyImageToStorage(sourceUrl, filename);
         
         if (permanentUrl) {
           // Update the database record

@@ -6,6 +6,7 @@ export default function MigrateImagesPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [preview, setPreview] = useState<any>(null);
+  const [specificIds, setSpecificIds] = useState<string>("");
 
   const checkMigration = async (showAll = false, checkAccessible = false) => {
     setLoading(true);
@@ -27,10 +28,20 @@ export default function MigrateImagesPage() {
   const runMigration = async (limit: number = 5) => {
     setLoading(true);
     try {
+      const body: any = { limit };
+      
+      // If specific IDs are provided, use those
+      if (specificIds.trim()) {
+        const ids = specificIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        if (ids.length > 0) {
+          body.ids = ids;
+        }
+      }
+      
       const res = await fetch("/api/migrate-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       setResults(data);
@@ -83,6 +94,11 @@ export default function MigrateImagesPage() {
                 )}
               </p>
               <p className="text-sm text-[var(--muted-foreground)]">Filter: {preview.filter}</p>
+              {preview.filter === 'accessible only' && preview.count === 0 && (
+                <div className="mt-2 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded text-yellow-200 text-sm">
+                  <strong>No accessible images found.</strong> Check the browser console for detailed logs showing which URLs were tested and why they failed.
+                </div>
+              )}
               {preview.rows && preview.rows.length > 0 && (
                 <div className="mt-2">
                   <h4 className="font-medium text-[var(--fg)]">Sample rows:</h4>
@@ -105,6 +121,23 @@ export default function MigrateImagesPage() {
           <p className="text-[var(--muted-foreground)] mb-4">
             This will download images from Replicate CDN and store them permanently in Supabase Storage.
           </p>
+          
+          {/* Specific IDs input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[var(--fg)] mb-2">
+              Or specify exact IDs (comma-separated):
+            </label>
+            <input
+              type="text"
+              value={specificIds}
+              onChange={(e) => setSpecificIds(e.target.value)}
+              placeholder="e.g., 96, 79, 77, 75"
+              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--bg)] text-[var(--fg)]"
+            />
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+              Paste the IDs of the 12 images from your SQL query
+            </p>
+          </div>
           
           <div className="flex gap-2 mb-4">
             <button
