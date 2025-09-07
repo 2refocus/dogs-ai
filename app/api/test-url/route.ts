@@ -4,8 +4,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+  let url = 'unknown';
+  
   try {
-    const { url } = await req.json();
+    const body = await req.json();
+    url = body.url;
     
     if (!url) {
       return NextResponse.json({ ok: false, error: "URL is required" }, { status: 400 });
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       ok: false, 
       error: error.message,
-      url: req.body?.url || 'unknown'
+      url: url
     }, { status: 500 });
   }
 }
