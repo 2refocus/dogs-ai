@@ -74,6 +74,12 @@ export async function GET() {
     }) || [];
     console.log(`[community] Recent images (last 2 min):`, recentImages.length, recentImages.map(r => ({ id: r.id, time_ago: Math.round((Date.now() - new Date(r.created_at).getTime()) / 1000) + "s ago" })));
     
+    console.log(`[community] Sample items with preset_label:`, validItems.slice(0, 3).map(item => ({
+      id: item.id,
+      preset_label: item.preset_label,
+      has_preset: !!item.preset_label
+    })));
+    
     return NextResponse.json({ ok: true, items: validItems });
   } catch (e: any) {
     console.error("Community API error:", e);
