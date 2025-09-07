@@ -35,6 +35,15 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   const currentImage = images[currentIndex];
   if (!currentImage) return null;
 
+  // Debug: Log the current image data
+  console.log("[Lightbox] Current image data:", {
+    id: currentImage.id,
+    preset_label: currentImage.preset_label,
+    preset_label_type: typeof currentImage.preset_label,
+    preset_label_length: currentImage.preset_label?.length,
+    all_keys: Object.keys(currentImage)
+  });
+
   const download = async () => {
     try {
       // Use high-res URL if available, otherwise fallback to regular URL
