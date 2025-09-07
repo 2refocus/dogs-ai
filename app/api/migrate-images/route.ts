@@ -7,6 +7,16 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Check if an image URL is still accessible
+async function isImageAccessible(imageUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(imageUrl, { method: 'HEAD' });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
 // Download and store image in Supabase Storage
 async function downloadAndStoreImage(imageUrl: string, filename: string): Promise<string | null> {
   try {
@@ -56,6 +66,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const showAll = url.searchParams.get('all') === 'true';
+    const checkAccessible = url.searchParams.get('check') === 'true';
     
     let query = supabaseAdmin
       .from('generations')
@@ -75,6 +86,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
+    let accessibleRows = rows || [];
+    
+    // If checking accessibility, test each URL
+    if (checkAccessible && rows && rows.length > 0) {
+      console.log(`[migrate] Checking accessibility of ${rows.length} images...`);
+      const accessibilityChecks = await Promise.all(
+        rows.map(async (row) => {
+          const sourceUrl = row.high_res_url || row.output_url;
+          const isAccessible = await isImageAccessible(sourceUrl);
+          return { ...row, isAccessible };
+        })
+      );
+      
+      // Filter to only accessible images
+      accessibleRows = accessibilityChecks.filter(row => row.isAccessible);
+      console.log(`[migrate] Found ${accessibleRows.length} accessible images out of ${rows.length} total`);
+    }
+
     // Get total count for comparison
     const { count: totalCount } = await supabaseAdmin
       .from('generations')
@@ -83,10 +112,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ 
       ok: true, 
-      count: rows?.length || 0,
+      count: accessibleRows.length,
       totalCount: totalCount || 0,
-      filter: showAll ? 'all' : 'recent (last 48 hours)',
-      rows: rows?.slice(0, 10) // Show first 10 for preview
+      filter: checkAccessible ? 'accessible only' : (showAll ? 'all' : 'recent (last 48 hours)'),
+      rows: accessibleRows.slice(0, 10) // Show first 10 for preview
     });
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });

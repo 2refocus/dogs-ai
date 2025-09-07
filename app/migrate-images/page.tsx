@@ -7,10 +7,13 @@ export default function MigrateImagesPage() {
   const [results, setResults] = useState<any>(null);
   const [preview, setPreview] = useState<any>(null);
 
-  const checkMigration = async (showAll = false) => {
+  const checkMigration = async (showAll = false, checkAccessible = false) => {
     setLoading(true);
     try {
-      const url = showAll ? "/api/migrate-images?all=true" : "/api/migrate-images";
+      let url = "/api/migrate-images";
+      if (showAll) url += "?all=true";
+      if (checkAccessible) url += showAll ? "&check=true" : "?check=true";
+      
       const res = await fetch(url);
       const data = await res.json();
       setPreview(data);
@@ -46,7 +49,7 @@ export default function MigrateImagesPage() {
         {/* Check Migration Status */}
         <div className="card p-6">
           <h2 className="text-xl font-semibold mb-4 text-[var(--fg)]">Check Migration Status</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => checkMigration(false)}
               disabled={loading}
@@ -60,6 +63,13 @@ export default function MigrateImagesPage() {
               className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 disabled:opacity-50"
             >
               {loading ? "Checking..." : "Check All"}
+            </button>
+            <button
+              onClick={() => checkMigration(false, true)}
+              disabled={loading}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {loading ? "Testing..." : "Check Accessible Only"}
             </button>
           </div>
           
