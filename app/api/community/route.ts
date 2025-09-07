@@ -27,11 +27,23 @@ export async function GET() {
     }
     
     console.log(`[community] Found ${allData?.length || 0} total records`);
+    console.log(`[community] Latest 3 records:`, allData?.slice(0, 3).map(r => ({ 
+      id: r.id, 
+      created_at: r.created_at, 
+      output_url: r.output_url?.substring(0, 50) + "...",
+      preset_label: r.preset_label 
+    })));
     
     // Filter for valid output_url and exclude deleted/inaccessible images
     const validItems = (allData || []).filter((r) => {
       // Basic URL validation
       if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
+        console.log(`[community] Filtering out record ${r.id}:`, {
+          has_url: !!r.output_url,
+          url_type: typeof r.output_url,
+          url_starts_http: r.output_url?.startsWith("http"),
+          url_preview: r.output_url?.substring(0, 50)
+        });
         return false;
       }
       

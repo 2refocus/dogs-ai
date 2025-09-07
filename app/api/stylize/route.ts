@@ -168,24 +168,38 @@ export async function POST(req: NextRequest) {
 
     // 4) Optional persistence — only if admin envs are present.
     //    Inserts a row for the Community feed.
+    console.log("[stylize] About to insert into database:", {
+      SUPABASE_URL: !!SUPABASE_URL,
+      SERVICE_ROLE: !!SERVICE_ROLE,
+      outputUrl: !!outputUrl,
+      preset_label
+    });
+    
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        await admin.from("generations").insert([
-          {
-            user_id: null,
-            output_url: outputUrl,
-            high_res_url: outputUrl,
-            preset_label: preset_label || "DEFAULT Portrait",
-            display_name: null,
-            website: null,
-            profile_image_url: null,
-          },
-        ]);
-        console.log("[stylize] Successfully inserted into database");
+        const insertData = {
+          user_id: null,
+          output_url: outputUrl,
+          high_res_url: outputUrl,
+          preset_label: preset_label || "DEFAULT Portrait",
+          display_name: null,
+          website: null,
+          profile_image_url: null,
+        };
+        console.log("[stylize] Inserting data:", insertData);
+        
+        const { error } = await admin.from("generations").insert(insertData);
+        if (error) {
+          console.error("[stylize] insert error:", error);
+        } else {
+          console.log("[stylize] Successfully inserted into database ✅");
+        }
       } catch (e) {
-        console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
+        console.error("[stylize] insert exception:", e);
       }
+    } else {
+      console.warn("[stylize] skipped insert — missing SUPABASE_SERVICE_ROLE or URL");
     }
 
     return json({
