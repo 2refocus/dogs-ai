@@ -29,12 +29,15 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     }
     
     // Download the image
+    console.log(`[migrate] Attempting to fetch: ${imageUrl}`);
     const response = await fetch(imageUrl);
+    console.log(`[migrate] Response status: ${response.status}, ok: ${response.ok}`);
+    
     if (!response.ok) {
       if (response.status === 404) {
         console.warn(`[migrate] Image expired (404): ${imageUrl}`);
       } else {
-        console.error(`[migrate] Failed to download image: ${response.status}`);
+        console.error(`[migrate] Failed to download image: ${response.status} - ${response.statusText}`);
       }
       return null;
     }
@@ -165,7 +168,10 @@ export async function POST(req: NextRequest) {
         const sourceUrl = row.high_res_url || row.output_url;
         const filename = `migrated-${row.id}-${Date.now()}.jpg`;
         
-        console.log(`[migrate] Processing row ${row.id}: ${sourceUrl}`);
+        console.log(`[migrate] Processing row ${row.id}:`);
+        console.log(`[migrate] - output_url: ${row.output_url}`);
+        console.log(`[migrate] - high_res_url: ${row.high_res_url}`);
+        console.log(`[migrate] - using sourceUrl: ${sourceUrl}`);
         
         // Copy the image to permanent storage
         const permanentUrl = await copyImageToStorage(sourceUrl, filename);
