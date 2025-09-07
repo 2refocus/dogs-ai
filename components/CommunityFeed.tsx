@@ -30,7 +30,7 @@ export default function CommunityFeed() {
       
       if (j?.ok && Array.isArray(j.items)) {
         console.log("[CommunityFeed] Raw items:", j.items.slice(0, 2));
-        console.log("[CommunityFeed] Sample preset_labels:", j.items.slice(0, 3).map(item => ({
+        console.log("[CommunityFeed] Sample preset_labels:", j.items.slice(0, 3).map((item: any) => ({
           id: item.id,
           preset_label: item.preset_label,
           has_preset: !!item.preset_label
