@@ -59,7 +59,7 @@ export default function Home() {
   const [userUrl, setUserUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [numImages, setNumImages] = useState<number>(1);
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[0]?.value || "");
   const [cropRatio, setCropRatio] = useState<string>("1:1");
   const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -126,8 +126,8 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset or default prompt
-      const promptToUse = selectedPreset || DEFAULT_PROMPT;
+      // Use selected preset for logged-in users, or DEFAULT Portrait for non-logged-in users
+      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
       fd.append("prompt", promptToUse);
       
       // Add premium parameters for logged-in users
@@ -137,7 +137,7 @@ export default function Home() {
       }
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
-      fd.append("preset_label", "");
+      fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
@@ -411,7 +411,7 @@ export default function Home() {
                 output_url: genUrl,
                 display_name: displayName || null,
                 website: userUrl || null,
-                preset_label: null
+                preset_label: PRESETS.dog.find(p => p.value === selectedPreset)?.label || null
               }]}
               initialIndex={0}
               onClose={() => setShowLightbox(false)}
