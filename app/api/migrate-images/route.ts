@@ -133,6 +133,24 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     const imageBuffer = await response.arrayBuffer();
     const imageBlob = new Blob([imageBuffer]);
     
+    console.log(`[migrate] Downloaded image size: ${imageBuffer.byteLength} bytes`);
+    console.log(`[migrate] Blob size: ${imageBlob.size} bytes`);
+    console.log(`[migrate] Content-Type: ${response.headers.get('content-type')}`);
+    
+    // Check if the response is actually an image
+    if (imageBuffer.byteLength === 0) {
+      console.error(`[migrate] Downloaded file is empty! Response might be HTML error page`);
+      // Try to get the response as text to see what we actually got
+      try {
+        const textResponse = await fetch(response.url);
+        const text = await textResponse.text();
+        console.log(`[migrate] Empty response content (first 200 chars): ${text.substring(0, 200)}`);
+      } catch (e) {
+        console.log(`[migrate] Could not get response text:`, e);
+      }
+      return null;
+    }
+    
     // Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage
       .from('generations')
