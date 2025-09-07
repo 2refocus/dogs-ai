@@ -67,8 +67,7 @@ export default function CommunityFeed() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-[var(--fg)]">Community Gallery</h2>
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => fetchCommunityData(true)}
           disabled={refreshing}
