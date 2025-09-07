@@ -2,7 +2,7 @@ export type Species = "dog" | "cat";
 export type Preset = { label: string; value: string };
 
 const IDENTITY =
-  "transform this into a single pet head-and-shoulders portrait, centered, looking at camera; " +
+  "transform this into a single pet head-and-shoulders portrait, golden ratio, looking at camera; " +
   "convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; " +
   "realistic breed, unique markings, fur texture and eye color; " +
   "respect the original pose and proportions; no changes to anatomy";
@@ -20,7 +20,7 @@ const STYLES: { label: string; style: string }[] = [
   {
     label: "DEFAULT Portrait",
     style:
-      "Dramatic fine-art portrait of a pet inside a grand castle hall, against an ornate background wall, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality.",
+      "Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality.",
   },
   {
     label: "Classic Oil on Canvas",
