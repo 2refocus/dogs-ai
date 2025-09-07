@@ -20,7 +20,7 @@ const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
 // Optional — ONLY used if present (won’t break if missing)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE || "";
 
 // Small helpers
 function json(body: any, status = 200) {
@@ -74,26 +74,14 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 }
 
 // ---- Replicate REST helpers (no SDK; very stable)
-async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
+async function replicateCreate(imageUrl: string, prompt: string) {
+  // IMPORTANT: image_input as an ARRAY (fix for 422)
   const body = {
     input: {
-      image_input: [imageUrl],
-      prompt: basePrompt,
-      negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
-      width: 1024,
-      height: 1024,
-      num_outputs: options.num_outputs || 1,
-      guidance_scale: 7.5,
-      num_inference_steps: 50,
-      scheduler: "DPMSolverMultistep"
+      image_input: [imageUrl], // <-- key fix
+      prompt,
     },
   };
-
-  console.log("[stylize] nano-banana request:", { 
-    prompt: basePrompt.substring(0, 200) + "...", 
-    crop_ratio: options.crop_ratio, 
-    num_outputs: options.num_outputs
-  });
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
@@ -132,16 +120,12 @@ export async function POST(req: NextRequest) {
       return json({ ok: false, error: "Invalid content-type" }, 400);
     }
 
-    // Get user ID (authenticated user or "anonymous" for free users)
-    const userId = await getUserId(req);
-
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const prompt = (form.get("prompt") || "").toString().trim() ||
-      "fine-art pet portrait, dramatic elegant lighting, high detail";
+    const prompt =
+      (form.get("prompt") || "").toString().trim() ||
+      "fine-art pet portrait, dramatic elegant lighting, high detail, 1:1";
     const preset_label = (form.get("preset_label") || "").toString();
-    const user_url = (form.get("user_url") || "").toString().trim();
-    const display_name = (form.get("display_name") || "").toString().trim();
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
@@ -149,21 +133,7 @@ export async function POST(req: NextRequest) {
     const inputUrl = await uploadToSupabasePublic(file);
 
     // 2) Create prediction
-    // Get premium parameters
-    const num_outputs = parseInt(form.get("num_outputs")?.toString() || "1", 10);
-    const crop_ratio = form.get("crop_ratio")?.toString();
-
-    // Create prediction with options
-    const options: { num_outputs: number; crop_ratio?: string } = {
-      num_outputs: num_outputs || 1
-    };
-    
-    // Only include crop_ratio if explicitly provided
-    if (crop_ratio) {
-      options.crop_ratio = crop_ratio;
-    }
-    
-    const created = await replicateCreate(inputUrl, prompt, options);
+    const created = await replicateCreate(inputUrl, prompt);
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
 
@@ -171,91 +141,57 @@ export async function POST(req: NextRequest) {
     const t0 = Date.now();
     const timeoutMs = 55_000;
     let outputUrl: string | null = null;
-    let highResUrl: string | null = null;
 
     while (Date.now() - t0 < timeoutMs) {
       const p = await replicateGet(prediction_id);
       const status = String(p?.status || "");
 
-      // Normalize output - now handling both preview and high-res URLs
-      let previewUrl = null;
-      
-      console.log("[stylize] prediction output structure:", {
-        status: p?.status,
-        output: p?.output,
-        outputType: typeof p?.output,
-        isArray: Array.isArray(p?.output),
-        length: Array.isArray(p?.output) ? p.output.length : 'N/A',
-        urls: (p as any)?.urls
-      });
-
+      // Normalize output
       if (Array.isArray(p?.output) && p.output.length > 0) {
-        outputUrl = p.output[0];
-        highResUrl = p.output[0];  // Same URL for now, since we're generating high quality in one step
-        console.log("[stylize] using array output, first item:", outputUrl);
+        outputUrl = p.output[0]!;
       } else if (typeof p?.output === "string") {
         outputUrl = p.output;
-        highResUrl = p.output;
-        console.log("[stylize] using string output:", outputUrl);
       } else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) {
-        outputUrl = (p as any).urls[0];
-        highResUrl = (p as any).urls[0];
-        console.log("[stylize] using urls array, first item:", outputUrl);
+        outputUrl = (p as any).urls[0]!;
       }
 
       if (status === "succeeded" || status === "completed") break;
       if (status === "failed" || status === "canceled") {
         return json({ ok: false, error: p?.error || "Generation failed" }, 500);
       }
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1200));
     }
 
     if (!outputUrl || !isHttpsUrl(outputUrl)) {
       return json({ ok: false, error: "No output URL returned" }, 500);
     }
 
-    // 4) Always save to database for community feed (both anonymous and authenticated users)
-    console.log("[stylize] About to insert into database:", {
-      SUPABASE_URL: !!SUPABASE_URL,
-      SERVICE_ROLE: !!SERVICE_ROLE,
-      outputUrl: !!outputUrl,
-      userId
-    });
-    
+    // 4) Optional persistence — only if admin envs are present.
+    //    Inserts a *minimal* row for the Community feed (safe across schemas).
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        const insertData = {
-          output_url: outputUrl,
-          high_res_url: highResUrl,
-          aspect_ratio: crop_ratio || null,
-          preset_label,
-          website: user_url || null,
-          display_name: display_name || null,
-          // Don't set profile_image_url - let it remain null for new generations
-          user_id: userId,
-        };
-        console.log("[stylize] Inserting data:", insertData);
-        
-        const { error } = await admin.from("generations").insert(insertData);
-        if (error) {
-          console.error("[stylize] insert error:", error);
-        } else {
-          console.log(`[stylize] inserted row into generations for user: ${userId} ✅`);
-        }
+        await admin.from("generations").insert([
+          {
+            user_id: null,
+            output_url: outputUrl,
+            is_public: true,
+            // add these back only if your table has them as nullable:
+            // input_url: inputUrl,
+            // prompt,
+            // preset_label,
+          },
+        ]);
       } catch (e) {
-        console.error("[stylize] insert exception:", e);
+        console.warn("[stylize] insert skipped/failed:", (e as any)?.message || e);
       }
-    } else {
-      console.warn("[stylize] skipped insert — missing SUPABASE_SERVICE_ROLE or URL");
     }
 
-    return json({ 
-      ok: true, 
-      prediction_id, 
-      input_url: inputUrl, 
+    return json({
+      ok: true,
+      prediction_id,
+      input_url: inputUrl,
       output_url: outputUrl,
-      high_res_url: highResUrl
     });
   } catch (e: any) {
     console.error("[stylize] error:", e?.message || e);
