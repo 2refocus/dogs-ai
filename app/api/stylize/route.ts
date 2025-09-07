@@ -129,6 +129,8 @@ async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: str
     body.input.crop_ratio = cropRatio;
     console.log(`[stylize] Adding crop_ratio parameter: ${cropRatio}`);
   }
+  
+  console.log(`[stylize] Complete request body to Replicate:`, JSON.stringify(body, null, 2));
 
   const res = await fetch(
     `https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`,
@@ -142,6 +144,8 @@ async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: str
     }
   );
   const text = await res.text();
+  console.log(`[stylize] Replicate API response status: ${res.status}`);
+  console.log(`[stylize] Replicate API response body:`, text);
   if (!res.ok) throw new Error(`replicate create ${res.status}: ${text}`);
   return JSON.parse(text);
 }
@@ -175,6 +179,8 @@ export async function POST(req: NextRequest) {
     const preset_label = (form.get("preset_label") || "").toString();
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "").toString();
+    
+    console.log(`[stylize] Received crop_ratio from form: "${crop_ratio}"`);
 
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
