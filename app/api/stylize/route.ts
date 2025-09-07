@@ -188,6 +188,11 @@ export async function POST(req: NextRequest) {
     console.log(`[stylize] Final composed prompt: ${finalPrompt}`);
     console.log(`[stylize] Prompt length: ${finalPrompt.length} characters`);
     
+    // Debug: Check if the prompt actually contains the aspect ratio instruction
+    const hasAspectRatio = finalPrompt.includes('aspect ratio') || finalPrompt.includes('orientation');
+    console.log(`[stylize] Prompt contains aspect ratio instruction: ${hasAspectRatio}`);
+    console.log(`[stylize] Last 100 chars of prompt: ${finalPrompt.slice(-100)}`);
+    
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
     // 1) Upload input (same as before)
