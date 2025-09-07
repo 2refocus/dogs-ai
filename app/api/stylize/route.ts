@@ -173,7 +173,9 @@ export async function POST(req: NextRequest) {
       SUPABASE_URL: !!SUPABASE_URL,
       SERVICE_ROLE: !!SERVICE_ROLE,
       outputUrl: !!outputUrl,
-      preset_label
+      preset_label,
+      preset_label_type: typeof preset_label,
+      preset_label_length: preset_label?.length
     });
     
     if (SUPABASE_URL && SERVICE_ROLE) {

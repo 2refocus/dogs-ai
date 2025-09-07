@@ -81,11 +81,9 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
         </button>
 
         {/* Style label */}
-        {currentImage.preset_label && (
-          <div className="absolute top-4 left-4 text-white text-sm bg-black/60 px-3 py-1 rounded-full border border-white/20">
-            {currentImage.preset_label}
-          </div>
-        )}
+        <div className="absolute top-4 left-4 text-white text-sm bg-black/60 px-3 py-1 rounded-full border border-white/20">
+          {currentImage.preset_label || "No Style Info"}
+        </div>
 
         {/* Image */}
         <div className="relative">
