@@ -136,8 +136,9 @@ export default function Home() {
       // Add premium parameters for logged-in users
       if (userToken) {
         fd.append("num_outputs", String(numImages));
-        fd.append("crop_ratio", cropRatio);
       }
+      // Always send crop_ratio (available for all users)
+      fd.append("crop_ratio", cropRatio);
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
       fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");

@@ -182,7 +182,8 @@ export async function POST(req: NextRequest) {
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
     // Use the new prompt framework to compose the final prompt
-    const finalPrompt = composePrompt(basePrompt, "generate", crop_ratio as AspectKey);
+    // Mode: "edit" because we're transforming an uploaded image, not generating from text
+    const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
     console.log(`[stylize] Crop ratio: ${crop_ratio}`);
