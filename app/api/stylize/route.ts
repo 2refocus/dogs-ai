@@ -75,52 +75,13 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, basePrompt: string, options: { crop_ratio?: string; num_outputs?: number } = {}) {
-  // Build the prompt with crop ratio instructions if specified
-  let prompt = basePrompt;
-  if (options.crop_ratio) {
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w && h) {
-      if (w > h) {
-        prompt += `, crop to ${options.crop_ratio} aspect ratio, landscape orientation, wide format, horizontal composition`;
-      } else if (h > w) {
-        prompt += `, crop to ${options.crop_ratio} aspect ratio, portrait orientation, tall format, vertical composition`;
-      } else {
-        prompt += `, crop to ${options.crop_ratio} aspect ratio, square format, centered composition`;
-      }
-    }
-  }
-  
-  prompt += `, professional studio portrait, ultra high quality, sharp focus, 8k uhd`;
-
-  // Determine dimensions based on crop ratio
-  let width = 1024;
-  let height = 1024;
-  
-  if (options.crop_ratio) {
-    const [w, h] = options.crop_ratio.split(":").map(Number);
-    if (w && h) {
-      // Calculate dimensions maintaining aspect ratio
-      const aspectRatio = w / h;
-      if (aspectRatio > 1) {
-        // Landscape
-        width = 1024;
-        height = Math.round(1024 / aspectRatio);
-      } else if (aspectRatio < 1) {
-        // Portrait
-        height = 1024;
-        width = Math.round(1024 * aspectRatio);
-      }
-      // Square stays 1024x1024
-    }
-  }
-
   const body = {
     input: {
       image_input: [imageUrl],
-      prompt: prompt,
+      prompt: basePrompt,
       negative_prompt: "blurry, low quality, distorted, deformed, disfigured, bad anatomy, watermark, pixelated, jpeg artifacts, oversaturated, human, person, people",
-      width: width,
-      height: height,
+      width: 1024,
+      height: 1024,
       num_outputs: options.num_outputs || 1,
       guidance_scale: 7.5,
       num_inference_steps: 50,
@@ -129,10 +90,9 @@ async function replicateCreate(imageUrl: string, basePrompt: string, options: { 
   };
 
   console.log("[stylize] nano-banana request:", { 
-    prompt: prompt.substring(0, 200) + "...", 
+    prompt: basePrompt.substring(0, 200) + "...", 
     crop_ratio: options.crop_ratio, 
-    num_outputs: options.num_outputs,
-    has_crop_instructions: prompt.includes("aspect ratio")
+    num_outputs: options.num_outputs
   });
 
   const res = await fetch(
