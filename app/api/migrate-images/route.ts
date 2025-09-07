@@ -65,7 +65,8 @@ export async function GET(req: NextRequest) {
 
     // Only filter by recent if not showing all
     if (!showAll) {
-      query = query.gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()); // Last 6 hours
+      // Use a more flexible range - images from last 48 hours that might still be available
+      query = query.gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()); // Last 48 hours
     }
 
     const { data: rows, error } = await query;
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
       ok: true, 
       count: rows?.length || 0,
       totalCount: totalCount || 0,
-      filter: showAll ? 'all' : 'recent (last 6 hours)',
+      filter: showAll ? 'all' : 'recent (last 48 hours)',
       rows: rows?.slice(0, 10) // Show first 10 for preview
     });
   } catch (error: any) {
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       .from('generations')
       .select('id, output_url, high_res_url, preset_label, created_at')
       .like('output_url', '%replicate.delivery%')
-      .gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()) // Last 6 hours
+      .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()) // Last 48 hours
       .order('created_at', { ascending: false })
       .limit(limit);
 

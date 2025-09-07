@@ -52,7 +52,7 @@ export default function MigrateImagesPage() {
               disabled={loading}
               className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
             >
-              {loading ? "Checking..." : "Check Recent (6h)"}
+              {loading ? "Checking..." : "Check Recent (48h)"}
             </button>
             <button
               onClick={() => checkMigration(true)}
