@@ -41,40 +41,69 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     console.log(`[migrate] Attempting to fetch: ${imageUrl}`);
     console.log(`[migrate] URL encoded: ${encodeURI(imageUrl)}`);
     
-    // Try using a proxy service to bypass bot detection
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-    console.log(`[migrate] Trying proxy URL: ${proxyUrl}`);
-    
+    // Try multiple approaches to bypass bot detection
     let response;
+    let method = 'unknown';
+    
+    // Method 1: Try with different headers and referrer
     try {
-      // First try the proxy
-      response = await fetch(proxyUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-      });
-      console.log(`[migrate] Proxy response status: ${response.status}, ok: ${response.ok}`);
-    } catch (proxyError) {
-      console.log(`[migrate] Proxy failed, trying direct:`, proxyError);
-      
-      // Fallback to direct fetch
+      console.log(`[migrate] Trying method 1: Direct with referrer`);
       response = await fetch(imageUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://replicate.com/',
+          'Origin': 'https://replicate.com',
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
+      method = 'direct_with_referrer';
+      console.log(`[migrate] Method 1 response: ${response.status}, ok: ${response.ok}`);
+    } catch (error) {
+      console.log(`[migrate] Method 1 failed:`, error);
     }
-    console.log(`[migrate] Response status: ${response.status}, ok: ${response.ok}`);
     
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`[migrate] Image expired (404): ${imageUrl}`);
+    // Method 2: Try with minimal headers
+    if (!response || !response.ok) {
+      try {
+        console.log(`[migrate] Trying method 2: Minimal headers`);
+        response = await fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'curl/7.68.0'
+          }
+        });
+        method = 'minimal_headers';
+        console.log(`[migrate] Method 2 response: ${response.status}, ok: ${response.ok}`);
+      } catch (error) {
+        console.log(`[migrate] Method 2 failed:`, error);
+      }
+    }
+    
+    // Method 3: Try with proxy service
+    if (!response || !response.ok) {
+      try {
+        const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
+        console.log(`[migrate] Trying method 3: CORS proxy`);
+        response = await fetch(proxyUrl, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        method = 'cors_proxy';
+        console.log(`[migrate] Method 3 response: ${response.status}, ok: ${response.ok}`);
+      } catch (error) {
+        console.log(`[migrate] Method 3 failed:`, error);
+      }
+    }
+    console.log(`[migrate] Final response status: ${response.status}, ok: ${response.ok}, method: ${method}`);
+    
+    if (!response || !response.ok) {
+      if (response && response.status === 404) {
+        console.warn(`[migrate] Image expired (404): ${imageUrl} (method: ${method})`);
       } else {
-        console.error(`[migrate] Failed to download image: ${response.status} - ${response.statusText}`);
+        console.error(`[migrate] Failed to download image: ${response?.status || 'no response'} - ${response?.statusText || 'unknown error'} (method: ${method})`);
       }
       return null;
     }
