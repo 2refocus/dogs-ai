@@ -27,6 +27,47 @@ function json(body: any, status = 200) {
   return NextResponse.json(body, { status });
 }
 
+// Download and store image in Supabase Storage
+async function downloadAndStoreImage(imageUrl: string, filename: string): Promise<string | null> {
+  try {
+    console.log(`[stylize] Downloading image from: ${imageUrl}`);
+    
+    // Download the image
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error(`[stylize] Failed to download image: ${response.status}`);
+      return null;
+    }
+    
+    const imageBuffer = await response.arrayBuffer();
+    const imageBlob = new Blob([imageBuffer]);
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabaseAdmin.storage
+      .from('generations')
+      .upload(filename, imageBlob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+    
+    if (error) {
+      console.error(`[stylize] Failed to upload to storage:`, error);
+      return null;
+    }
+    
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from('generations')
+      .getPublicUrl(data.path);
+    
+    console.log(`[stylize] Successfully stored image: ${urlData.publicUrl}`);
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error(`[stylize] Error downloading/storing image:`, error);
+    return null;
+  }
+}
+
 // Get user ID from Authorization header, fallback to anonymous UUID
 async function getUserId(req: NextRequest): Promise<string> {
   try {
@@ -167,7 +208,20 @@ export async function POST(req: NextRequest) {
       return json({ ok: false, error: "No output URL returned" }, 500);
     }
 
-    // 4) Optional persistence — only if admin envs are present.
+    // 4) Download and store image in Supabase Storage (permanent storage)
+    let permanentUrl = outputUrl; // Fallback to original URL
+    if (SUPABASE_URL && SERVICE_ROLE) {
+      const filename = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const storedUrl = await downloadAndStoreImage(outputUrl, filename);
+      if (storedUrl) {
+        permanentUrl = storedUrl;
+        console.log(`[stylize] Using permanent storage URL: ${permanentUrl}`);
+      } else {
+        console.warn(`[stylize] Failed to store image, using original URL: ${outputUrl}`);
+      }
+    }
+
+    // 5) Optional persistence — only if admin envs are present.
     //    Inserts a row for the Community feed.
     console.log("[stylize] About to insert into database:", {
       SUPABASE_URL: !!SUPABASE_URL,
@@ -183,8 +237,8 @@ export async function POST(req: NextRequest) {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
         const insertData = {
           user_id: user_id || "00000000-0000-0000-0000-000000000000", // Use provided user_id or fallback for anonymous
-          output_url: outputUrl,
-          high_res_url: outputUrl,
+          output_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
+          high_res_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           preset_label: preset_label || "DEFAULT Portrait",
           display_name: null,
           website: null,
