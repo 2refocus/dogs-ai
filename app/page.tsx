@@ -61,7 +61,7 @@ export default function Home() {
   const [displayName, setDisplayName] = useState<string>("");
   const [numImages, setNumImages] = useState<number>(1);
   const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[0]?.value || "");
-  const [cropRatio, setCropRatio] = useState<string>("1:1");
+  const [cropRatio, setCropRatio] = useState<string>("1_1");
   const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
 
@@ -308,10 +308,15 @@ export default function Home() {
                       onChange={(e) => setCropRatio(e.target.value)}
                       className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
                     >
-                      <option value="1:1">Square (1:1)</option>
-                      <option value="4:5">Portrait (4:5)</option>
-                      <option value="3:2">Landscape (3:2)</option>
-                      <option value="16:9">Wide (16:9)</option>
+                      <option value="1_1">Square (1:1)</option>
+                      <option value="4_5">Portrait (4:5)</option>
+                      <option value="3_4">Portrait (3:4)</option>
+                      <option value="2_3">Portrait (2:3)</option>
+                      <option value="4_3">Landscape (4:3)</option>
+                      <option value="3_2">Landscape (3:2)</option>
+                      <option value="16_9">Wide (16:9)</option>
+                      <option value="21_9">Ultra-Wide (21:9)</option>
+                      <option value="9_16">Vertical (9:16)</option>
                     </select>
                   </div>
                 </div>
