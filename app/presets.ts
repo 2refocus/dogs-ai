@@ -2,8 +2,8 @@ export type Species = "dog" | "cat";
 export type Preset = { label: string; value: string };
 
 const IDENTITY =
-  "transform this into a single {{subject}} head-and-shoulders portrait, centered, looking at camera; " +
-  "convert any human or other subject into a realistic {{subject}}, preserve the original pose and composition; " +
+  "transform this into a single pet head-and-shoulders portrait, centered, looking at camera; " +
+  "convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; " +
   "realistic breed, unique markings, fur texture and eye color; " +
   "respect the original pose and proportions; no changes to anatomy";
 
@@ -116,9 +116,8 @@ const STYLES: { label: string; style: string }[] = [
 
 function buildPrompt(species: Species, style: string) {
   // Keep the template order stable for consistency
-  const subject = species;
   return (
-    `${IDENTITY.replace("{{subject}}", subject)}. ` +
+    `${IDENTITY}. ` +
     `${CAMERA}. ` +
     `Style: ${style}. ` +
     `Avoid: ${NEGATIVE}.`

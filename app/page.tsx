@@ -126,8 +126,8 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset for logged-in users, or DEFAULT Portrait for non-logged-in users
-      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
+      // Use simple default prompt that was working
+      const promptToUse = "";
       fd.append("prompt", promptToUse);
       
       // Add premium parameters for logged-in users
