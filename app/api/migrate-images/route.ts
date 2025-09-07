@@ -81,20 +81,42 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
       }
     }
     
-    // Method 3: Try with proxy service
+    // Method 3: Try with different proxy services
     if (!response || !response.ok) {
       try {
-        const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
-        console.log(`[migrate] Trying method 3: CORS proxy`);
-        response = await fetch(proxyUrl, {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        method = 'cors_proxy';
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+        console.log(`[migrate] Trying method 3: AllOrigins proxy`);
+        response = await fetch(proxyUrl);
+        method = 'allorigins_proxy';
         console.log(`[migrate] Method 3 response: ${response.status}, ok: ${response.ok}`);
       } catch (error) {
         console.log(`[migrate] Method 3 failed:`, error);
+      }
+    }
+    
+    // Method 4: Try with another proxy service
+    if (!response || !response.ok) {
+      try {
+        const proxyUrl = `https://thingproxy.freeboard.io/fetch/${imageUrl}`;
+        console.log(`[migrate] Trying method 4: ThingProxy`);
+        response = await fetch(proxyUrl);
+        method = 'thingproxy';
+        console.log(`[migrate] Method 4 response: ${response.status}, ok: ${response.ok}`);
+      } catch (error) {
+        console.log(`[migrate] Method 4 failed:`, error);
+      }
+    }
+    
+    // Method 5: Try with a simple image proxy
+    if (!response || !response.ok) {
+      try {
+        const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}`;
+        console.log(`[migrate] Trying method 5: Weserv proxy`);
+        response = await fetch(proxyUrl);
+        method = 'weserv_proxy';
+        console.log(`[migrate] Method 5 response: ${response.status}, ok: ${response.ok}`);
+      } catch (error) {
+        console.log(`[migrate] Method 5 failed:`, error);
       }
     }
     console.log(`[migrate] Final response status: ${response?.status || 'no response'}, ok: ${response?.ok || false}, method: ${method}`);
