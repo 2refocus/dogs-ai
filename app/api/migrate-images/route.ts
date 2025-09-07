@@ -39,6 +39,16 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     
     // Download the image with browser-like headers
     console.log(`[migrate] Attempting to fetch: ${imageUrl}`);
+    console.log(`[migrate] URL encoded: ${encodeURI(imageUrl)}`);
+    
+    // Test with a simple fetch first
+    try {
+      const testResponse = await fetch(imageUrl);
+      console.log(`[migrate] Simple fetch test - status: ${testResponse.status}, ok: ${testResponse.ok}`);
+    } catch (testError) {
+      console.log(`[migrate] Simple fetch test failed:`, testError);
+    }
+    
     const response = await fetch(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -187,8 +197,12 @@ export async function POST(req: NextRequest) {
         
         console.log(`[migrate] Processing row ${row.id}:`);
         console.log(`[migrate] - output_url: ${row.output_url}`);
+        console.log(`[migrate] - output_url length: ${row.output_url?.length}`);
         console.log(`[migrate] - high_res_url: ${row.high_res_url}`);
+        console.log(`[migrate] - high_res_url length: ${row.high_res_url?.length}`);
         console.log(`[migrate] - using sourceUrl: ${sourceUrl}`);
+        console.log(`[migrate] - sourceUrl length: ${sourceUrl?.length}`);
+        console.log(`[migrate] - sourceUrl === expected: ${sourceUrl === 'https://replicate.delivery/xezq/6IX4nBh2Bd4tERL4eXFno4YfEqlMvgqWsDyytFZ2DCS5ApSVA/tmpu5fwbg6j.jpeg'}`);
         
         // Copy the image to permanent storage
         const permanentUrl = await copyImageToStorage(sourceUrl, filename);
