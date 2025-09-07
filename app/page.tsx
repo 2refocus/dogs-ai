@@ -56,6 +56,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [freeLeft, setFreeLeft] = useState<number>(1);
   const [userToken, setUserToken] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userUrl, setUserUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [numImages, setNumImages] = useState<number>(1);
@@ -72,14 +73,16 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // Get user token for authenticated requests
+  // Get user token and ID for authenticated requests
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUserToken(data.session?.access_token || null);
+      setCurrentUserId(data.session?.user?.id || null);
     });
     
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserToken(session?.access_token || null);
+      setCurrentUserId(session?.user?.id || null);
     });
     
     return () => sub.subscription.unsubscribe();
@@ -138,6 +141,7 @@ export default function Home() {
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
       fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
+      fd.append("user_id", currentUserId || "");
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
