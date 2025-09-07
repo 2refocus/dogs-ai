@@ -1,0 +1,141 @@
+"use client";
+
+import { useState } from "react";
+
+export default function MigrateImagesPage() {
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any>(null);
+  const [preview, setPreview] = useState<any>(null);
+
+  const checkMigration = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/migrate-images");
+      const data = await res.json();
+      setPreview(data);
+    } catch (error) {
+      console.error("Error checking migration:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const runMigration = async (limit: number = 5) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/migrate-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit })
+      });
+      const data = await res.json();
+      setResults(data);
+    } catch (error) {
+      console.error("Error running migration:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="mx-auto max-w-4xl p-6">
+      <h1 className="text-3xl font-bold mb-6">Image Migration Tool</h1>
+      
+      <div className="grid gap-6">
+        {/* Check Migration Status */}
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold mb-4">Check Migration Status</h2>
+          <button
+            onClick={checkMigration}
+            disabled={loading}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+          >
+            {loading ? "Checking..." : "Check Status"}
+          </button>
+          
+          {preview && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-semibold">Migration Status:</h3>
+              <p>Total rows needing migration: <strong>{preview.count}</strong></p>
+              {preview.rows && preview.rows.length > 0 && (
+                <div className="mt-2">
+                  <h4 className="font-medium">Sample rows:</h4>
+                  <ul className="text-sm">
+                    {preview.rows.map((row: any) => (
+                      <li key={row.id}>
+                        ID {row.id}: {row.output_url?.substring(0, 50)}...
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Run Migration */}
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold mb-4">Run Migration</h2>
+          <p className="text-gray-600 mb-4">
+            This will download images from Replicate CDN and store them permanently in Supabase Storage.
+          </p>
+          
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => runMigration(1)}
+              disabled={loading}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {loading ? "Migrating..." : "Migrate 1 Image"}
+            </button>
+            <button
+              onClick={() => runMigration(5)}
+              disabled={loading}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {loading ? "Migrating..." : "Migrate 5 Images"}
+            </button>
+            <button
+              onClick={() => runMigration(10)}
+              disabled={loading}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {loading ? "Migrating..." : "Migrate 10 Images"}
+            </button>
+          </div>
+          
+          {results && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-semibold">Migration Results:</h3>
+              <p>Processed: <strong>{results.processed}</strong> images</p>
+              {results.results && (
+                <div className="mt-2">
+                  <h4 className="font-medium">Details:</h4>
+                  <ul className="text-sm">
+                    {results.results.map((result: any) => (
+                      <li key={result.id} className={result.status === 'success' ? 'text-green-600' : 'text-red-600'}>
+                        ID {result.id}: {result.status} {result.error && `(${result.error})`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Instructions */}
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold mb-4">Instructions</h2>
+          <ol className="list-decimal list-inside space-y-2 text-gray-600">
+            <li>First, click "Check Status" to see how many images need migration</li>
+            <li>Start with "Migrate 1 Image" to test the process</li>
+            <li>If successful, migrate in small batches (5-10 images at a time)</li>
+            <li>Monitor the results to ensure images are being stored correctly</li>
+            <li>Once all images are migrated, old Replicate URLs will be replaced with permanent Supabase URLs</li>
+          </ol>
+        </div>
+      </div>
+    </main>
+  );
+}
