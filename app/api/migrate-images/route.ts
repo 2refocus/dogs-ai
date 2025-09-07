@@ -10,7 +10,16 @@ export const dynamic = "force-dynamic";
 // Check if an image URL is still accessible
 async function isImageAccessible(imageUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(imageUrl, { method: 'HEAD' });
+    const response = await fetch(imageUrl, { 
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     return response.ok;
   } catch (error) {
     return false;
@@ -28,9 +37,17 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
       return imageUrl;
     }
     
-    // Download the image
+    // Download the image with browser-like headers
     console.log(`[migrate] Attempting to fetch: ${imageUrl}`);
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     console.log(`[migrate] Response status: ${response.status}, ok: ${response.ok}`);
     
     if (!response.ok) {
