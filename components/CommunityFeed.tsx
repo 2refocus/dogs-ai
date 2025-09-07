@@ -46,7 +46,7 @@ export default function CommunityFeed() {
       }));
       setItems(loc);
     } else {
-      console.log("[CommunityFeed] Logged in, not using local fallback");
+      console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
     }
   };

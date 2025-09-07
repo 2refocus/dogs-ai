@@ -31,7 +31,8 @@ export async function GET() {
       id: r.id, 
       created_at: r.created_at, 
       output_url: r.output_url?.substring(0, 50) + "...",
-      preset_label: r.preset_label 
+      preset_label: r.preset_label,
+      time_ago: r.created_at ? Math.round((Date.now() - new Date(r.created_at).getTime()) / 1000) + "s ago" : "unknown"
     })));
     
     // Filter for valid output_url and exclude deleted/inaccessible images
@@ -58,7 +59,20 @@ export async function GET() {
     });
     
     console.log(`[community] Filtered to ${validItems.length} valid items`);
-    console.log(`[community] Latest items:`, validItems.slice(0, 3).map(i => ({ id: i.id, output_url: i.output_url?.substring(0, 50) + "...", created_at: i.created_at })));
+    console.log(`[community] Latest valid items:`, validItems.slice(0, 3).map(i => ({ 
+      id: i.id, 
+      output_url: i.output_url?.substring(0, 50) + "...", 
+      created_at: i.created_at,
+      time_ago: i.created_at ? Math.round((Date.now() - new Date(i.created_at).getTime()) / 1000) + "s ago" : "unknown"
+    })));
+    
+    // Check if any recent images (last 2 minutes) are missing
+    const recentImages = allData?.filter(r => {
+      if (!r.created_at) return false;
+      const age = Date.now() - new Date(r.created_at).getTime();
+      return age < 120000; // 2 minutes
+    }) || [];
+    console.log(`[community] Recent images (last 2 min):`, recentImages.length, recentImages.map(r => ({ id: r.id, time_ago: Math.round((Date.now() - new Date(r.created_at).getTime()) / 1000) + "s ago" })));
     
     return NextResponse.json({ ok: true, items: validItems });
   } catch (e: any) {
