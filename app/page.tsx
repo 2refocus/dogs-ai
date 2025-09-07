@@ -59,7 +59,7 @@ export default function Home() {
   const [userUrl, setUserUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [numImages, setNumImages] = useState<number>(1);
-  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[2]?.value || "");
+  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[0]?.value || "");
   const [cropRatio, setCropRatio] = useState<string>("1:1");
   const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -126,8 +126,8 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset for logged-in users, or Cozy Home Portrait for non-logged-in users
-      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[2]?.value || DEFAULT_PROMPT) : PRESETS.dog[2]?.value || DEFAULT_PROMPT;
+      // Use selected preset for logged-in users, or DEFAULT Portrait for non-logged-in users
+      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
       fd.append("prompt", promptToUse);
       
       // Add premium parameters for logged-in users
