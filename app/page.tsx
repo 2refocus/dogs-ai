@@ -59,10 +59,24 @@ export default function Home() {
   const [userUrl, setUserUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [numImages, setNumImages] = useState<number>(1);
-  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[0]?.value || "");
+  const [selectedPreset, setSelectedPreset] = useState<string>(PRESETS.dog[2]?.value || "");
   const [cropRatio, setCropRatio] = useState<string>("1:1");
+  const [detectedSpecies, setDetectedSpecies] = useState<"dog" | "cat" | null>(null);
   const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
+
+  // Simple species detection based on file name or user input
+  const detectSpecies = (fileName: string, userInput: string): "dog" | "cat" => {
+    const text = (fileName + " " + userInput).toLowerCase();
+    if (text.includes("cat") || text.includes("kitten") || text.includes("feline")) {
+      return "cat";
+    }
+    if (text.includes("dog") || text.includes("puppy") || text.includes("canine")) {
+      return "dog";
+    }
+    // Default to dog if no clear indication
+    return "dog";
+  };
 
   useEffect(() => {
     try {
@@ -126,8 +140,13 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset for logged-in users, or first preset for non-logged-in users
-      const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
+      // Detect species and use appropriate preset
+      const species = detectSpecies(file.name, displayName);
+      setDetectedSpecies(species);
+      
+      // Use selected preset for logged-in users, or Cozy Home Portrait for non-logged-in users
+      const presets = species === "cat" ? PRESETS.cat : PRESETS.dog;
+      const promptToUse = userToken ? (selectedPreset || presets[2]?.value || DEFAULT_PROMPT) : presets[2]?.value || DEFAULT_PROMPT;
       fd.append("prompt", promptToUse);
       
       // Add premium parameters for logged-in users
@@ -137,7 +156,7 @@ export default function Home() {
       }
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
-      fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
+      fd.append("preset_label", presets.find(p => p.value === promptToUse)?.label || "");
 
       // Include Authorization header if user is logged in
       const headers: HeadersInit = {};
@@ -272,7 +291,7 @@ export default function Home() {
                       onChange={(e) => setSelectedPreset(e.target.value)}
                       className="w-full rounded-xl bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] transition-all"
                     >
-                      {PRESETS.dog.map((preset) => (
+                      {(detectedSpecies === "cat" ? PRESETS.cat : PRESETS.dog).map((preset) => (
                         <option key={preset.label} value={preset.value}>
                           {preset.label}
                         </option>
@@ -411,7 +430,7 @@ export default function Home() {
                 output_url: genUrl,
                 display_name: displayName || null,
                 website: userUrl || null,
-                preset_label: PRESETS.dog.find(p => p.value === selectedPreset)?.label || null
+                preset_label: (detectedSpecies === "cat" ? PRESETS.cat : PRESETS.dog).find(p => p.value === selectedPreset)?.label || null
               }]}
               initialIndex={0}
               onClose={() => setShowLightbox(false)}
