@@ -192,6 +192,7 @@ export default function Home() {
             pushLocal({
               output_url: url,
               input_url: create?.input_url ?? null,
+              preset_label: PRESETS.dog.find(p => p.value === promptToUse)?.label || "DEFAULT Portrait",
               created_at: new Date().toISOString(),
             });
           } catch {}
