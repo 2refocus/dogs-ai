@@ -97,7 +97,7 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
         console.log(`[migrate] Method 3 failed:`, error);
       }
     }
-    console.log(`[migrate] Final response status: ${response.status}, ok: ${response.ok}, method: ${method}`);
+    console.log(`[migrate] Final response status: ${response?.status || 'no response'}, ok: ${response?.ok || false}, method: ${method}`);
     
     if (!response || !response.ok) {
       if (response && response.status === 404) {
