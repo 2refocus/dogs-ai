@@ -65,18 +65,5 @@ export default function CommunityFeed() {
     };
   }, []);
 
-  return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => fetchCommunityData(true)}
-          disabled={refreshing}
-          className="px-3 py-1 text-sm bg-[var(--brand)] text-[var(--brand-ink)] rounded-lg hover:bg-[var(--brand)]/90 disabled:opacity-50"
-        >
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
-      <CommunityGrid items={items} />
-    </div>
-  );
+  return <CommunityGrid items={items} />;
 }
