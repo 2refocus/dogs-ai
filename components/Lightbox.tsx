@@ -89,13 +89,14 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
           →
         </button>
 
-        {/* Style label */}
-        <div className="absolute top-4 left-4 text-white text-sm bg-black/60 px-3 py-1 rounded-full border border-white/20">
-          {currentImage.preset_label || "No Style Info"}
-        </div>
-
-        {/* Image */}
+        {/* Image container with style label */}
         <div className="relative">
+          {/* Style label */}
+          <div className="absolute top-4 left-4 text-white text-sm bg-black/60 px-3 py-1 rounded-full border border-white/20 z-[60]">
+            {currentImage.preset_label || "No Style Info"}
+          </div>
+
+          {/* Image */}
           <img
             src={currentImage.high_res_url || currentImage.output_url}
             alt="Pet portrait"
