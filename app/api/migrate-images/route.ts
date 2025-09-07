@@ -41,23 +41,33 @@ async function copyImageToStorage(imageUrl: string, filename: string): Promise<s
     console.log(`[migrate] Attempting to fetch: ${imageUrl}`);
     console.log(`[migrate] URL encoded: ${encodeURI(imageUrl)}`);
     
-    // Test with a simple fetch first
-    try {
-      const testResponse = await fetch(imageUrl);
-      console.log(`[migrate] Simple fetch test - status: ${testResponse.status}, ok: ${testResponse.ok}`);
-    } catch (testError) {
-      console.log(`[migrate] Simple fetch test failed:`, testError);
-    }
+    // Try using a proxy service to bypass bot detection
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
+    console.log(`[migrate] Trying proxy URL: ${proxyUrl}`);
     
-    const response = await fetch(imageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
+    let response;
+    try {
+      // First try the proxy
+      response = await fetch(proxyUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      console.log(`[migrate] Proxy response status: ${response.status}, ok: ${response.ok}`);
+    } catch (proxyError) {
+      console.log(`[migrate] Proxy failed, trying direct:`, proxyError);
+      
+      // Fallback to direct fetch
+      response = await fetch(imageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+    }
     console.log(`[migrate] Response status: ${response.status}, ok: ${response.ok}`);
     
     if (!response.ok) {
