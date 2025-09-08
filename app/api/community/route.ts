@@ -82,7 +82,7 @@ export async function GET(request: Request) {
         .order("id", { ascending: false })
         .range(offset + limit, offset + limit + 10); // Check next 10 records
       
-      hasMore = nextPageData && nextPageData.length > 0;
+      hasMore = Boolean(nextPageData && nextPageData.length > 0);
     }
     
     console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} valid items, limit ${limit}, total DB records: ${totalCount})`);
