@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { buildReplicatePrompt, optimizePromptForReplicate, buildReplicateParams } from "@/lib/replicatePipeline";
 // Removed composePrompt import - using simple approach
 
 export const runtime = "nodejs";
@@ -141,22 +142,16 @@ async function uploadToSupabasePublicWithId(file: File, generationId: number | n
 
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: string) {
-  // IMPORTANT: image_input as an ARRAY (fix for 422)
-  const body: any = {
-    input: {
-      image_input: [imageUrl], // <-- key fix
-      prompt,
-    },
-  };
+  // Use improved parameter building
+  const inputParams = buildReplicateParams({
+    imageUrl,
+    prompt,
+    cropRatio,
+  });
   
-  // Try Replicate API parameter approach with better debugging
-  if (cropRatio && cropRatio !== "1_1") {
-    const replicateCropRatio = cropRatio.replace("_", ":");
-    body.input.crop_ratio = replicateCropRatio;
-    console.log(`[stylize] Using Replicate API crop_ratio parameter: ${replicateCropRatio}`);
-  } else {
-    console.log(`[stylize] Using default crop ratio (1:1) - no API parameter needed`);
-  }
+  const body: any = {
+    input: inputParams,
+  };
   
   console.log(`[stylize] Complete request body to Replicate:`, JSON.stringify(body, null, 2));
 
@@ -201,12 +196,10 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const basePrompt = (form.get("prompt") || "").toString().trim() ||
-      "transform this into a pet head-and-shoulders portrait, rule of thirds composition, looking at camera; PRESERVE the original animal type - if it's a dog, keep it as a dog; if it's a cat, keep it as a cat; only convert humans to pets; preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
-    
-    const preset_label = (form.get("preset_label") || "").toString();
+    const customPrompt = (form.get("prompt") || "").toString().trim();
+    const preset_label = (form.get("preset_label") || "Photorealistic").toString();
     const user_id = (form.get("user_id") || "").toString();
-    const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
+    const crop_ratio = (form.get("crop_ratio") || "4_5").toString();
     const display_name = (form.get("display_name") || "").toString();
     const user_url_raw = (form.get("user_url") || "").toString();
     
@@ -216,13 +209,20 @@ export async function POST(req: NextRequest) {
       user_url = `https://${user_url_raw}`;
     }
     
-    // Use simple approach: just the base prompt, let Replicate API handle crop_ratio
-    const finalPrompt = basePrompt;
+    // Build improved prompt using pipeline structure
+    const finalPrompt = buildReplicatePrompt({
+      species: "dog", // You could make this dynamic based on user input
+      styleLabel: preset_label,
+      cropRatio: crop_ratio,
+      customPrompt: customPrompt || undefined,
+    });
     
-    console.log(`[stylize] Base prompt: ${basePrompt}`);
-    console.log(`[stylize] Crop ratio received: ${crop_ratio}`);
-    console.log(`[stylize] Final prompt: ${finalPrompt}`);
-    console.log(`[stylize] Prompt length: ${finalPrompt.length} characters`);
+    // Optimize prompt for Replicate model
+    const optimizedPrompt = optimizePromptForReplicate(finalPrompt, REPLICATE_MODEL);
+    
+    console.log(`[stylize] Style: ${preset_label}, Crop: ${crop_ratio}`);
+    console.log(`[stylize] Final prompt: ${optimizedPrompt}`);
+    console.log(`[stylize] Prompt length: ${optimizedPrompt.length} characters`);
     
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
     const inputUrl = await uploadToSupabasePublicWithId(file, generationId);
 
     // 3) Create prediction
-    const created = await replicateCreate(inputUrl, finalPrompt, crop_ratio);
+    const created = await replicateCreate(inputUrl, optimizedPrompt, crop_ratio);
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
 
