@@ -238,7 +238,7 @@ export default function Home() {
       // Always send crop_ratio (available for all users)
       fd.append("crop_ratio", cropRatio);
       console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
-      console.log(`[frontend] About to send request to /api/stylize`);
+      console.log(`[frontend] About to send request to /api/stylize-unified`);
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
       fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
@@ -260,73 +260,50 @@ export default function Home() {
         body: fd,
         headers
       });
-      console.log(`[frontend] Received response from /api/stylize:`, createRes.status);
+      console.log(`[frontend] Received response from /api/stylize-unified:`, createRes.status);
       const create = await createRes.json();
       console.log(`[frontend] Response data:`, create);
-      if (!createRes.ok || !create?.prediction_id) {
+      if (!createRes.ok || !create?.output_url) {
         setMsg(create?.error || "Create failed");
         setLoading(false);
         return;
       }
 
-      const id: string = create.prediction_id;
-      setMsg("Generating…");
-      const t0 = Date.now();
-      while (Date.now() - t0 < 120000) {
-        await new Promise((r) => setTimeout(r, 1200));
-        const r2 = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
-        const s = await r2.json();
-
-        if (s?.status === "failed" || s?.status === "canceled") {
-          setMsg(`Failed: ${s?.error || "unknown"}`);
-          setLoading(false);
-          return;
-        }
-
-        let url: string | null = null;
-        if (Array.isArray(s?.urls) && s.urls.length > 0) url = s.urls[0];
-        else if (typeof s?.output === "string") url = s.output;
-        else if (Array.isArray(s?.output) && s.output.length > 0) url = s.output[0];
-
-        if ((s?.status === "succeeded" || s?.status === "completed") && url) {
-          setGenUrl(url);
-          setMsg("Done ✓");
-          setShowSuccess(true); // Show success animation
-          
-          // Log pipeline info if available
-          if (create?.pipeline_mode) {
-            console.log(`[frontend] Generation completed with pipeline: ${create.pipeline_mode}`);
-            console.log(`[frontend] Model used: ${create.model || 'Unknown'}`);
-          }
-
-          // Scroll to generated image
-          generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
-
-          // 1) local guest history (works offline)
-          try {
-            pushLocal({
-              output_url: url,
-              input_url: create?.input_url ?? null,
-              preset_label: PRESETS.dog.find(p => p.value === promptToUse)?.label || "DEFAULT Portrait",
-              created_at: new Date().toISOString(),
-            });
-          } catch {}
-
-          // Note: Database insert is already handled by /api/stylize route
-          // No need for duplicate /api/generations call
-
-          setLoading(false);
-          
-          // Hide success animation after 3 seconds
-          setTimeout(() => {
-            setShowSuccess(false);
-          }, 3000);
-          
-          return;
-        }
+      // Unified API already waits for completion, so we can use the result directly
+      setGenUrl(create.output_url);
+      setMsg("Done ✓");
+      setShowSuccess(true); // Show success animation
+      
+      // Log pipeline info if available
+      if (create?.pipeline_mode) {
+        console.log(`[frontend] Generation completed with pipeline: ${create.pipeline_mode}`);
+        console.log(`[frontend] Model used: ${create.model || 'Unknown'}`);
       }
 
-      setMsg("Timed out while polling.");
+      // Scroll to generated image
+      generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+      // 1) local guest history (works offline)
+      try {
+        pushLocal({
+          output_url: create.output_url,
+          input_url: create?.input_url ?? preview,
+          preset_label: PRESETS.dog.find(p => p.value === promptToUse)?.label || "DEFAULT Portrait",
+          created_at: new Date().toISOString(),
+        });
+      } catch {}
+
+      // Note: Database insert is already handled by /api/stylize-unified route
+      // No need for duplicate /api/generations call
+
+      setLoading(false);
+      
+      // Hide success animation after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+      
+      return;
     } catch (err: any) {
       setMsg(err?.message || "Unexpected error");
     } finally {

@@ -19,6 +19,27 @@ const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
 const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
+// Helper functions (same as original API)
+function isHttpsUrl(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function replicateGet(id: string) {
+  const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+    headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
+    cache: "no-store",
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`replicate get ${res.status}: ${text}`);
+  return JSON.parse(text);
+}
+
 // Upload function
 async function uploadToSupabasePublic(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -82,23 +103,42 @@ async function processSimplePipeline(
   }
   
   const prediction = await res.json();
-  
-  // Poll for completion
-  let result = prediction;
-  while (result.status !== "succeeded" && result.status !== "failed") {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
-    });
-    result = await pollRes.json();
+  const prediction_id: string | undefined = prediction?.id;
+  if (!prediction_id) {
+    throw new Error("No prediction id");
   }
-  
-  if (result.status === "failed") {
-    throw new Error(`Generation failed: ${result.error}`);
+
+  // Poll for completion (same logic as original API)
+  const t0 = Date.now();
+  const timeoutMs = 55_000;
+  let outputUrl: string | null = null;
+
+  while (Date.now() - t0 < timeoutMs) {
+    const p = await replicateGet(prediction_id);
+    const status = String(p?.status || "");
+
+    // Normalize output
+    if (Array.isArray(p?.output) && p.output.length > 0) {
+      outputUrl = p.output[0]!;
+    } else if (typeof p?.output === "string") {
+      outputUrl = p.output;
+    } else if (Array.isArray((p as any)?.urls) && (p as any).urls.length > 0) {
+      outputUrl = (p as any).urls[0]!;
+    }
+
+    if (status === "succeeded" || status === "completed") break;
+    if (status === "failed" || status === "canceled") {
+      throw new Error(`Generation failed: ${p?.error || "Unknown error"}`);
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  if (!outputUrl || !isHttpsUrl(outputUrl)) {
+    throw new Error("No output URL returned");
   }
   
   return {
-    imageUrl: result.output[0],
+    imageUrl: outputUrl,
     model: "Nano-Banana",
   };
 }
