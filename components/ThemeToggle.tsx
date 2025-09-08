@@ -5,17 +5,17 @@ export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    // Check localStorage first, then system preference
+    // Check localStorage first, then default to dark mode
     const savedTheme = localStorage.getItem('theme-preference');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    const shouldBeDark = savedTheme ? savedTheme === 'dark' : true; // Default to dark mode
     
     setIsDark(shouldBeDark);
     
     // Apply the theme immediately
     const root = document.documentElement;
     if (shouldBeDark) {
-      // Dark theme
+      // Dark theme (default)
+      root.removeAttribute('data-theme');
       root.style.setProperty('--bg', '#0f1115');
       root.style.setProperty('--fg', '#e9eef6');
       root.style.setProperty('--muted', '#1a1f29');
@@ -25,6 +25,7 @@ export default function ThemeToggle() {
       root.style.setProperty('--skeleton-c', 'rgba(255,255,255,0.02)');
     } else {
       // Light theme
+      root.setAttribute('data-theme', 'light');
       root.style.setProperty('--bg', '#faf9f7');
       root.style.setProperty('--fg', '#0f1115');
       root.style.setProperty('--muted', '#ffffff');
@@ -34,34 +35,7 @@ export default function ThemeToggle() {
       root.style.setProperty('--skeleton-c', 'rgba(0,0,0,0.02)');
     }
     
-    // Listen for system theme changes (only if no saved preference)
-    if (!savedTheme) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        setIsDark(e.matches);
-        // Apply theme change
-        if (e.matches) {
-          root.style.setProperty('--bg', '#0f1115');
-          root.style.setProperty('--fg', '#e9eef6');
-          root.style.setProperty('--muted', '#1a1f29');
-          root.style.setProperty('--line', 'rgba(255,255,255,0.08)');
-          root.style.setProperty('--skeleton-a', 'rgba(255,255,255,0.06)');
-          root.style.setProperty('--skeleton-b', 'rgba(255,255,255,0.04)');
-          root.style.setProperty('--skeleton-c', 'rgba(255,255,255,0.02)');
-        } else {
-          root.style.setProperty('--bg', '#faf9f7');
-          root.style.setProperty('--fg', '#0f1115');
-          root.style.setProperty('--muted', '#ffffff');
-          root.style.setProperty('--line', 'rgba(0,0,0,0.08)');
-          root.style.setProperty('--skeleton-a', 'rgba(0,0,0,0.06)');
-          root.style.setProperty('--skeleton-b', 'rgba(0,0,0,0.04)');
-          root.style.setProperty('--skeleton-c', 'rgba(0,0,0,0.02)');
-        }
-      };
-      mediaQuery.addEventListener('change', handleChange);
-      
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
+    // No need to listen for system theme changes since we default to dark mode
   }, []);
 
   const toggleTheme = () => {
@@ -71,7 +45,8 @@ export default function ThemeToggle() {
     // Apply theme by setting CSS custom properties
     const root = document.documentElement;
     if (newIsDark) {
-      // Dark theme
+      // Dark theme (default)
+      root.removeAttribute('data-theme');
       root.style.setProperty('--bg', '#0f1115');
       root.style.setProperty('--fg', '#e9eef6');
       root.style.setProperty('--muted', '#1a1f29');
@@ -81,6 +56,7 @@ export default function ThemeToggle() {
       root.style.setProperty('--skeleton-c', 'rgba(255,255,255,0.02)');
     } else {
       // Light theme
+      root.setAttribute('data-theme', 'light');
       root.style.setProperty('--bg', '#faf9f7');
       root.style.setProperty('--fg', '#0f1115');
       root.style.setProperty('--muted', '#ffffff');

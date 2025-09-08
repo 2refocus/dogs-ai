@@ -68,66 +68,33 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   };
 
   const share = async () => {
-    if (sharing) return; // Prevent multiple clicks
-    
+    if (sharing) return;
     setSharing(true);
+    
+    const shareUrl = currentImage.high_res_url || currentImage.output_url;
+    const shareText = `Check out this amazing pet portrait! 🐾✨`;
+    
+    console.log('[Lightbox] Starting share with URL:', shareUrl);
+    
+    // Simple approach: try clipboard first, then open in new tab
     try {
-      const shareUrl = currentImage.high_res_url || currentImage.output_url;
-      const shareText = `Check out this amazing pet portrait! 🐾✨`;
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      console.log('[Lightbox] Clipboard success');
       
-      console.log('[Lightbox] Share attempt:', { shareUrl, shareText });
-      
-      // Try Web Share API first (mobile)
-      if (navigator.share) {
-        try {
-          console.log('[Lightbox] Attempting Web Share API');
-          await navigator.share({
-            title: 'Pet Portrait',
-            text: shareText,
-            url: shareUrl,
-          });
-          console.log('[Lightbox] Web Share API successful');
-          return;
-        } catch (shareError) {
-          console.log('[Lightbox] Web Share API failed:', shareError);
-          // Fall through to clipboard
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.textContent = 'Link copied to clipboard!';
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
         }
-      } else {
-        console.log('[Lightbox] Web Share API not available');
-      }
+      }, 3000);
       
-      // Fallback: Copy to clipboard
-      try {
-        console.log('[Lightbox] Using clipboard fallback');
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        console.log('[Lightbox] Clipboard successful');
-        
-        // Show notification
-        const notification = document.createElement('div');
-        notification.textContent = 'Link copied to clipboard!';
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
-        document.body.appendChild(notification);
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 3000);
-        return;
-      } catch (clipboardError) {
-        console.log('[Lightbox] Clipboard failed:', clipboardError);
-        // Fall through to new tab
-      }
-      
-      // Final fallback: open in new tab
-      console.log('[Lightbox] Using new tab fallback');
+    } catch (clipboardError) {
+      console.log('[Lightbox] Clipboard failed, opening in new tab:', clipboardError);
       window.open(shareUrl, '_blank', 'noopener,noreferrer');
-      
-    } catch (error) {
-      console.error("Share failed completely:", error);
-      // Last resort fallback: open in new tab
-      const fallbackUrl = currentImage.high_res_url || currentImage.output_url;
-      console.log('[Lightbox] Error fallback, opening:', fallbackUrl);
-      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
     } finally {
       setSharing(false);
     }

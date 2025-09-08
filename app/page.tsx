@@ -494,10 +494,10 @@ export default function Home() {
                   <div className="flex items-start gap-2">
                     <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
                         Sign up for better quality
                       </p>
-                      <p className="text-xs text-gray-600 mt-1 dark:text-gray-300">
+                      <p className="text-xs text-gray-800 mt-1 dark:text-gray-300">
                         Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
                       </p>
                     </div>

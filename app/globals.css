@@ -22,14 +22,16 @@
   --skeleton-speed: 1.8s;                /* slower than before (was 1.1s) */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #faf9f7; --fg: #0f1115; --muted: #ffffff; --line: rgba(0,0,0,0.08);
-    /* keep skeleton subtle in light too */
-    --skeleton-a: rgba(0,0,0,0.06);
-    --skeleton-b: rgba(0,0,0,0.04);
-    --skeleton-c: rgba(0,0,0,0.02);
-  }
+/* Light theme - only applied when explicitly set */
+html[data-theme="light"] {
+  --bg: #faf9f7; 
+  --fg: #0f1115; 
+  --muted: #ffffff; 
+  --line: rgba(0,0,0,0.08);
+  /* keep skeleton subtle in light too */
+  --skeleton-a: rgba(0,0,0,0.06);
+  --skeleton-b: rgba(0,0,0,0.04);
+  --skeleton-c: rgba(0,0,0,0.02);
 }
 
 html, body { height: 100%; }
