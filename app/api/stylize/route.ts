@@ -115,6 +115,30 @@ async function uploadToSupabasePublic(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+// New upload function with predictable path using generation ID
+async function uploadToSupabasePublicWithId(file: File, generationId: number | null): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const safeName = (file.name || "upload.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const ext = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "jpg";
+  
+  // Use generation ID for predictable path, fallback to random if no ID
+  const path = generationId 
+    ? `public/inputs/input-${generationId}.${ext}`
+    : `public/inputs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error } = await supabase
+    .storage
+    .from("generations")
+    .upload(path, buffer, { contentType: file.type || "image/jpeg", upsert: false });
+
+  if (error) throw new Error("upload failed: " + error.message);
+
+  const { data } = supabase.storage.from("generations").getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error("no public url from storage");
+  return data.publicUrl;
+}
+
 // ---- Replicate REST helpers (no SDK; very stable)
 async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: string) {
   // IMPORTANT: image_input as an ARRAY (fix for 422)
@@ -202,10 +226,36 @@ export async function POST(req: NextRequest) {
     
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
-    // 1) Upload input (same as before)
-    const inputUrl = await uploadToSupabasePublic(file);
+    // 1) Create database record first to get ID
+    let generationId: number | null = null;
+    if (SUPABASE_URL && SERVICE_ROLE) {
+      try {
+        const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
+        const { data, error } = await admin.from("generations").insert({
+          user_id: user_id || "00000000-0000-0000-0000-000000000000",
+          output_url: "pending", // Temporary placeholder
+          high_res_url: "pending", // Temporary placeholder
+          preset_label: preset_label || "DEFAULT Portrait",
+          display_name: display_name || null,
+          website: user_url || null,
+          profile_image_url: null,
+        }).select("id").single();
+        
+        if (error) {
+          console.error("[stylize] Failed to create generation record:", error);
+        } else {
+          generationId = data.id;
+          console.log(`[stylize] Created generation record with ID: ${generationId}`);
+        }
+      } catch (e) {
+        console.error("[stylize] Exception creating generation record:", e);
+      }
+    }
 
-    // 2) Create prediction
+    // 2) Upload input with predictable path using generation ID
+    const inputUrl = await uploadToSupabasePublicWithId(file, generationId);
+
+    // 3) Create prediction
     const created = await replicateCreate(inputUrl, finalPrompt, crop_ratio);
     const prediction_id: string | undefined = created?.id;
     if (!prediction_id) return json({ ok: false, error: "No prediction id" }, 502);
@@ -252,43 +302,40 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5) Optional persistence — only if admin envs are present.
-    //    Inserts a row for the Community feed.
-    console.log("[stylize] About to insert into database:", {
+    // 5) Update database record with final URLs
+    console.log("[stylize] About to update database:", {
       SUPABASE_URL: !!SUPABASE_URL,
       SERVICE_ROLE: !!SERVICE_ROLE,
+      generationId,
       outputUrl: !!outputUrl,
       preset_label,
       preset_label_type: typeof preset_label,
       preset_label_length: preset_label?.length
     });
     
-    if (SUPABASE_URL && SERVICE_ROLE) {
+    if (SUPABASE_URL && SERVICE_ROLE && generationId) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        const insertData = {
-          user_id: user_id || "00000000-0000-0000-0000-000000000000", // Use provided user_id or fallback for anonymous
+        const updateData = {
           output_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           high_res_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           input_url: inputUrl, // Store the original uploaded image URL
-          preset_label: preset_label || "DEFAULT Portrait",
-          display_name: display_name || null,
-          website: user_url || null,
-          profile_image_url: null,
         };
-        console.log("[stylize] Inserting data:", insertData);
+        console.log("[stylize] Updating data for ID", generationId, ":", updateData);
         
-        const { error } = await admin.from("generations").insert(insertData);
+        const { error } = await admin.from("generations").update(updateData).eq("id", generationId);
         if (error) {
-          console.error("[stylize] insert error:", error);
+          console.error("[stylize] update error:", error);
         } else {
-          console.log("[stylize] Successfully inserted into database ✅");
+          console.log("[stylize] Successfully updated database record ✅");
         }
       } catch (e) {
-        console.error("[stylize] insert exception:", e);
+        console.error("[stylize] update exception:", e);
       }
+    } else if (!generationId) {
+      console.warn("[stylize] No generation ID available for update");
     } else {
-      console.warn("[stylize] skipped insert — missing SUPABASE_SERVICE_ROLE or URL");
+      console.warn("[stylize] skipped update — missing SUPABASE_SERVICE_ROLE or URL");
     }
 
     return json({

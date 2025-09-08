@@ -21,6 +21,22 @@ export async function GET() {
       .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, created_at")
       .order("id", { ascending: false });
     
+    // For records without input_url, try to reconstruct it from the predictable path
+    const processedData = (allData || []).map((item: any) => {
+      if (!item.input_url && item.id) {
+        // Try to reconstruct input URL from predictable path
+        // Path format: public/inputs/input-{id}.{ext}
+        // We'll try common extensions
+        const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+        const baseUrl = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/public/inputs/input-${item.id}`;
+        
+        // For now, we'll use jpg as default since we can't check which extension exists
+        // In a production system, you might want to store the extension in the database
+        item.input_url = `${baseUrl}.jpg`;
+      }
+      return item;
+    });
+    
     if (allError) {
       console.error("Database query error:", allError);
       return NextResponse.json({ ok: false, error: allError.message, items: [] }, { status: 500 });
@@ -29,7 +45,7 @@ export async function GET() {
     // Debug logs removed for cleaner console output
     
     // Filter for valid output_url and exclude deleted/inaccessible images
-    const validItems = (allData || []).filter((r) => {
+    const validItems = processedData.filter((r) => {
       // Basic URL validation
       if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
         // Filtering out invalid record
