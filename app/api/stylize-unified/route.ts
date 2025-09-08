@@ -95,7 +95,7 @@ async function upscaleWithRealESRGAN(imageUrl: string, scale: number = 2): Promi
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      version: "nightmareai/real-esrgan:latest",
+      model: "nightmareai/real-esrgan",
       input: {
         image: imageUrl,
         scale: scale,
@@ -161,7 +161,7 @@ async function upscaleWithSwinIR(imageUrl: string): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      version: "jingyunliang/swinir:latest",
+      model: "jingyunliang/swinir",
       input: {
         image: imageUrl,
         task_type: "Real-World Image Super-Resolution-Large",
@@ -256,6 +256,9 @@ async function processSimplePipeline(
       // Try to get higher resolution from Nano-Banana
       num_inference_steps: 50, // More steps for better quality
       guidance_scale: 7.5, // Higher guidance for better prompt following
+      // Try additional parameters that might help with resolution
+      scheduler: "DPMSolverMultistepScheduler", // Better scheduler for quality
+      safety_tolerance: 2, // Allow more creative freedom
     },
   };
   
@@ -407,29 +410,9 @@ export async function POST(req: NextRequest) {
       // Hybrid: Simple + upscaling
       const simpleResult = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
       
-      // Add upscaling step - try multiple methods for better resolution
-      try {
-        console.log("[stylize-unified] Starting upscaling with Real-ESRGAN 4x...");
-        const upscaledUrl = await upscaleWithRealESRGAN(simpleResult.imageUrl, 4);
-        result = {
-          imageUrl: upscaledUrl,
-          model: `${simpleResult.model} + Real-ESRGAN 4x`,
-        };
-        console.log("[stylize-unified] Real-ESRGAN upscaling completed successfully");
-      } catch (upscaleError) {
-        console.error("[stylize-unified] Real-ESRGAN failed, trying SwinIR:", upscaleError);
-        try {
-          const swinirUrl = await upscaleWithSwinIR(simpleResult.imageUrl);
-          result = {
-            imageUrl: swinirUrl,
-            model: `${simpleResult.model} + SwinIR`,
-          };
-          console.log("[stylize-unified] SwinIR upscaling completed successfully");
-        } catch (swinirError) {
-          console.error("[stylize-unified] Both upscaling methods failed, using original:", swinirError);
-          result = simpleResult; // Fallback to original if both upscaling methods fail
-        }
-      }
+      // Temporarily disable upscaling due to API issues - focus on better base resolution
+      console.log("[stylize-unified] Upscaling temporarily disabled, using enhanced base resolution");
+      result = simpleResult;
     }
 
     console.log(`[stylize-unified] Pipeline complete: ${result.model}`);
@@ -441,7 +424,7 @@ export async function POST(req: NextRequest) {
         const insertData = {
           user_id: user_id || "00000000-0000-0000-0000-000000000000",
           output_url: result.imageUrl,
-          high_res_url: (selectedMode === "multimodel" || selectedMode === "hybrid") ? result.imageUrl : null, // Set high_res_url for multi-model and hybrid pipelines
+          high_res_url: selectedMode === "multimodel" ? result.imageUrl : null, // Only set high_res_url for multi-model pipeline (upscaling disabled)
           input_url: inputUrl,
           preset_label: styleLabel,
           display_name: display_name || null,
