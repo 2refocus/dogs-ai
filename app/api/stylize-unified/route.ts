@@ -40,6 +40,45 @@ async function replicateGet(id: string) {
   return JSON.parse(text);
 }
 
+// Download and store image in Supabase Storage (same as original API)
+async function downloadAndStoreImage(imageUrl: string, filename: string): Promise<string | null> {
+  try {
+    console.log(`[stylize-unified] Downloading image from: ${imageUrl}`);
+    
+    // Download the image
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error(`[stylize-unified] Failed to download image: ${response.status}`);
+      return null;
+    }
+    
+    const imageBuffer = await response.arrayBuffer();
+    const imageBlob = new Blob([imageBuffer]);
+    
+    // Upload to Supabase Storage
+    const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
+    const { data, error } = await admin.storage
+      .from('generations')
+      .upload(filename, imageBlob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+    
+    if (error) {
+      console.error(`[stylize-unified] Storage upload error:`, error);
+      return null;
+    }
+    
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/generations/${filename}`;
+    console.log(`[stylize-unified] Image stored successfully: ${publicUrl}`);
+    return publicUrl;
+    
+  } catch (error) {
+    console.error(`[stylize-unified] Error downloading/storing image:`, error);
+    return null;
+  }
+}
+
 // Upload function
 async function uploadToSupabasePublic(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -136,9 +175,22 @@ async function processSimplePipeline(
   if (!outputUrl || !isHttpsUrl(outputUrl)) {
     throw new Error("No output URL returned");
   }
+
+  // Download and store image in Supabase Storage (same as original API)
+  let permanentUrl = outputUrl; // Fallback to original URL
+  if (SUPABASE_URL && SERVICE_ROLE) {
+    const filename = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+    const storedUrl = await downloadAndStoreImage(outputUrl, filename);
+    if (storedUrl) {
+      permanentUrl = storedUrl;
+      console.log(`[stylize-unified] Using permanent storage URL: ${permanentUrl}`);
+    } else {
+      console.warn(`[stylize-unified] Failed to store image, using original URL: ${outputUrl}`);
+    }
+  }
   
   return {
-    imageUrl: outputUrl,
+    imageUrl: permanentUrl,
     model: "Nano-Banana",
   };
 }
