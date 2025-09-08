@@ -119,7 +119,7 @@ export default function GenerationForm({ userId, onGenerate, loading }: Generati
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="rounded-lg p-3 shadow-sm bg-white border-2 border-gray-400 dark:bg-gray-800/30 dark:border-gray-700 dark:shadow-none">
+        <div className="rounded-lg p-3 shadow-sm bg-white border-2 border-gray-400 dark:bg-gray-800/30 dark:border-gray-700 dark:shadow-none info-box-light dark:!bg-gray-800/30 dark:!border-gray-700">
           <div className="flex items-start gap-2">
             <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
             <div>

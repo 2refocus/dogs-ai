@@ -56,6 +56,21 @@ body { background: var(--bg); color: var(--fg); }
 .btn-outline:hover { background: rgba(255,255,255,0.06); }
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: .55rem; }
 
+/* Info box specific styling to override CSS variables */
+.info-box-light {
+  background-color: white !important;
+  border-color: #9ca3af !important;
+  color: #111827 !important;
+}
+
+.info-box-light p {
+  color: #111827 !important;
+}
+
+.info-box-light .text-xs {
+  color: #1f2937 !important;
+}
+
 /* Loading gradient on buttons */
 .btn-loading {
   background: linear-gradient(90deg, var(--brand), #F4D7A1, var(--brand));

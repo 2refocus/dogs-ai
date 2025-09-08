@@ -74,29 +74,12 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               </div>
             )}
             
-            {/* Failed image placeholder with retry */}
+            {/* Failed image placeholder */}
             {failedImages.has(idx) && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <div className="text-2xl mb-1">🖼️</div>
-                  <div className="text-xs mb-2">Image unavailable</div>
-                  <button 
-                    onClick={() => {
-                      setFailedImages(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(idx);
-                        return newSet;
-                      });
-                      // Trigger reload by updating the image src
-                      const img = document.querySelector(`img[data-index="${idx}"]`) as HTMLImageElement;
-                      if (img) {
-                        img.src = img.src + '?retry=' + Date.now();
-                      }
-                    }}
-                    className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-                  >
-                    Retry
-                  </button>
+                  <div className="text-xs">Image unavailable</div>
                 </div>
               </div>
             )}
@@ -109,7 +92,6 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               <img
                 src={it.output_url}
                 alt={it.display_name || "community"}
-                data-index={idx}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${
                   loadedImages.has(idx) ? 'opacity-100' : 
                   failedImages.has(idx) ? 'opacity-0' : 'opacity-100'
