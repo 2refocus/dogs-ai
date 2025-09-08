@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import CommunityGrid from "./CommunityGrid";
 import { readLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
@@ -26,6 +26,7 @@ export default function CommunityFeed() {
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const fetchCommunityData = async (showRefresh = false, pageNum = 1, append = false) => {
+    console.log('[CommunityFeed] Fetching data:', { showRefresh, pageNum, append });
     if (showRefresh) setRefreshing(true);
     if (!append) setLoading(true);
     
@@ -33,14 +34,23 @@ export default function CommunityFeed() {
       const res = await fetch(`/api/community?page=${pageNum}&limit=20`, { cache: "no-store" });
       const j = await res.json().catch(() => ({ ok: false }));
       
+      console.log('[CommunityFeed] API response:', { pageNum, itemsCount: j.items?.length, hasMore: j.hasMore, ok: j.ok });
+      
       if (j?.ok && Array.isArray(j.items)) {
         if (append) {
-          setItems(prev => [...prev, ...j.items]);
+          setItems(prev => {
+            const newItems = [...prev, ...j.items];
+            console.log('[CommunityFeed] Appending items, total now:', newItems.length);
+            return newItems;
+          });
         } else {
           setItems(j.items);
+          console.log('[CommunityFeed] Setting initial items:', j.items.length);
         }
         // Use hasMore from API response, fallback to checking item count
-        setHasMore(j.hasMore !== undefined ? j.hasMore : j.items.length === 20);
+        const newHasMore = j.hasMore !== undefined ? j.hasMore : j.items.length === 20;
+        console.log('[CommunityFeed] Setting hasMore to:', newHasMore);
+        setHasMore(newHasMore);
         setLastFetchTime(Date.now());
         return;
       }
@@ -66,13 +76,14 @@ export default function CommunityFeed() {
     setLoading(false);
   };
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loading && hasMore && !refreshing) {
       const nextPage = page + 1;
+      console.log('[CommunityFeed] Loading more, page:', nextPage);
       setPage(nextPage);
       fetchCommunityData(false, nextPage, true);
     }
-  };
+  }, [loading, hasMore, refreshing, page]);
 
   useEffect(() => {
     fetchCommunityData();
@@ -102,8 +113,18 @@ export default function CommunityFeed() {
         const windowHeight = window.innerHeight;
         const documentHeight = document.documentElement.offsetHeight;
         
+        console.log('[CommunityFeed] Scroll check:', { 
+          scrollTop, 
+          windowHeight, 
+          documentHeight, 
+          distanceFromBottom: documentHeight - (scrollTop + windowHeight),
+          loading, 
+          hasMore 
+        });
+        
         // Load more when user is 500px from bottom (reduced from 1000px)
         if (scrollTop + windowHeight >= documentHeight - 500) {
+          console.log('[CommunityFeed] Triggering loadMore from scroll');
           loadMore();
         }
       }, 100); // 100ms debounce
@@ -114,7 +135,7 @@ export default function CommunityFeed() {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timeoutId);
     };
-  }, [loading, hasMore, page]);
+  }, [loading, hasMore, page, loadMore]);
 
   if (loading && items.length === 0) {
     return (
