@@ -20,16 +20,27 @@ type Item = {
 export default function CommunityFeed() {
   const [items, setItems] = useState<Item[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  const fetchCommunityData = async (showRefresh = false) => {
+  const fetchCommunityData = async (showRefresh = false, pageNum = 1, append = false) => {
     if (showRefresh) setRefreshing(true);
+    if (!append) setLoading(true);
+    
     try {
-      const res = await fetch("/api/community", { cache: "no-store" });
+      const res = await fetch(`/api/community?page=${pageNum}&limit=20`, { cache: "no-store" });
       const j = await res.json().catch(() => ({ ok: false }));
       
       if (j?.ok && Array.isArray(j.items)) {
-        // Items are already filtered by the API, so use them directly
-        setItems(j.items);
+        if (append) {
+          setItems(prev => [...prev, ...j.items]);
+        } else {
+          setItems(j.items);
+        }
+        setHasMore(j.items.length === 20); // If we got less than 20, no more pages
+        setLastFetchTime(Date.now());
         return;
       }
     } catch (e) {
@@ -49,19 +60,76 @@ export default function CommunityFeed() {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
     }
+    
     if (showRefresh) setRefreshing(false);
+    setLoading(false);
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchCommunityData(false, nextPage, true);
+    }
   };
 
   useEffect(() => {
     fetchCommunityData();
     
-    // Refresh every 5 seconds to catch new images
-    const interval = setInterval(fetchCommunityData, 5000);
+    // Refresh every 10 seconds to catch new images (less frequent than before)
+    const interval = setInterval(() => {
+      // Only refresh if it's been more than 10 seconds since last fetch
+      if (Date.now() - lastFetchTime > 10000) {
+        fetchCommunityData(true);
+      }
+    }, 10000);
     
     return () => {
       clearInterval(interval);
     };
   }, []);
 
-  return <CommunityGrid items={items} />;
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, hasMore, page]);
+
+  if (loading && items.length === 0) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
+            <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <CommunityGrid items={items} />
+      {loading && items.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`loading-${i}`} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
+              <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
+            </div>
+          ))}
+        </div>
+      )}
+      {!hasMore && items.length > 0 && (
+        <div className="mt-4 text-center text-sm opacity-60">
+          No more images to load
+        </div>
+      )}
+    </div>
+  );
 }

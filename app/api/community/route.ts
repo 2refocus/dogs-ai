@@ -9,17 +9,24 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (!SUPABASE_URL || !SERVICE_KEY) {
       // Soft-fail so UI still works even if env missing
       return NextResponse.json({ ok: true, items: [] });
     }
     
+    // Parse query parameters for pagination
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+    
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
       .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, pipeline_mode, model_used, user_tier, generation_time_ms, created_at")
-      .order("id", { ascending: false });
+      .order("id", { ascending: false })
+      .range(offset, offset + limit - 1);
     
     // For records without input_url, try to reconstruct it from the predictable path
     const processedData = (allData || []).map((item: any) => {

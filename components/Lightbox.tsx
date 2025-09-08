@@ -66,6 +66,37 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
     }
   };
 
+  const share = async () => {
+    try {
+      const shareUrl = currentImage.high_res_url || currentImage.output_url;
+      const shareText = `Check out this amazing pet portrait! 🐾✨`;
+      
+      // Try Web Share API first (mobile)
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Pet Portrait',
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+      
+      // Fallback: Copy to clipboard
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        // You could add a toast notification here
+        alert('Link copied to clipboard!');
+      } else {
+        // Final fallback: open in new tab
+        window.open(shareUrl, '_blank');
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      // Fallback: open in new tab
+      window.open(currentImage.high_res_url || currentImage.output_url, '_blank');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
          onClick={onClose}>
@@ -141,12 +172,20 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
                 <span>{currentImage.social_handle}</span>
               )}
             </div>
-            <button
-              onClick={download}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg"
-            >
-              Download
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={share}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Share
+              </button>
+              <button
+                onClick={download}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Download
+              </button>
+            </div>
           </div>
         </div>
 
