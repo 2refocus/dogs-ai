@@ -316,7 +316,7 @@ export default function Home() {
                 <select
                   value={cropRatio}
                   onChange={(e) => setCropRatio(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+                  className="w-full rounded-xl border-2 border-[var(--line)] bg-[var(--muted)] text-[var(--fg)] px-4 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] transition-all duration-200 hover:border-[var(--brand)]/50"
                 >
                   <option value="1_1">Square (1:1) - Instagram Square</option>
                   <option value="4_5">Portrait (4:5) - Instagram Post</option>
