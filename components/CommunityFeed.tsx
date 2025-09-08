@@ -105,12 +105,8 @@ export default function CommunityFeed() {
 
   if (loading && items.length === 0) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
-            <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
-          </div>
-        ))}
+      <div className="text-center py-8">
+        <div className="text-sm opacity-60">Loading community images...</div>
       </div>
     );
   }
@@ -135,16 +131,6 @@ export default function CommunityFeed() {
         </div>
       )}
       
-      {/* Loading skeletons when loading more */}
-      {loading && items.length > 0 && hasMore && (
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={`loading-${i}`} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
-              <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
-            </div>
-          ))}
-        </div>
-      )}
       
       {!hasMore && items.length > 0 && (
         <div className="mt-4 text-center text-sm opacity-60">
