@@ -1,6 +1,7 @@
 export type Species = "dog" | "cat";
 export type Preset = { label: string; value: string };
 
+// ---- Identity / Camera / Negative (unchanged) ----
 const IDENTITY =
   "transform this into a single pet head-and-shoulders portrait, rule of thirds composition, looking at camera; " +
   "convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; " +
@@ -15,7 +16,7 @@ const NEGATIVE =
   "no text, no watermark, no frame, no hands, no extra limbs, no second animal, " +
   "no distortion, no over-saturation, no human, no person, no people";
 
-/** Style library — only these words change between presets. */
+/** Style library — existing styles + 5 new packs */
 const STYLES: { label: string; style: string }[] = [
   {
     label: "DEFAULT Portrait",
@@ -112,10 +113,98 @@ const STYLES: { label: string; style: string }[] = [
       "charcoal on textured paper, controlled hatching, realistic proportion, " +
       "tonal depth, smudge highlights",
   },
+
+  // ---- New 5-style pack ----
+  {
+    label: "Modern Studio Portrait",
+    style:
+      "clean minimalist studio set, neutral gradient background, controlled soft key and subtle rim light, " +
+      "shallow depth of field, timeless and refined",
+  },
+  {
+    label: "Luxury Interior",
+    style:
+      "stylish upscale apartment interior, tasteful modern furniture, marble and wood accents, " +
+      "subtle warm ambient lighting, sophisticated lifestyle mood",
+  },
+  {
+    label: "Outdoor Premium Lifestyle",
+    style:
+      "editorial outdoor setting at golden hour, landscaped garden or chic rooftop terrace, " +
+      "warm sunlight, cinematic bokeh, aspirational mood",
+  },
+  {
+    label: "Fine Art Black & White",
+    style:
+      "dramatic monochrome portrait, high micro-contrast, deep shadows and luminous highlights, " +
+      "textured backdrop, classic fine-art aesthetic",
+  },
+  {
+    label: "Editorial Fashion Vibe",
+    style:
+      "fashion-inspired lighting setup (soft fill + dramatic rim), magazine-ready composition, " +
+      "clean background, chic modern styling",
+  },
 ];
 
+// ---------- Aspect Ratio suggestions per style ----------
+export type AspectKey = "1:1" | "4:5" | "3:4" | "2:3" | "16:9";
+
+export const STYLE_ASPECTS: Record<string, AspectKey> = {
+  "DEFAULT Portrait": "4:5",
+  "Classic Oil on Canvas": "4:5",
+  "Cozy Home Portrait": "3:4",
+  "Elegant Black & Gold": "4:5",
+  "Watercolor Pastel": "4:5",
+  "Matte Fine-Art Studio": "4:5",
+  "Vintage Film (Portra 400)": "2:3",
+  "Minimal Line Art": "1:1",
+  "Autumn Forest Glow": "3:4",
+  "Snowy Winter Portrait": "3:4",
+  "Bohemian Floral": "4:5",
+  "Modern Editorial": "4:5",
+  "Renaissance Painting": "4:5",
+  "Pop Art Halftone": "1:1",
+  "Cozy Cabin Wood": "3:4",
+  "Fine Charcoal Sketch": "3:4",
+
+  // new
+  "Modern Studio Portrait": "4:5",
+  "Luxury Interior": "3:4",
+  "Outdoor Premium Lifestyle": "3:4",
+  "Fine Art Black & White": "4:5",
+  "Editorial Fashion Vibe": "4:5",
+};
+
+// ---------- Prompt snippets for aspect handling ----------
+type Mode = "generate" | "edit";
+
+/** Natural-language aspect snippets that work well with Gemini/Nano Banana. */
+function aspectSnippet(mode: Mode, ar: AspectKey, opts?: { extendBg?: boolean }) {
+  const px = {
+    "1:1": "1024×1024",
+    "4:5": "1080×1350",
+    "3:4": "1536×2048",
+    "2:3": "2000×3000",
+    "16:9": "1920×1080",
+  }[ar];
+
+  if (mode === "generate") {
+    return `Compose in ${ar === "1:1" ? "a square frame" : "portrait orientation"}, aspect ratio ${ar} (${px}).`;
+  }
+  // edit mode (recreate on new canvas + optional background extension)
+  const extend = opts?.extendBg ? " Extend the background naturally to fill the new frame." : "";
+  const ori =
+    ar === "1:1"
+      ? "a NEW square canvas"
+      : ar === "16:9"
+      ? "a NEW wide cinematic canvas"
+      : "a NEW portrait canvas";
+  return `Recreate on ${ori}, aspect ratio ${ar} (${px}).${extend}`;
+}
+
+// ---------- Your original builders (unchanged) ----------
 function buildPrompt(species: Species, style: string) {
-  // Keep the template order stable for consistency
   return (
     `${IDENTITY}. ` +
     `${CAMERA}. ` +
@@ -136,3 +225,20 @@ export const PRESETS: Record<Species, Preset[]> = {
   dog: makeSet("dog"),
   cat: makeSet("cat"),
 };
+
+// ---------- Helper to attach the right aspect to any preset ----------
+export function withAspect(
+  presetValue: string,
+  label: string,
+  mode: Mode,
+  opts?: { extendBg?: boolean; overrideAspect?: AspectKey }
+) {
+  const ar = opts?.overrideAspect ?? STYLE_ASPECTS[label] ?? "4:5";
+  return `${presetValue} ${aspectSnippet(mode, ar, { extendBg: opts?.extendBg })}`.trim();
+}
+
+/** Example usage:
+ * const p = PRESETS.dog.find(p => p.label === "Modern Editorial")!;
+ * const finalGeneratePrompt = withAspect(p.value, p.label, "generate");
+ * const finalEditPrompt = withAspect(p.value, p.label, "edit", { extendBg: true });
+ */
