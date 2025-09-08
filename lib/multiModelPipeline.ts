@@ -8,8 +8,8 @@ export type PipelineMode = "generate" | "edit" | "upscale";
 // Model configurations for Replicate
 const REPLICATE_MODELS = {
   SDXL: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-  IP_ADAPTER_SDXL: "lucataco/ip-adapter-sdxl:4a3b5b1b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b", // TODO: Get real model ID
-  REAL_ESRGAN: "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
+  IP_ADAPTER_SDXL: "lucataco/ip-adapter-sdxl:4a3b5b1b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b", // TODO: Find working IP-Adapter model
+  REAL_ESRGAN: "nightmareai/real-esrgan:latest", // Updated to latest version
 } as const;
 
 // Aspect ratio to pixel dimensions

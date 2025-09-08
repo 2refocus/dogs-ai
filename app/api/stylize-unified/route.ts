@@ -79,6 +79,72 @@ async function downloadAndStoreImage(imageUrl: string, filename: string): Promis
   }
 }
 
+// Upscaling function using Real-ESRGAN
+async function upscaleWithRealESRGAN(imageUrl: string, scale: number = 2): Promise<string> {
+  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("Missing REPLICATE_API_TOKEN");
+  }
+
+  console.log(`[stylize-unified] Upscaling image: ${imageUrl} with scale: ${scale}x`);
+
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      version: "nightmareai/real-esrgan:latest",
+      input: {
+        image: imageUrl,
+        scale: scale,
+        face_enhance: false,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Real-ESRGAN API error: ${response.status}`);
+  }
+
+  const prediction = await response.json();
+  const predictionId = prediction.id;
+
+  // Poll for completion
+  let attempts = 0;
+  const maxAttempts = 60; // 60 seconds max
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
+    });
+    
+    const result = await pollResponse.json();
+    
+    if (result.status === "succeeded") {
+      const upscaledUrl = result.output;
+      console.log(`[stylize-unified] Upscaling completed: ${upscaledUrl}`);
+      
+      // Download and store the upscaled image
+      const filename = `upscaled-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const storedUrl = await downloadAndStoreImage(upscaledUrl, filename);
+      
+      return storedUrl || upscaledUrl; // Fallback to original URL if storage fails
+    }
+    
+    if (result.status === "failed") {
+      throw new Error(`Upscaling failed: ${result.error}`);
+    }
+    
+    attempts++;
+  }
+
+  throw new Error("Upscaling timeout");
+}
+
 // Upload function
 async function uploadToSupabasePublic(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -272,8 +338,20 @@ export async function POST(req: NextRequest) {
     } else {
       // Hybrid: Simple + upscaling
       const simpleResult = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
-      // TODO: Add upscaling step here
-      result = simpleResult;
+      
+      // Add upscaling step
+      try {
+        console.log("[stylize-unified] Starting upscaling with Real-ESRGAN...");
+        const upscaledUrl = await upscaleWithRealESRGAN(simpleResult.imageUrl);
+        result = {
+          imageUrl: upscaledUrl,
+          model: `${simpleResult.model} + Real-ESRGAN 2x`,
+        };
+        console.log("[stylize-unified] Upscaling completed successfully");
+      } catch (upscaleError) {
+        console.error("[stylize-unified] Upscaling failed, using original:", upscaleError);
+        result = simpleResult; // Fallback to original if upscaling fails
+      }
     }
 
     console.log(`[stylize-unified] Pipeline complete: ${result.model}`);
@@ -285,7 +363,7 @@ export async function POST(req: NextRequest) {
         const insertData = {
           user_id: user_id || "00000000-0000-0000-0000-000000000000",
           output_url: result.imageUrl,
-          high_res_url: selectedMode === "multimodel" ? result.imageUrl : null, // Only set high_res_url for multi-model pipeline
+          high_res_url: (selectedMode === "multimodel" || selectedMode === "hybrid") ? result.imageUrl : null, // Set high_res_url for multi-model and hybrid pipelines
           input_url: inputUrl,
           preset_label: styleLabel,
           display_name: display_name || null,
