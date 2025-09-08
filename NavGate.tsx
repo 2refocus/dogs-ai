@@ -41,7 +41,7 @@ export default function NavGate() {
 
   const Menu = () => (
     <div className="menu-panel" ref={panelRef}>
-      <Link className="menu-item" href="/" onClick={() => setOpen(false)}>Home</Link>
+      <Link className="menu-item" href="/" onClick={() => setOpen(false)}>Create</Link>
       <Link className="menu-item" href="/bundles" onClick={() => setOpen(false)}>Bundles</Link>
       {email ? (
         <>
@@ -58,7 +58,7 @@ export default function NavGate() {
   return (
     <div className="relative">
       <nav className="hidden sm:flex items-center gap-2 text-sm">
-        <Link className="btn-outline !px-3 !py-1" href="/">Home</Link>
+        <Link className="btn-outline !px-3 !py-1" href="/">Create</Link>
         <Link className="btn-outline !px-3 !py-1" href="/bundles">Bundles</Link>
         {email ? (
           <>
