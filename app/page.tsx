@@ -333,7 +333,7 @@ export default function Home() {
       {/* Uploader - only show when showUploadForm is true */}
       {showUploadForm && (
         <section className="grid gap-4">
-         <label className="text-xl font-bold text-[var(--fg)] text-center">Upload your beloved pet's photo or transform yourself into their furry friend 🪄✨🐕🐈</label>
+          <label className="text-xl font-bold text-[var(--brand)] text-center">Upload your beloved pet's photo or transform yourself into their furry friend ✨</label>
         <div className="grid gap-4">
           <div className="grid gap-4">
             <div className="grid gap-4">
