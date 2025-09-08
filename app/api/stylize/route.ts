@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const basePrompt = (form.get("prompt") || "").toString().trim() ||
-      "transform this into a single pet head-and-shoulders portrait, rule of thirds composition, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
+      "transform this into a single pet head-and-shoulders portrait, rule of thirds composition, looking at camera; if the image already contains pets, preserve them exactly as they are; if the image contains humans or other subjects, convert them into realistic pets (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
     
     const preset_label = (form.get("preset_label") || "").toString();
     const user_id = (form.get("user_id") || "").toString();
@@ -187,9 +187,10 @@ export async function POST(req: NextRequest) {
     console.log(`[stylize] Prompt length: ${finalPrompt.length} characters`);
     
     // Debug: Check if the prompt actually contains the aspect ratio instruction
-    const hasAspectRatio = finalPrompt.includes('aspect ratio') || finalPrompt.includes('orientation');
+    const hasAspectRatio = finalPrompt.includes('aspect ratio') || finalPrompt.includes('orientation') || finalPrompt.includes('vertical mobile frame');
     console.log(`[stylize] Prompt contains aspect ratio instruction: ${hasAspectRatio}`);
     console.log(`[stylize] Last 100 chars of prompt: ${finalPrompt.slice(-100)}`);
+    console.log(`[stylize] Full final prompt: ${finalPrompt}`);
     
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 
