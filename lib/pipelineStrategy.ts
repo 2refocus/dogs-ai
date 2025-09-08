@@ -145,7 +145,7 @@ export function selectPipelineForRequest(opts: {
     selectedMode: recommendedMode,
     userTier,
     canAccess: true,
-    upgradeMessage: requestedMode ? getUpgradeMessage(userTier, requestedMode) : undefined,
+    upgradeMessage: requestedMode ? getUpgradeMessage(userTier, requestedMode) || undefined : undefined,
   };
 }
 
