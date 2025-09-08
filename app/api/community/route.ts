@@ -22,6 +22,11 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
     
+    // Get total count for debugging
+    const { count: totalCount } = await supabaseAdmin
+      .from("generations")
+      .select("*", { count: "exact", head: true });
+    
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
       .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, pipeline_mode, model_used, user_tier, generation_time_ms, created_at")
@@ -55,7 +60,7 @@ export async function GET(request: Request) {
     const validItems = processedData.filter((r) => {
       // Basic URL validation
       if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
-        // Filtering out invalid record
+        console.log(`[Community API] Filtering out invalid record ${r.id}: ${r.output_url}`);
         return false;
       }
       
@@ -69,15 +74,29 @@ export async function GET(request: Request) {
       return true;
     });
     
-    // Debug logs removed for cleaner console output
+    // Debug logging
+    console.log(`[Community API] Page ${page}: Total records in DB: ${totalCount}, Got ${allData?.length || 0} raw records, ${validItems.length} valid items`);
     
-    // Return pagination info
+    // Check if there are more items by fetching one extra record
     const hasMore = validItems.length === limit;
+    
+    // If we got exactly the limit, check if there's one more record
+    let actuallyHasMore = hasMore;
+    if (hasMore) {
+      const { data: nextPageData } = await supabaseAdmin
+        .from("generations")
+        .select("id")
+        .order("id", { ascending: false })
+        .range(offset + limit, offset + limit);
+      
+      actuallyHasMore = nextPageData && nextPageData.length > 0;
+      console.log(`[Community API] Page ${page}: Checking for more records, found ${nextPageData?.length || 0}, hasMore: ${actuallyHasMore}`);
+    }
     
     return NextResponse.json({ 
       ok: true, 
       items: validItems,
-      hasMore: hasMore,
+      hasMore: actuallyHasMore,
       page: page,
       limit: limit
     });
