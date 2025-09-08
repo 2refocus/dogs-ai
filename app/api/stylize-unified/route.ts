@@ -54,7 +54,7 @@ async function processSimplePipeline(
   const optimizedPrompt = optimizePromptForReplicate(prompt, REPLICATE_MODEL);
   
   // Use existing Replicate API call
-  const body = {
+  const body: any = {
     input: {
       image_input: [inputUrl],
       prompt: optimizedPrompt,
