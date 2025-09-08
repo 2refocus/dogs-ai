@@ -145,6 +145,71 @@ async function upscaleWithRealESRGAN(imageUrl: string, scale: number = 2): Promi
   throw new Error("Upscaling timeout");
 }
 
+// Alternative upscaling with SwinIR for higher resolution
+async function upscaleWithSwinIR(imageUrl: string): Promise<string> {
+  const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("Missing REPLICATE_API_TOKEN");
+  }
+
+  console.log(`[stylize-unified] Upscaling with SwinIR: ${imageUrl}`);
+
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      version: "jingyunliang/swinir:latest",
+      input: {
+        image: imageUrl,
+        task_type: "Real-World Image Super-Resolution-Large",
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`SwinIR API error: ${response.status}`);
+  }
+
+  const prediction = await response.json();
+  const predictionId = prediction.id;
+
+  // Poll for completion
+  let attempts = 0;
+  const maxAttempts = 90; // 90 seconds max for SwinIR
+
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
+    });
+    
+    const result = await pollResponse.json();
+    
+    if (result.status === "succeeded") {
+      const upscaledUrl = result.output;
+      console.log(`[stylize-unified] SwinIR upscaling completed: ${upscaledUrl}`);
+      
+      // Download and store the upscaled image
+      const filename = `swinir-upscaled-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const storedUrl = await downloadAndStoreImage(upscaledUrl, filename);
+      
+      return storedUrl || upscaledUrl; // Fallback to original URL if storage fails
+    }
+    
+    if (result.status === "failed") {
+      throw new Error(`SwinIR upscaling failed: ${result.error}`);
+    }
+    
+    attempts++;
+  }
+
+  throw new Error("SwinIR upscaling timeout");
+}
+
 // Upload function
 async function uploadToSupabasePublic(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -188,6 +253,9 @@ async function processSimplePipeline(
     input: {
       image_input: [inputUrl],
       prompt: optimizedPrompt,
+      // Try to get higher resolution from Nano-Banana
+      num_inference_steps: 50, // More steps for better quality
+      guidance_scale: 7.5, // Higher guidance for better prompt following
     },
   };
   
@@ -339,18 +407,28 @@ export async function POST(req: NextRequest) {
       // Hybrid: Simple + upscaling
       const simpleResult = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
       
-      // Add upscaling step
+      // Add upscaling step - try multiple methods for better resolution
       try {
-        console.log("[stylize-unified] Starting upscaling with Real-ESRGAN...");
-        const upscaledUrl = await upscaleWithRealESRGAN(simpleResult.imageUrl);
+        console.log("[stylize-unified] Starting upscaling with Real-ESRGAN 4x...");
+        const upscaledUrl = await upscaleWithRealESRGAN(simpleResult.imageUrl, 4);
         result = {
           imageUrl: upscaledUrl,
-          model: `${simpleResult.model} + Real-ESRGAN 2x`,
+          model: `${simpleResult.model} + Real-ESRGAN 4x`,
         };
-        console.log("[stylize-unified] Upscaling completed successfully");
+        console.log("[stylize-unified] Real-ESRGAN upscaling completed successfully");
       } catch (upscaleError) {
-        console.error("[stylize-unified] Upscaling failed, using original:", upscaleError);
-        result = simpleResult; // Fallback to original if upscaling fails
+        console.error("[stylize-unified] Real-ESRGAN failed, trying SwinIR:", upscaleError);
+        try {
+          const swinirUrl = await upscaleWithSwinIR(simpleResult.imageUrl);
+          result = {
+            imageUrl: swinirUrl,
+            model: `${simpleResult.model} + SwinIR`,
+          };
+          console.log("[stylize-unified] SwinIR upscaling completed successfully");
+        } catch (swinirError) {
+          console.error("[stylize-unified] Both upscaling methods failed, using original:", swinirError);
+          result = simpleResult; // Fallback to original if both upscaling methods fail
+        }
       }
     }
 
