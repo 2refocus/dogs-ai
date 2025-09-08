@@ -112,6 +112,10 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(currentImage.website, '_blank', 'noopener,noreferrer');
+                  }}
                 >
                   {currentImage.display_name}
                 </a>
