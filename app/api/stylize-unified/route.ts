@@ -104,6 +104,8 @@ async function processSimplePipeline(
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now(); // Track generation start time
+  
   try {
     const ct = req.headers.get("content-type") || "";
     if (!ct.startsWith("multipart/form-data")) {
@@ -191,6 +193,11 @@ export async function POST(req: NextRequest) {
           display_name: display_name || null,
           website: user_url || null,
           profile_image_url: null,
+          // Pipeline information
+          pipeline_mode: selectedMode,
+          model_used: result.model,
+          user_tier: userTier,
+          generation_time_ms: Date.now() - startTime, // Calculate generation time
         };
         
         const { error } = await admin.from("generations").insert(insertData);

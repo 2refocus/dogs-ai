@@ -12,6 +12,8 @@ import dynamic from "next/dynamic";
 import { pushLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
 import { PRESETS } from "./presets";
+import { usePipelineSelection } from "@/components/PipelineSelector";
+import type { PipelineMode } from "@/lib/pipelineConfig";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 const Lightbox = dynamic(() => import("@/components/Lightbox"), { ssr: false });
@@ -105,6 +107,9 @@ export default function Home() {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(true);
+  
+  // Pipeline selection
+  const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
 
   useEffect(() => {
     
@@ -245,8 +250,12 @@ export default function Home() {
         headers.Authorization = `Bearer ${userToken}`;
       }
       
-      console.log(`[frontend] Sending POST request to /api/stylize`);
-      const createRes = await fetch("/api/stylize", { 
+      // Add pipeline mode to form data
+      fd.append("pipeline_mode", selectedMode);
+      fd.append("generation_mode", "auto"); // Let the API decide based on user tier
+      
+      console.log(`[frontend] Sending POST request to /api/stylize-unified with pipeline: ${selectedMode}`);
+      const createRes = await fetch("/api/stylize-unified", { 
         method: "POST", 
         body: fd,
         headers
@@ -283,6 +292,12 @@ export default function Home() {
           setGenUrl(url);
           setMsg("Done ✓");
           setShowSuccess(true); // Show success animation
+          
+          // Log pipeline info if available
+          if (create?.pipeline_mode) {
+            console.log(`[frontend] Generation completed with pipeline: ${create.pipeline_mode}`);
+            console.log(`[frontend] Model used: ${create.model || 'Unknown'}`);
+          }
 
           // Scroll to generated image
           generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -442,6 +457,72 @@ export default function Home() {
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {/* Pipeline Selection - Available for all users */}
+              <div className="grid gap-3">
+                <label className="text-sm font-semibold text-[var(--fg)]">Generation Quality</label>
+                <div className="space-y-2">
+                  {availableOptions.options.map((option: any) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedMode === option.value
+                          ? "border-[var(--brand)] bg-[var(--brand)]/10"
+                          : "border-[var(--line)] hover:border-[var(--brand)]/50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="pipeline_mode"
+                        value={option.value}
+                        checked={selectedMode === option.value}
+                        onChange={(e) => setSelectedMode(e.target.value as PipelineMode)}
+                        className="sr-only"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[var(--fg)]">
+                            {option.label}
+                          </span>
+                          <span className="text-xs text-[var(--muted-fg)]">
+                            {option.estimatedTime}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[var(--muted-fg)] mt-1">
+                          {option.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs bg-[var(--muted)] text-[var(--muted-fg)] px-2 py-1 rounded">
+                            {option.maxResolution}
+                          </span>
+                          {option.value === "multimodel" && userTier === "guest" && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              Sign up required
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* User Tier Info */}
+              {userTier === "guest" && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="text-blue-500 mt-0.5">ℹ️</div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        Sign up for better quality
+                      </p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -18,7 +18,7 @@ export async function GET() {
     
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
-      .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, created_at")
+      .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, pipeline_mode, model_used, user_tier, generation_time_ms, created_at")
       .order("id", { ascending: false });
     
     // For records without input_url, try to reconstruct it from the predictable path
