@@ -43,6 +43,45 @@ const SHIMMER_CSS = `
   animation: shimmerMove 1.25s linear infinite;
   mix-blend-mode: screen;
 }
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes heart-float {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-20px) scale(1.2); opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+}
+
+@keyframes success-glow {
+  0% { box-shadow: 0 0 0 0 rgba(240, 156, 32, 0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(240, 156, 32, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 156, 32, 0); }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  background: var(--brand);
+  animation: confetti-fall 3s linear infinite;
+  z-index: 1000;
+}
+
+.heart {
+  position: fixed;
+  color: #ff6b6b;
+  font-size: 20px;
+  animation: heart-float 2s ease-out infinite;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.success-glow {
+  animation: success-glow 1.5s ease-out;
+}
 `;
 
 const DEFAULT_PROMPT =
@@ -64,8 +103,11 @@ export default function Home() {
   const [cropRatio, setCropRatio] = useState<string>("1_1");
   const generatedRef = useRef<HTMLDivElement>(null);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(true);
 
   useEffect(() => {
+    
     try {
       const k = localStorage.getItem("freeGenerationsLeft");
       if (k == null) localStorage.setItem("freeGenerationsLeft", "1");
@@ -92,6 +134,8 @@ export default function Home() {
     const f = e.target.files?.[0] || null;
     setFile(f);
     setGenUrl("");
+    setShowSuccess(false);
+    setShowUploadForm(true); // Show upload form when new file is selected
     if (!f) {
       setPreview("");
       return;
@@ -99,6 +143,17 @@ export default function Home() {
     const reader = new FileReader();
     reader.onload = () => setPreview(String(reader.result || ""));
     reader.readAsDataURL(f);
+  }
+
+  function resetForm() {
+    setFile(null);
+    setPreview("");
+    setGenUrl("");
+    setMsg("");
+    setShowSuccess(false);
+    setShowUploadForm(true);
+    setDisplayName("");
+    setUserUrl("");
   }
 
   function resetFree() {
@@ -111,6 +166,7 @@ export default function Home() {
   async function onGenerate() {
     setMsg("");
     setGenUrl("");
+    setShowSuccess(false);
     if (!file) {
       setMsg("Pick a file first.");
       return;
@@ -126,6 +182,7 @@ export default function Home() {
     setFreeLeft((n) => Math.max(0, n - 1));
 
     setLoading(true);
+    setShowUploadForm(false); // Hide upload form when generation starts
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -189,6 +246,7 @@ export default function Home() {
         if ((s?.status === "succeeded" || s?.status === "completed") && url) {
           setGenUrl(url);
           setMsg("Done ✓");
+          setShowSuccess(true); // Show success animation
 
           // Scroll to generated image
           generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -207,6 +265,12 @@ export default function Home() {
           // No need for duplicate /api/generations call
 
           setLoading(false);
+          
+          // Hide success animation after 3 seconds
+          setTimeout(() => {
+            setShowSuccess(false);
+          }, 3000);
+          
           return;
         }
       }
@@ -219,12 +283,56 @@ export default function Home() {
     }
   }
 
+  // Success animation component
+  const SuccessAnimation = () => {
+    if (!showSuccess) return null;
+    
+    return (
+      <div className="fixed inset-0 pointer-events-none z-50">
+        {/* Confetti */}
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="confetti"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              backgroundColor: ['var(--brand)', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'][Math.floor(Math.random() * 5)]
+            }}
+          />
+        ))}
+        
+        {/* Hearts */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="heart"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`
+            }}
+          >
+            ❤️
+          </div>
+        ))}
+        
+        {/* Success message */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[var(--brand)] text-[var(--brand-ink)] px-8 py-4 rounded-2xl text-xl font-bold shadow-2xl">
+          🎉 Success! Your pet portrait is ready! 🎉
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main className="mx-auto max-w-6xl p-6">
       <style dangerouslySetInnerHTML={{ __html: SHIMMER_CSS }} />
+      <SuccessAnimation />
 
-      {/* Uploader */}
-      <section className="grid gap-4">
+      {/* Uploader - only show when showUploadForm is true */}
+      {showUploadForm && (
+        <section className="grid gap-4">
         <label className="text-lg font-semibold text-[var(--fg)]">Upload a pet photo</label>
         <div className="grid gap-4">
           <div className="grid gap-4">
@@ -357,6 +465,19 @@ export default function Home() {
           </button>
         </div>
       </section>
+      )}
+
+      {/* Create Another button - show when form is hidden */}
+      {!showUploadForm && (
+        <section className="mb-6">
+          <button
+            onClick={resetForm}
+            className="w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200"
+          >
+            ✨ Create Another Portrait
+          </button>
+        </section>
+      )}
 
       {/* Panels */}
       <section className="mt-8 grid gap-6 lg:grid-cols-[300px_1fr]">
@@ -383,7 +504,7 @@ export default function Home() {
             ) : genUrl ? (
               <button
                 onClick={() => setShowLightbox(true)}
-                className="w-full h-full group"
+                className={cx("w-full h-full group", showSuccess && "success-glow")}
               >
                 <img src={genUrl} alt="Generated" className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" />
               </button>
