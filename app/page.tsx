@@ -273,37 +273,31 @@ export default function Home() {
                 />
               </div>
               
-              {/* Premium features for logged-in users */}
-              {userToken && (
-                <div className="grid gap-4 p-6 rounded-xl bg-[var(--muted)]/5">
-                  <div className="grid gap-3">
-                    <label className="text-sm font-semibold text-[var(--fg)]">Style Preset</label>
-                    <select
-                      value={selectedPreset}
-                      onChange={(e) => setSelectedPreset(e.target.value)}
-                      className="w-full rounded-xl bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] transition-all appearance-none cursor-pointer"
-                      style={{
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'none',
-                        appearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 12px center',
-                        backgroundSize: '16px',
-                        paddingRight: '40px'
-                      }}
-                    >
-                      {PRESETS.dog.map((preset) => (
-                        <option key={preset.label} value={preset.value}>
-                          {preset.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-
-                </div>
-              )}
+              {/* Style Preset - Available for all users */}
+              <div className="grid gap-3">
+                <label className="text-sm font-semibold text-[var(--fg)]">Style Preset</label>
+                <select
+                  value={selectedPreset}
+                  onChange={(e) => setSelectedPreset(e.target.value)}
+                  className="w-full rounded-xl bg-[var(--muted)] text-[var(--fg)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] transition-all appearance-none cursor-pointer"
+                  style={{
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    backgroundSize: '16px',
+                    paddingRight: '40px'
+                  }}
+                >
+                  {PRESETS.dog.map((preset) => (
+                    <option key={preset.label} value={preset.value}>
+                      {preset.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Crop Ratio - Using original Nano-Banana framework */}
               <div className="grid gap-3">
