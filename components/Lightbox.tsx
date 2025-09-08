@@ -106,21 +106,20 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
           {/* Bottom toolbar */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent flex justify-between items-center">
             <div className="text-white flex gap-4">
-              {currentImage.display_name && (
-                <span>{currentImage.display_name}</span>
-              )}
-              {currentImage.social_handle && (
-                <span>{currentImage.social_handle}</span>
-              )}
-              {currentImage.website && (
+              {currentImage.display_name && currentImage.website ? (
                 <a
-                  href={currentImage.website || "#"}
+                  href={currentImage.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"
                 >
-                  Visit Creator
+                  {currentImage.display_name}
                 </a>
+              ) : currentImage.display_name ? (
+                <span>{currentImage.display_name}</span>
+              ) : null}
+              {currentImage.social_handle && (
+                <span>{currentImage.social_handle}</span>
               )}
             </div>
             <button
