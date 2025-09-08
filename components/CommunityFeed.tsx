@@ -39,7 +39,8 @@ export default function CommunityFeed() {
         } else {
           setItems(j.items);
         }
-        setHasMore(j.items.length === 20); // If we got less than 20, no more pages
+        // Use hasMore from API response, fallback to checking item count
+        setHasMore(j.hasMore !== undefined ? j.hasMore : j.items.length === 20);
         setLastFetchTime(Date.now());
         return;
       }
@@ -130,7 +131,7 @@ export default function CommunityFeed() {
   return (
     <div>
       <CommunityGrid items={items} />
-      {loading && items.length > 0 && (
+      {loading && items.length > 0 && hasMore && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={`loading-${i}`} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">

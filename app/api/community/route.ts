@@ -71,7 +71,16 @@ export async function GET(request: Request) {
     
     // Debug logs removed for cleaner console output
     
-    return NextResponse.json({ ok: true, items: validItems });
+    // Return pagination info
+    const hasMore = validItems.length === limit;
+    
+    return NextResponse.json({ 
+      ok: true, 
+      items: validItems,
+      hasMore: hasMore,
+      page: page,
+      limit: limit
+    });
   } catch (e: any) {
     console.error("Community API error:", e);
     return NextResponse.json({ ok: false, error: e?.message || "Community fetch failed", items: [] }, { status: 500 });
