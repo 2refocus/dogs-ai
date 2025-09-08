@@ -185,8 +185,8 @@ export async function POST(req: NextRequest) {
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
-    // Try subtle prompt-based crop control (preserving style)
-    const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
+    // For API parameter approach, use "generate" mode (Replicate handles cropping)
+    const finalPrompt = composePrompt(basePrompt, "generate", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
     console.log(`[stylize] Crop ratio received: ${crop_ratio}`);
