@@ -66,7 +66,7 @@ export default function CommunityFeed() {
   };
 
   const loadMore = () => {
-    if (!loading && hasMore) {
+    if (!loading && hasMore && !refreshing) {
       const nextPage = page + 1;
       setPage(nextPage);
       fetchCommunityData(false, nextPage, true);
@@ -91,14 +91,28 @@ export default function CommunityFeed() {
 
   // Infinite scroll effect
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMore();
-      }
+      // Debounce scroll events to prevent multiple rapid calls
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.offsetHeight;
+        
+        // Load more when user is 500px from bottom (reduced from 1000px)
+        if (scrollTop + windowHeight >= documentHeight - 500) {
+          loadMore();
+        }
+      }, 100); // 100ms debounce
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
   }, [loading, hasMore, page]);
 
   if (loading && items.length === 0) {
@@ -118,7 +132,7 @@ export default function CommunityFeed() {
       <CommunityGrid items={items} />
       {loading && items.length > 0 && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <div key={`loading-${i}`} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
               <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
             </div>

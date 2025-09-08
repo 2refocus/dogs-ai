@@ -88,14 +88,14 @@ export default function PipelineSelector({
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
           <div className="flex items-start gap-2">
-            <div className="text-blue-500 mt-0.5">ℹ️</div>
+            <div className="text-blue-500 dark:text-blue-400 mt-0.5">ℹ️</div>
             <div>
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 Sign up for better quality
               </p>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                 Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
               </p>
             </div>

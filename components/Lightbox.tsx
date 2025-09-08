@@ -71,8 +71,11 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       const shareUrl = currentImage.high_res_url || currentImage.output_url;
       const shareText = `Check out this amazing pet portrait! 🐾✨`;
       
+      console.log('[Lightbox] Share attempt:', { shareUrl, shareText });
+      
       // Try Web Share API first (mobile)
-      if (navigator.share) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
+        console.log('[Lightbox] Using Web Share API');
         await navigator.share({
           title: 'Pet Portrait',
           text: shareText,
@@ -82,18 +85,28 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       }
       
       // Fallback: Copy to clipboard
-      if (navigator.clipboard) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        console.log('[Lightbox] Using clipboard fallback');
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        // You could add a toast notification here
-        alert('Link copied to clipboard!');
+        // Show a more user-friendly notification
+        const notification = document.createElement('div');
+        notification.textContent = 'Link copied to clipboard!';
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50';
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 2000);
       } else {
         // Final fallback: open in new tab
-        window.open(shareUrl, '_blank');
+        console.log('[Lightbox] Using new tab fallback');
+        window.open(shareUrl, '_blank', 'noopener,noreferrer');
       }
     } catch (error) {
       console.error("Share failed:", error);
       // Fallback: open in new tab
-      window.open(currentImage.high_res_url || currentImage.output_url, '_blank');
+      const fallbackUrl = currentImage.high_res_url || currentImage.output_url;
+      console.log('[Lightbox] Error fallback, opening:', fallbackUrl);
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
