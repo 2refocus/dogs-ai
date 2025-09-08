@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
         const insertData = {
           user_id: user_id || "00000000-0000-0000-0000-000000000000",
           output_url: result.imageUrl,
-          high_res_url: result.imageUrl,
+          high_res_url: selectedMode === "multimodel" ? result.imageUrl : null, // Only set high_res_url for multi-model pipeline
           input_url: inputUrl,
           preset_label: styleLabel,
           display_name: display_name || null,

@@ -44,8 +44,30 @@ const NEGATIVE =
   "no text, no watermark, no frame, no hands, no extra limbs, no second animal, " +
   "no distortion, no over-saturation, no human, no person, no people";
 
-// Style presets optimized for Replicate models
+// Style presets optimized for Replicate models (matching app/presets.ts)
 const STYLE_PACKS: Record<string, string> = {
+  "DEFAULT Portrait": "Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality.",
+  "Classic Oil on Canvas": "classic oil painting on linen canvas, rich brushstrokes, warm amber palette, Rembrandt lighting, subtle varnish sheen, gallery-grade finish",
+  "Cozy Home Portrait": "soft window light, warm tungsten accents, knitted blanket texture, hygge aesthetic, muted earth tones, gentle vignette",
+  "Elegant Black & Gold": "dark charcoal backdrop, gold accent key light, editorial fine-art look, sculpted shadows, luxurious yet restrained",
+  "Watercolor Pastel": "delicate watercolor wash, pastel palette, soft bleeding edges, paper texture visible, airy and light",
+  "Matte Fine-Art Studio": "matte tonality, soft gradients, smooth background falloff, desaturated elegance, gallery print vibes",
+  "Vintage Film (Portra 400)": "Portra 400 film emulation, natural skin/fur tones, mild grain, soft contrast, subtle halation on highlights",
+  "Minimal Line Art": "single-weight line art, clean outlines, sparse shading, ivory paper background, contemporary minimalism",
+  "Autumn Forest Glow": "golden hour backlight, autumn foliage bokeh, warm oranges and browns, hazy atmosphere, cinematic glow",
+  "Snowy Winter Portrait": "cool daylight, soft falling snow particles, pale blue-gray palette, clean white backdrop with subtle depth",
+  "Bohemian Floral": "soft floral backdrop, dried flowers & pampas accents, creamy tones, romantic boutique studio look",
+  "Modern Editorial": "neutral seamless background, directional softbox, crisp edge definition, magazine editorial composition",
+  "Renaissance Painting": "Renaissance oil technique, chiaroscuro lighting, deep muted colors, canvas texture, museum-quality finish",
+  "Pop Art Halftone": "bold pop-art poster, halftone shading, limited high-contrast palette, clean graphic feel",
+  "Cozy Cabin Wood": "warm lamplight, rustic wood textures, gentle smoke/tea steam ambiance, amber color grade, snug atmosphere",
+  "Fine Charcoal Sketch": "charcoal on textured paper, controlled hatching, realistic proportion, tonal depth, smudge highlights",
+  "Modern Studio Portrait": "clean minimalist studio set, neutral gradient background, controlled soft key and subtle rim light, shallow depth of field, timeless and refined",
+  "Luxury Interior": "stylish upscale apartment interior, tasteful modern furniture, marble and wood accents, subtle warm ambient lighting, sophisticated lifestyle mood",
+  "Outdoor Premium Lifestyle": "editorial outdoor setting at golden hour, landscaped garden or chic rooftop terrace, warm sunlight, cinematic bokeh, aspirational mood",
+  "Fine Art Black & White": "dramatic monochrome portrait, high micro-contrast, deep shadows and luminous highlights, textured backdrop, classic fine-art aesthetic",
+  "Editorial Fashion Vibe": "fashion-inspired lighting setup (soft fill + dramatic rim), magazine-ready composition, clean background, chic modern styling",
+  // Legacy styles for backward compatibility
   "Watercolor": "watercolor painting style, soft brushstrokes, artistic watercolor technique, flowing colors, artistic texture",
   "Oil Painting": "oil painting style, rich textures, classical painting technique, bold brushwork, artistic medium",
   "Pencil Sketch": "pencil sketch style, detailed line work, artistic drawing, monochrome shading, sketch aesthetic",
@@ -60,8 +82,30 @@ const STYLE_PACKS: Record<string, string> = {
   "Surreal": "surreal art style, dreamlike quality, imaginative elements, artistic fantasy",
 };
 
-// Suggested aspect per style (optimized for Replicate's capabilities)
+// Suggested aspect per style (matching app/presets.ts)
 const STYLE_ASPECT: Record<string, AspectKey> = {
+  "DEFAULT Portrait": "4:5",
+  "Classic Oil on Canvas": "3:4",
+  "Cozy Home Portrait": "4:5",
+  "Elegant Black & Gold": "3:4",
+  "Watercolor Pastel": "4:5",
+  "Matte Fine-Art Studio": "4:5",
+  "Vintage Film (Portra 400)": "3:4",
+  "Minimal Line Art": "4:5",
+  "Autumn Forest Glow": "4:5",
+  "Snowy Winter Portrait": "4:5",
+  "Bohemian Floral": "4:5",
+  "Modern Editorial": "3:4",
+  "Renaissance Painting": "3:4",
+  "Pop Art Halftone": "1:1",
+  "Cozy Cabin Wood": "4:5",
+  "Fine Charcoal Sketch": "4:5",
+  "Modern Studio Portrait": "4:5",
+  "Luxury Interior": "3:4",
+  "Outdoor Premium Lifestyle": "3:4",
+  "Fine Art Black & White": "4:5",
+  "Editorial Fashion Vibe": "4:5",
+  // Legacy styles for backward compatibility
   "Watercolor": "4:5",
   "Oil Painting": "3:4", 
   "Pencil Sketch": "4:5",
