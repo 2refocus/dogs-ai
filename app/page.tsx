@@ -407,7 +407,8 @@ export default function Home() {
                 </select>
               </div>
 
-              {/* Crop Ratio - Using original Nano-Banana framework */}
+              {/* Crop Ratio - Temporarily disabled until working properly */}
+              {/* 
               <div className="grid gap-3">
                 <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
                 <select
@@ -436,6 +437,7 @@ export default function Home() {
                   <option value="9_16">Vertical (9:16) - Instagram Story/TikTok</option>
                 </select>
               </div>
+              */}
 
               <button
                 onClick={onGenerate}
