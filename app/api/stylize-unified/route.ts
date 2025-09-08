@@ -113,6 +113,10 @@ async function processSimplePipeline(
   
   const optimizedPrompt = optimizePromptForReplicate(prompt, REPLICATE_MODEL);
   
+  console.log(`[stylize-unified] Style label: ${styleLabel}`);
+  console.log(`[stylize-unified] Original prompt: ${prompt}`);
+  console.log(`[stylize-unified] Optimized prompt: ${optimizedPrompt}`);
+  
   // Use existing Replicate API call
   const body: any = {
     input: {
@@ -262,7 +266,9 @@ export async function POST(req: NextRequest) {
     if (selectedMode === "simple") {
       result = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
     } else if (selectedMode === "multimodel") {
-      result = await processWithMultiModelPipeline(inputUrl, styleLabel, cropRatio, "dog", true);
+      // TODO: Fix IP-Adapter model ID - for now fall back to simple pipeline
+      console.log("[stylize-unified] Multi-model pipeline temporarily disabled, using simple pipeline");
+      result = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
     } else {
       // Hybrid: Simple + upscaling
       const simpleResult = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
