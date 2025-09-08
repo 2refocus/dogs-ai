@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
-    // Use subtle prompt-based crop control with "edit" mode
+    // Use the original Nano-Banana framework exactly as provided
     const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);

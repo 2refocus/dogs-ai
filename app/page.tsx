@@ -306,7 +306,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Crop Ratio - Available for all users */}
+              {/* Crop Ratio - Using original Nano-Banana framework */}
               <div className="grid gap-3">
                 <label className="text-sm font-semibold text-[var(--fg)]">Crop Ratio</label>
                 <select
