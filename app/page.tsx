@@ -519,23 +519,10 @@ export default function Home() {
         </section>
       )}
 
-      {/* Panels */}
-      <section className="mt-8 grid gap-6 lg:grid-cols-[300px_1fr]">
-        {/* Original small */}
-        <div className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
-          <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Original</h3>
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-black/20">
-            {preview ? (
-              <img src={preview} alt="Original" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
-                No image selected
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Generated big with shimmer - more prominent */}
+      {/* Panels - only show after generation starts */}
+      {(loading || genUrl) && (
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_300px]">
+        {/* Generated big with shimmer - more prominent (now on left/top) */}
         <div ref={generatedRef} className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
           <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Generated Portrait</h3>
           <div className="relative aspect-[4/3] lg:aspect-[4/3] rounded-xl overflow-hidden bg-black/20">
@@ -562,16 +549,16 @@ export default function Home() {
               {genUrl && (
                 <>
                   <button
+                    onClick={shareImage}
+                    className="rounded-lg border border-[var(--brand)] bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-3 py-2 text-sm font-medium transition-all"
+                  >
+                    Share
+                  </button>
+                  <button
                     onClick={() => setShowLightbox(true)}
                     className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                   >
                     View
-                  </button>
-                  <button
-                    onClick={shareImage}
-                    className="rounded-lg border border-[var(--brand)] bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-3 py-2 text-sm font-medium transition-all"
-                  >
-                    📤 Share
                   </button>
                   <a
                     className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
@@ -601,7 +588,22 @@ export default function Home() {
             />
           )}
         </div>
+
+        {/* Original small (now on right/bottom) */}
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-4">
+          <h3 className="text-sm font-semibold text-[var(--fg)] mb-3">Original</h3>
+          <div className="relative aspect-square rounded-xl overflow-hidden bg-black/20">
+            {preview ? (
+              <img src={preview} alt="Original" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
+                No image selected
+              </div>
+            )}
+          </div>
+        </div>
       </section>
+      )}
 
       {/* Community feed */}
       <div className="mt-12">
