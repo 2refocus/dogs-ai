@@ -156,6 +156,42 @@ export default function Home() {
     setUserUrl("");
   }
 
+  async function shareImage() {
+    if (!genUrl) return;
+    
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share) {
+        // Fetch the image as a blob
+        const response = await fetch(genUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'pet-portrait.jpg', { type: 'image/jpeg' });
+        
+        await navigator.share({
+          title: 'My Pet Portrait',
+          text: 'Check out this amazing pet portrait I created!',
+          files: [file]
+        });
+      } else {
+        // Fallback: copy URL to clipboard
+        await navigator.clipboard.writeText(genUrl);
+        setMsg("Image URL copied to clipboard!");
+        setTimeout(() => setMsg(""), 3000);
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback: copy URL to clipboard
+      try {
+        await navigator.clipboard.writeText(genUrl);
+        setMsg("Image URL copied to clipboard!");
+        setTimeout(() => setMsg(""), 3000);
+      } catch (clipboardError) {
+        setMsg("Share not supported. Right-click image to save.");
+        setTimeout(() => setMsg(""), 3000);
+      }
+    }
+  }
+
   function resetFree() {
     try {
       localStorage.setItem("freeGenerationsLeft", "1");
@@ -530,6 +566,12 @@ export default function Home() {
                     className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                   >
                     View
+                  </button>
+                  <button
+                    onClick={shareImage}
+                    className="rounded-lg border border-[var(--brand)] bg-[var(--brand)]/10 hover:bg-[var(--brand)]/20 text-[var(--brand)] px-3 py-2 text-sm font-medium transition-all"
+                  >
+                    📤 Share
                   </button>
                   <a
                     className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
