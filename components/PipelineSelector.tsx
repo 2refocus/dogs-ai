@@ -90,7 +90,7 @@ export default function PipelineSelector({
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 dark:bg-gray-800/30 dark:border-gray-700">
+        <div className="bg-white border border-gray-300 rounded-lg p-3 dark:bg-gray-800/30 dark:border-gray-700">
           <div className="flex items-start gap-2">
             <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
             <div>
