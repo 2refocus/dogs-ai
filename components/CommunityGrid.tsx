@@ -27,6 +27,7 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   
   // Track which images are loading/loaded
   const handleImageLoad = (idx: number) => {
@@ -38,8 +39,19 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
     setLoadedImages(prev => new Set(prev).add(idx));
   };
   
+  const handleImageError = (idx: number) => {
+    setLoadingImages(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(idx);
+      return newSet;
+    });
+    setFailedImages(prev => new Set(prev).add(idx));
+    console.log(`[CommunityGrid] Image ${idx} failed to load:`, items[idx]?.output_url);
+  };
+  
   const handleImageStartLoad = (idx: number) => {
     setLoadingImages(prev => new Set(prev).add(idx));
+    console.log(`[CommunityGrid] Starting to load image ${idx}:`, items[idx]?.output_url);
   };
 
   if (!items || items.length === 0) {
@@ -55,32 +67,46 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
             className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square relative group"
             title={it.created_at || ""}
           >
-            {/* Loading skeleton */}
-            {loadingImages.has(idx) && !loadedImages.has(idx) && (
+            {/* Loading skeleton - only show while actively loading */}
+            {loadingImages.has(idx) && !loadedImages.has(idx) && !failedImages.has(idx) && (
               <div className="absolute inset-0 z-10">
                 <ImageSkeleton />
+              </div>
+            )}
+            
+            {/* Failed image placeholder */}
+            {failedImages.has(idx) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <div className="text-center text-gray-500 dark:text-gray-400">
+                  <div className="text-2xl mb-1">🖼️</div>
+                  <div className="text-xs">Image unavailable</div>
+                </div>
               </div>
             )}
             
             <button
               onClick={() => setSelectedImageIndex(idx)}
               className="w-full h-full relative"
+              disabled={failedImages.has(idx)}
             >
               <img
                 src={it.output_url}
                 alt={it.display_name || "community"}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${
-                  loadedImages.has(idx) ? 'opacity-100' : 'opacity-0'
+                  loadedImages.has(idx) ? 'opacity-100' : 
+                  failedImages.has(idx) ? 'opacity-0' : 'opacity-100'
                 }`}
                 onLoadStart={() => handleImageStartLoad(idx)}
                 onLoad={() => handleImageLoad(idx)}
-                onError={() => handleImageLoad(idx)} // Remove loading state on error too
+                onError={() => handleImageError(idx)}
               />
               
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-sm font-medium">View</span>
-              </div>
+              {/* Hover overlay - only show for loaded images */}
+              {loadedImages.has(idx) && (
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">View</span>
+                </div>
+              )}
             </button>
           </div>
         ))}

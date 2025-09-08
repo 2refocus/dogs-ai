@@ -149,6 +149,9 @@ export default function CommunityFeed() {
     );
   }
 
+  // Debug logging
+  console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore);
+  
   return (
     <div>
       <CommunityGrid items={items} />

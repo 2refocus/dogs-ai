@@ -119,14 +119,18 @@ export default function GenerationForm({ userId, onGenerate, loading }: Generati
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="!bg-white !border-2 !border-gray-400 rounded-lg p-3 shadow-sm dark:!bg-gray-800/30 dark:!border-gray-700 dark:shadow-none" style={{backgroundColor: 'white', borderColor: '#9ca3af'}}>
+        <div className="rounded-lg p-3 shadow-sm" style={{
+          backgroundColor: 'white', 
+          border: '2px solid #9ca3af',
+          color: '#111827'
+        }}>
           <div className="flex items-start gap-2">
             <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+              <p className="text-sm font-medium" style={{color: '#111827'}}>
                 Sign up for better quality
               </p>
-              <p className="text-xs text-gray-800 mt-1 dark:text-gray-300">
+              <p className="text-xs mt-1" style={{color: '#1f2937'}}>
                 Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
               </p>
             </div>
