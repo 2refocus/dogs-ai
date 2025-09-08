@@ -4,6 +4,7 @@ type Item = {
   id?: string | number;
   output_url: string;
   high_res_url?: string | null;
+  input_url?: string | null;
   aspect_ratio?: string | null;
   created_at?: string;
   display_name?: string | null;

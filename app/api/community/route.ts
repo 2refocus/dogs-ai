@@ -18,7 +18,7 @@ export async function GET() {
     
     const { data: allData, error: allError } = await supabaseAdmin
       .from("generations")
-      .select("id, user_id, output_url, high_res_url, aspect_ratio, preset_label, display_name, website, profile_image_url, created_at")
+      .select("id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, created_at")
       .order("id", { ascending: false });
     
     if (allError) {
