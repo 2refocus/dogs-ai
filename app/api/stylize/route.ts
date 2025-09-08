@@ -270,6 +270,7 @@ export async function POST(req: NextRequest) {
           user_id: user_id || "00000000-0000-0000-0000-000000000000", // Use provided user_id or fallback for anonymous
           output_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           high_res_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
+          input_url: inputUrl, // Store the original uploaded image URL
           preset_label: preset_label || "DEFAULT Portrait",
           display_name: display_name || null,
           website: user_url || null,
