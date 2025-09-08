@@ -21,6 +21,7 @@ interface LightboxProps {
 export default function Lightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [sharing, setSharing] = useState(false);
   
   useEffect(() => {
     // Handle keyboard navigation
@@ -67,46 +68,68 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   };
 
   const share = async () => {
+    if (sharing) return; // Prevent multiple clicks
+    
+    setSharing(true);
     try {
       const shareUrl = currentImage.high_res_url || currentImage.output_url;
       const shareText = `Check out this amazing pet portrait! 🐾✨`;
       
       console.log('[Lightbox] Share attempt:', { shareUrl, shareText });
       
-      // Try Web Share API first (mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ url: shareUrl })) {
-        console.log('[Lightbox] Using Web Share API');
-        await navigator.share({
-          title: 'Pet Portrait',
-          text: shareText,
-          url: shareUrl,
-        });
-        return;
+      // Try Web Share API first (mobile) - but with better error handling
+      if (navigator.share) {
+        try {
+          console.log('[Lightbox] Attempting Web Share API');
+          await navigator.share({
+            title: 'Pet Portrait',
+            text: shareText,
+            url: shareUrl,
+          });
+          console.log('[Lightbox] Web Share API successful');
+          return;
+        } catch (shareError) {
+          console.log('[Lightbox] Web Share API failed:', shareError);
+          // Don't return here, fall through to clipboard
+        }
       }
       
       // Fallback: Copy to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        console.log('[Lightbox] Using clipboard fallback');
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        // Show a more user-friendly notification
-        const notification = document.createElement('div');
-        notification.textContent = 'Link copied to clipboard!';
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50';
-        document.body.appendChild(notification);
-        setTimeout(() => {
-          document.body.removeChild(notification);
-        }, 2000);
-      } else {
-        // Final fallback: open in new tab
-        console.log('[Lightbox] Using new tab fallback');
-        window.open(shareUrl, '_blank', 'noopener,noreferrer');
+        try {
+          console.log('[Lightbox] Using clipboard fallback');
+          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          console.log('[Lightbox] Clipboard successful');
+          
+          // Show a more user-friendly notification
+          const notification = document.createElement('div');
+          notification.textContent = 'Link copied to clipboard!';
+          notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 3000);
+          return;
+        } catch (clipboardError) {
+          console.log('[Lightbox] Clipboard failed:', clipboardError);
+          // Fall through to new tab
+        }
       }
+      
+      // Final fallback: open in new tab
+      console.log('[Lightbox] Using new tab fallback');
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      
     } catch (error) {
-      console.error("Share failed:", error);
-      // Fallback: open in new tab
+      console.error("Share failed completely:", error);
+      // Last resort fallback: open in new tab
       const fallbackUrl = currentImage.high_res_url || currentImage.output_url;
       console.log('[Lightbox] Error fallback, opening:', fallbackUrl);
       window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -188,9 +211,10 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
             <div className="flex gap-2">
               <button
                 onClick={share}
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
+                disabled={sharing}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Share
+                {sharing ? 'Sharing...' : 'Share'}
               </button>
               <button
                 onClick={download}
