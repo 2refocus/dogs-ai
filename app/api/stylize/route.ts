@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient"; // <-- same client you were using before
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { composePrompt, type AspectKey } from "@/lib/promptFormats";
+// Removed composePrompt import - using simple approach
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -178,25 +178,19 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const basePrompt = (form.get("prompt") || "").toString().trim() ||
-      "transform this into a pet portrait, rule of thirds composition, looking at camera; CRITICAL: If the image already contains dogs, keep them as dogs - DO NOT convert dogs to cats; if the image contains humans, convert them into realistic pets (dog or cat), preserve the original pose and composition; if there are multiple pets, keep all of them; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality, artistic composition, creative lighting, emotional depth. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
+      "transform this into a single pet head-and-shoulders portrait, rule of thirds composition, looking at camera; convert any human or other subject into a realistic pet (dog or cat), preserve the original pose and composition; realistic breed, unique markings, fur texture and eye color; respect the original pose and proportions; no changes to anatomy. fine-art studio photograph, 85mm lens look, shallow depth of field (f/1.8), soft key + subtle rim light, gentle bokeh, high detail, crisp facial features. Style: Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality. Avoid: no text, no watermark, no frame, no hands, no extra limbs, no second animal, no distortion, no over-saturation, no human, no person, no people.";
     
     const preset_label = (form.get("preset_label") || "").toString();
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
-    // Try hybrid approach: API parameter + prompt instruction
-    const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
+    // Use simple approach: just the base prompt, let Replicate API handle crop_ratio
+    const finalPrompt = basePrompt;
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
     console.log(`[stylize] Crop ratio received: ${crop_ratio}`);
-    console.log(`[stylize] Final composed prompt: ${finalPrompt}`);
+    console.log(`[stylize] Final prompt: ${finalPrompt}`);
     console.log(`[stylize] Prompt length: ${finalPrompt.length} characters`);
-    
-    // Debug: Check if the prompt actually contains the aspect ratio instruction
-    const hasAspectRatio = finalPrompt.includes('aspect ratio') || finalPrompt.includes('orientation') || finalPrompt.includes('vertical mobile frame');
-    console.log(`[stylize] Prompt contains aspect ratio instruction: ${hasAspectRatio}`);
-    console.log(`[stylize] Last 100 chars of prompt: ${finalPrompt.slice(-100)}`);
-    console.log(`[stylize] Full final prompt: ${finalPrompt}`);
     
     if (!file) return json({ ok: false, error: "Missing file" }, 400);
 

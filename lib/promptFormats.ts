@@ -85,7 +85,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Use landscape orientation, aspect ratio 3:2.",
       edit: ({extendBg} = {}) =>
-        `CRITICAL: Recreate the uploaded image in landscape orientation, aspect ratio 3:2. The final image MUST be 3:2 aspect ratio.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
+        `Recreate the uploaded image in landscape orientation, aspect ratio 3:2.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "16_9": {
