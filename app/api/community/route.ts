@@ -64,11 +64,10 @@ export async function GET(request: Request) {
         return false;
       }
       
-      // Additional check: if it's a Supabase storage URL, make sure it's not a deleted file
-      // This is a basic check - in production you might want to actually verify the file exists
-      if (r.output_url.includes("supabase") && r.output_url.includes("storage")) {
-        // Skip if the URL looks like it might be deleted (you can add more specific checks here)
-        return true; // For now, we'll trust the database
+      // Skip old Replicate URLs that are likely expired
+      if (r.output_url.includes("replicate.delivery")) {
+        console.log(`[Community API] Filtering out expired Replicate URL ${r.id}: ${r.output_url}`);
+        return false;
       }
       
       return true;
@@ -77,8 +76,11 @@ export async function GET(request: Request) {
     // Debug logging
     console.log(`[Community API] Page ${page}: Total records in DB: ${totalCount}, Got ${allData?.length || 0} raw records, ${validItems.length} valid items`);
     
-    // Simple hasMore logic - if we got exactly the limit, assume there might be more
+    // Better hasMore logic - check if we got fewer items than requested
+    // If we got exactly the limit, there might be more. If we got fewer, we've reached the end.
     const hasMore = validItems.length === limit;
+    
+    console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} items, limit ${limit})`);
     
     return NextResponse.json({ 
       ok: true, 

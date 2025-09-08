@@ -90,7 +90,12 @@ export default function PipelineSelector({
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="rounded-lg p-3 shadow-sm bg-white border-2 border-gray-400 dark:bg-gray-800/30 dark:border-gray-700 dark:shadow-none">
+        <div className="rounded-lg p-3 shadow-sm dark:bg-gray-800/30 dark:border-gray-700 dark:shadow-none" style={{
+          '--bg': 'white',
+          '--line': '#9ca3af',
+          backgroundColor: 'var(--bg)',
+          border: '2px solid var(--line)'
+        } as React.CSSProperties}>
           <div className="flex items-start gap-2">
             <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
             <div>
