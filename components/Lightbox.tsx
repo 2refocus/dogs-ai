@@ -41,8 +41,9 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   console.log("[Lightbox] Current image data:", {
     id: currentImage.id,
     preset_label: currentImage.preset_label,
-    preset_label_type: typeof currentImage.preset_label,
-    preset_label_length: currentImage.preset_label?.length,
+    input_url: currentImage.input_url,
+    output_url: currentImage.output_url,
+    showOriginal: showOriginal,
     all_keys: Object.keys(currentImage)
   });
 

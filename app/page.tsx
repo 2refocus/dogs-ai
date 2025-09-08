@@ -579,6 +579,7 @@ export default function Home() {
               images={[{
                 id: Date.now(),
                 output_url: genUrl,
+                input_url: preview || null,
                 display_name: displayName || null,
                 website: userUrl || null,
                 preset_label: PRESETS.dog.find(p => p.value === selectedPreset)?.label || null

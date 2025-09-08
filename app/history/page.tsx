@@ -20,6 +20,7 @@ type CommunityRow = {
   id: number;
   output_url: string;
   high_res_url?: string | null;
+  input_url?: string | null;
   aspect_ratio?: string | null;
   display_name?: string | null;
   website?: string | null;
