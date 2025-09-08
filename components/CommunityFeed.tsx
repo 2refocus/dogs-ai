@@ -101,41 +101,7 @@ export default function CommunityFeed() {
     };
   }, []);
 
-  // Infinite scroll effect
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    const handleScroll = () => {
-      // Debounce scroll events to prevent multiple rapid calls
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.offsetHeight;
-        
-        console.log('[CommunityFeed] Scroll check:', { 
-          scrollTop, 
-          windowHeight, 
-          documentHeight, 
-          distanceFromBottom: documentHeight - (scrollTop + windowHeight),
-          loading, 
-          hasMore 
-        });
-        
-        // Load more when user is 500px from bottom (reduced from 1000px)
-        if (scrollTop + windowHeight >= documentHeight - 500) {
-          console.log('[CommunityFeed] Triggering loadMore from scroll');
-          loadMore();
-        }
-      }, 100); // 100ms debounce
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(timeoutId);
-    };
-  }, [loading, hasMore, page, loadMore]);
+  // Remove infinite scroll - we'll use a Load More button instead
 
   if (loading && items.length === 0) {
     return (
@@ -155,15 +121,31 @@ export default function CommunityFeed() {
   return (
     <div>
       <CommunityGrid items={items} />
+      
+      {/* Load More Button */}
+      {hasMore && items.length > 0 && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={loadMore}
+            disabled={loading}
+            className="px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
+      )}
+      
+      {/* Loading skeletons when loading more */}
       {loading && items.length > 0 && hasMore && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={`loading-${i}`} className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square animate-pulse">
               <div className="w-full h-full bg-gradient-to-r from-gray-300/20 via-gray-200/20 to-gray-300/20 animate-shimmer"></div>
             </div>
           ))}
         </div>
       )}
+      
       {!hasMore && items.length > 0 && (
         <div className="mt-4 text-center text-sm opacity-60">
           No more images to load

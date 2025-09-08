@@ -263,17 +263,35 @@ export default function HistoryPage() {
         <h2 className="text-xl font-semibold">Community</h2>
         {hasCommunity ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {community.map((it) => (
+            {community.map((it, idx) => (
               <button
                 key={it.id}
                 onClick={() => setSelectedCommunityImage({ image: it, index: community.indexOf(it) })}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
+                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group aspect-square"
               >
                 <img
                   src={it.output_url}
                   alt=""
-                  className="w-full aspect-square object-cover"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Hide the image and show placeholder on error
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const placeholder = target.nextElementSibling as HTMLElement;
+                    if (placeholder) {
+                      placeholder.style.display = 'flex';
+                    }
+                  }}
                 />
+                <div 
+                  className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
+                  style={{ display: 'none' }}
+                >
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    <div className="text-2xl mb-1">🖼️</div>
+                    <div className="text-xs">Image unavailable</div>
+                  </div>
+                </div>
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <span className="text-white">View</span>
                 </div>
