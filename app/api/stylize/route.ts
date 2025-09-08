@@ -125,9 +125,15 @@ async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: str
     },
   };
   
-  // Note: We're using prompt-based aspect ratio control instead of API parameter
-  // The cropRatio is embedded in the prompt via composePrompt function
-  console.log(`[stylize] Using prompt-based aspect ratio control (cropRatio: ${cropRatio})`);
+  // Try using Replicate API parameter for crop control
+  if (cropRatio && cropRatio !== "1_1") {
+    // Convert our format to Replicate's expected format
+    const replicateCropRatio = cropRatio.replace("_", ":");
+    body.input.crop_ratio = replicateCropRatio;
+    console.log(`[stylize] Using Replicate API crop_ratio parameter: ${replicateCropRatio}`);
+  } else {
+    console.log(`[stylize] Using default crop ratio (1:1)`);
+  }
   
   console.log(`[stylize] Complete request body to Replicate:`, JSON.stringify(body, null, 2));
 
@@ -179,9 +185,8 @@ export async function POST(req: NextRequest) {
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
-    // Temporarily disable crop framework to test if style comes back
-    const finalPrompt = basePrompt;
-    // const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
+    // Try subtle prompt-based crop control (preserving style)
+    const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
     console.log(`[stylize] Crop ratio received: ${crop_ratio}`);
