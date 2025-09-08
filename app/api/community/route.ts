@@ -56,31 +56,27 @@ export async function GET(request: Request) {
     
     // Debug logs removed for cleaner console output
     
-    // Filter for valid output_url and exclude deleted/inaccessible images
+    // Filter for valid output_url - be less aggressive with filtering
     const validItems = processedData.filter((r) => {
-      // Basic URL validation
-      if (!r.output_url || typeof r.output_url !== "string" || !r.output_url.startsWith("http")) {
-        console.log(`[Community API] Filtering out invalid record ${r.id}: ${r.output_url}`);
+      // Only filter out completely invalid records
+      if (!r.output_url || typeof r.output_url !== "string") {
+        console.log(`[Community API] Filtering out record with no URL ${r.id}`);
         return false;
       }
       
-      // Skip old Replicate URLs that are likely expired
-      if (r.output_url.includes("replicate.delivery")) {
-        console.log(`[Community API] Filtering out expired Replicate URL ${r.id}: ${r.output_url}`);
-        return false;
-      }
-      
+      // Allow all URLs - let the frontend handle broken images
+      console.log(`[Community API] Keeping record ${r.id} with URL: ${r.output_url}`);
       return true;
     });
     
     // Debug logging
     console.log(`[Community API] Page ${page}: Total records in DB: ${totalCount}, Got ${allData?.length || 0} raw records, ${validItems.length} valid items`);
     
-    // Better hasMore logic - check if we got fewer items than requested
-    // If we got exactly the limit, there might be more. If we got fewer, we've reached the end.
-    const hasMore = validItems.length === limit;
+    // More aggressive hasMore logic - only stop if we got significantly fewer items
+    // This accounts for filtering that might reduce the count
+    const hasMore = validItems.length >= Math.floor(limit * 0.8); // If we got 80% or more, assume there might be more
     
-    console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} items, limit ${limit})`);
+    console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} items, limit ${limit}, threshold: ${Math.floor(limit * 0.8)})`);
     
     return NextResponse.json({ 
       ok: true, 
