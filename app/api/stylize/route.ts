@@ -125,8 +125,14 @@ async function replicateCreate(imageUrl: string, prompt: string, cropRatio?: str
     },
   };
   
-  // API parameter approach didn't work, using prompt-based approach
-  console.log(`[stylize] Using prompt-based aspect ratio control (cropRatio: ${cropRatio})`);
+  // Try Replicate API parameter approach with better debugging
+  if (cropRatio && cropRatio !== "1_1") {
+    const replicateCropRatio = cropRatio.replace("_", ":");
+    body.input.crop_ratio = replicateCropRatio;
+    console.log(`[stylize] Using Replicate API crop_ratio parameter: ${replicateCropRatio}`);
+  } else {
+    console.log(`[stylize] Using default crop ratio (1:1) - no API parameter needed`);
+  }
   
   console.log(`[stylize] Complete request body to Replicate:`, JSON.stringify(body, null, 2));
 
@@ -178,7 +184,7 @@ export async function POST(req: NextRequest) {
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     
-    // Use the original Nano-Banana framework exactly as provided
+    // Try hybrid approach: API parameter + prompt instruction
     const finalPrompt = composePrompt(basePrompt, "edit", crop_ratio as AspectKey);
     
     console.log(`[stylize] Base prompt: ${basePrompt}`);
