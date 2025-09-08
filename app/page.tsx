@@ -140,6 +140,7 @@ export default function Home() {
       // Always send crop_ratio (available for all users)
       fd.append("crop_ratio", cropRatio);
       console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
+      console.log(`[frontend] About to send request to /api/stylize`);
       fd.append("user_url", userUrl);
       fd.append("display_name", displayName);
       fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
@@ -151,12 +152,15 @@ export default function Home() {
         headers.Authorization = `Bearer ${userToken}`;
       }
       
+      console.log(`[frontend] Sending POST request to /api/stylize`);
       const createRes = await fetch("/api/stylize", { 
         method: "POST", 
         body: fd,
         headers
       });
+      console.log(`[frontend] Received response from /api/stylize:`, createRes.status);
       const create = await createRes.json();
+      console.log(`[frontend] Response data:`, create);
       if (!createRes.ok || !create?.prediction_id) {
         setMsg(create?.error || "Create failed");
         setLoading(false);
