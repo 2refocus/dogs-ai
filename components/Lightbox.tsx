@@ -11,6 +11,7 @@ interface LightboxProps {
     social_handle?: string | null;
     preset_label?: string | null;
     high_res_url?: string | null;
+    input_url?: string | null;
     aspect_ratio?: string | null;
   }>;
   initialIndex?: number;
@@ -103,7 +104,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
 
           {/* Image */}
           <img
-            src={showOriginal ? ((currentImage as any).input_url || currentImage.high_res_url || currentImage.output_url) : (currentImage.high_res_url || currentImage.output_url)}
+            src={showOriginal ? (currentImage.input_url || currentImage.high_res_url || currentImage.output_url) : (currentImage.high_res_url || currentImage.output_url)}
             alt={showOriginal ? "Original image" : "Pet portrait"}
             className="max-h-[90vh] mx-auto rounded-lg"
           />
