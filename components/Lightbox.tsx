@@ -77,7 +77,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       
       console.log('[Lightbox] Share attempt:', { shareUrl, shareText });
       
-      // Try Web Share API first (mobile) - simplified approach
+      // Try Web Share API first (mobile)
       if (navigator.share) {
         try {
           console.log('[Lightbox] Attempting Web Share API');
@@ -97,27 +97,25 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       }
       
       // Fallback: Copy to clipboard
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          console.log('[Lightbox] Using clipboard fallback');
-          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-          console.log('[Lightbox] Clipboard successful');
-          
-          // Show a more user-friendly notification
-          const notification = document.createElement('div');
-          notification.textContent = 'Link copied to clipboard!';
-          notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
-          document.body.appendChild(notification);
-          setTimeout(() => {
-            if (document.body.contains(notification)) {
-              document.body.removeChild(notification);
-            }
-          }, 3000);
-          return;
-        } catch (clipboardError) {
-          console.log('[Lightbox] Clipboard failed:', clipboardError);
-          // Fall through to new tab
-        }
+      try {
+        console.log('[Lightbox] Using clipboard fallback');
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        console.log('[Lightbox] Clipboard successful');
+        
+        // Show notification
+        const notification = document.createElement('div');
+        notification.textContent = 'Link copied to clipboard!';
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
+        return;
+      } catch (clipboardError) {
+        console.log('[Lightbox] Clipboard failed:', clipboardError);
+        // Fall through to new tab
       }
       
       // Final fallback: open in new tab
