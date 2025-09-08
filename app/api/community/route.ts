@@ -72,11 +72,20 @@ export async function GET(request: Request) {
     // Debug logging
     console.log(`[Community API] Page ${page}: Total records in DB: ${totalCount}, Got ${allData?.length || 0} raw records, ${validItems.length} valid items`);
     
-    // More aggressive hasMore logic - only stop if we got significantly fewer items
-    // This accounts for filtering that might reduce the count
-    const hasMore = validItems.length >= Math.floor(limit * 0.8); // If we got 80% or more, assume there might be more
+    // Check if there are more records by looking ahead
+    let hasMore = false;
+    if (validItems.length > 0) {
+      // If we got any valid items, check if there are more records in the database
+      const { data: nextPageData } = await supabaseAdmin
+        .from("generations")
+        .select("id")
+        .order("id", { ascending: false })
+        .range(offset + limit, offset + limit + 10); // Check next 10 records
+      
+      hasMore = nextPageData && nextPageData.length > 0;
+    }
     
-    console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} items, limit ${limit}, threshold: ${Math.floor(limit * 0.8)})`);
+    console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} valid items, limit ${limit}, total DB records: ${totalCount})`);
     
     return NextResponse.json({ 
       ok: true, 

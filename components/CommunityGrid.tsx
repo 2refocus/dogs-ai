@@ -46,7 +46,13 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
       return newSet;
     });
     setFailedImages(prev => new Set(prev).add(idx));
-    console.log(`[CommunityGrid] Image ${idx} failed to load:`, items[idx]?.output_url);
+    const url = items[idx]?.output_url;
+    console.log(`[CommunityGrid] Image ${idx} failed to load:`, url);
+    
+    // Check if it's an expired Replicate URL
+    if (url && url.includes('replicate.delivery')) {
+      console.log(`[CommunityGrid] This appears to be an expired Replicate URL`);
+    }
   };
   
   const handleImageStartLoad = (idx: number) => {
@@ -74,8 +80,8 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               </div>
             )}
             
-            {/* Failed image placeholder */}
-            {failedImages.has(idx) && (
+            {/* Failed image placeholder - only show if we have a valid URL */}
+            {failedImages.has(idx) && it.output_url && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <div className="text-2xl mb-1">🖼️</div>
