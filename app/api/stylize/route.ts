@@ -184,7 +184,13 @@ export async function POST(req: NextRequest) {
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
     const display_name = (form.get("display_name") || "").toString();
-    const user_url = (form.get("user_url") || "").toString();
+    const user_url_raw = (form.get("user_url") || "").toString();
+    
+    // Ensure URL has proper protocol
+    let user_url = user_url_raw;
+    if (user_url_raw && !user_url_raw.startsWith('http://') && !user_url_raw.startsWith('https://')) {
+      user_url = `https://${user_url_raw}`;
+    }
     
     // Use simple approach: just the base prompt, let Replicate API handle crop_ratio
     const finalPrompt = basePrompt;

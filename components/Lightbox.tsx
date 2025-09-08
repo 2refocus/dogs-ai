@@ -108,14 +108,20 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
             <div className="text-white flex gap-4">
               {currentImage.display_name && currentImage.website ? (
                 <a
-                  href={currentImage.website}
+                  href="#"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     if (currentImage.website) {
-                      window.open(currentImage.website, '_blank', 'noopener,noreferrer');
+                      // Ensure URL has proper protocol
+                      let url = currentImage.website;
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = `https://${url}`;
+                      }
+                      window.open(url, '_blank', 'noopener,noreferrer');
                     }
                   }}
                 >
