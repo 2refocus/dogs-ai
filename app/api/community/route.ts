@@ -89,7 +89,7 @@ export async function GET(request: Request) {
         .order("id", { ascending: false })
         .range(offset + limit, offset + limit);
       
-      actuallyHasMore = nextPageData && nextPageData.length > 0;
+      actuallyHasMore = Boolean(nextPageData && nextPageData.length > 0);
       console.log(`[Community API] Page ${page}: Checking for more records, found ${nextPageData?.length || 0}, hasMore: ${actuallyHasMore}`);
     }
     
