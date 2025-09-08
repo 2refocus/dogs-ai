@@ -78,7 +78,7 @@ export function getModelConfig(model: ModelType) {
 // Check if pipeline supports feature
 export function supportsFeature(mode: PipelineMode, feature: string): boolean {
   const config = getPipelineConfig(mode);
-  return config.features.includes(feature);
+  return config.features.includes(feature as any);
 }
 
 // Get recommended pipeline for use case
