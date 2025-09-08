@@ -488,14 +488,14 @@ export default function Home() {
 
               {/* User Tier Info */}
               {userTier === "guest" && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-green-900/20 dark:border-green-800">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 dark:bg-gray-800/30 dark:border-gray-700">
                   <div className="flex items-start gap-2">
-                    <div className="text-green-500 mt-0.5 dark:text-green-400">ℹ️</div>
+                    <div className="text-gray-500 mt-0.5 dark:text-gray-400">ℹ️</div>
                     <div>
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
                         Sign up for better quality
                       </p>
-                      <p className="text-xs text-green-700 mt-1 dark:text-green-300">
+                      <p className="text-xs text-gray-600 mt-1 dark:text-gray-300">
                         Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
                       </p>
                     </div>

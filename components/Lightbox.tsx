@@ -78,20 +78,30 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       console.log('[Lightbox] Share attempt:', { shareUrl, shareText });
       
       // Try Web Share API first (mobile) - but with better error handling
-      if (navigator.share) {
+      if (navigator.share && navigator.canShare) {
         try {
           console.log('[Lightbox] Attempting Web Share API');
-          await navigator.share({
+          const shareData = {
             title: 'Pet Portrait',
             text: shareText,
             url: shareUrl,
-          });
-          console.log('[Lightbox] Web Share API successful');
-          return;
+          };
+          
+          // Check if the browser can share this data
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            console.log('[Lightbox] Web Share API successful');
+            return;
+          } else {
+            console.log('[Lightbox] Web Share API cannot share this data');
+            // Fall through to clipboard
+          }
         } catch (shareError) {
           console.log('[Lightbox] Web Share API failed:', shareError);
           // Don't return here, fall through to clipboard
         }
+      } else {
+        console.log('[Lightbox] Web Share API not available');
       }
       
       // Fallback: Copy to clipboard
