@@ -46,7 +46,9 @@ export default function PipelineSelector({
               key={option.value}
               className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
                 selectedMode === option.value
-                  ? "border-[var(--brand)] bg-[var(--brand)]/10"
+                  ? userTier === "guest" 
+                    ? "border-gray-400 bg-gray-400/10" 
+                    : "border-[var(--brand)] bg-[var(--brand)]/10"
                   : "border-[var(--line)] hover:border-[var(--brand)]/50"
               }`}
             >
@@ -88,14 +90,14 @@ export default function PipelineSelector({
 
       {/* User Tier Info */}
       {userTier === "guest" && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 dark:bg-blue-900/20 dark:border-blue-800">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 dark:bg-green-900/20 dark:border-green-800">
           <div className="flex items-start gap-2">
-            <div className="text-blue-500 mt-0.5 dark:text-blue-400">ℹ️</div>
+            <div className="text-green-500 mt-0.5 dark:text-green-400">ℹ️</div>
             <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              <p className="text-sm font-medium text-green-900 dark:text-green-100">
                 Sign up for better quality
               </p>
-              <p className="text-xs text-blue-700 mt-1 dark:text-blue-300">
+              <p className="text-xs text-green-700 mt-1 dark:text-green-300">
                 Logged-in users get access to high-quality generation with precise aspect ratios and upscaling.
               </p>
             </div>
