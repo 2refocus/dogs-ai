@@ -183,6 +183,8 @@ export async function POST(req: NextRequest) {
     const preset_label = (form.get("preset_label") || "").toString();
     const user_id = (form.get("user_id") || "").toString();
     const crop_ratio = (form.get("crop_ratio") || "1_1").toString();
+    const display_name = (form.get("display_name") || "").toString();
+    const user_url = (form.get("user_url") || "").toString();
     
     // Use simple approach: just the base prompt, let Replicate API handle crop_ratio
     const finalPrompt = basePrompt;
@@ -263,8 +265,8 @@ export async function POST(req: NextRequest) {
           output_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           high_res_url: permanentUrl, // Use permanent Supabase URL instead of expiring Replicate URL
           preset_label: preset_label || "DEFAULT Portrait",
-          display_name: null,
-          website: null,
+          display_name: display_name || null,
+          website: user_url || null,
           profile_image_url: null,
         };
         console.log("[stylize] Inserting data:", insertData);
