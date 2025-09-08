@@ -25,7 +25,7 @@ export default function NavGate() {
     <>
       {/* Desktop navigation */}
       <nav className="hidden md:flex items-center gap-4 text-sm">
-        <a href="/" className="hover:opacity-80">Home</a>
+        <a href="/" className="hover:opacity-80">Create</a>
         <a href="/history" className="hover:opacity-80">History</a>
         <a href="/dashboard" className="hover:opacity-80">Dashboard</a>
         <a href="/bundles" className="hover:opacity-80">Credits</a>
@@ -51,7 +51,7 @@ export default function NavGate() {
       <details className="md:hidden relative">
         <summary className="list-none cursor-pointer rounded-xl border border-[var(--line)] px-3 py-2 bg-[var(--muted)] hover:bg-[var(--line)] transition-colors">☰</summary>
         <div className="fixed left-4 right-4 top-20 rounded-xl border border-[var(--line)] bg-[var(--muted)] backdrop-blur p-2 z-50">
-          <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/">Home</a>
+          <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/">Create</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/history">History</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/dashboard">Dashboard</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/bundles">Credits</a>
