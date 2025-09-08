@@ -19,6 +19,7 @@ interface LightboxProps {
 
 export default function Lightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [showOriginal, setShowOriginal] = useState(false);
   
   useEffect(() => {
     // Handle keyboard navigation
@@ -91,15 +92,19 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
 
         {/* Image container with style label */}
         <div className="relative">
-          {/* Style label */}
-          <div className="absolute top-4 left-4 text-white text-sm bg-black/60 px-3 py-1 rounded-full border border-white/20 z-[60]">
-            {currentImage.preset_label || "No Style Info"}
-          </div>
+          {/* Style label - now clickable */}
+          <button
+            onClick={() => setShowOriginal(!showOriginal)}
+            className="absolute top-4 left-4 text-white text-sm bg-black/60 hover:bg-black/80 px-3 py-1 rounded-full border border-white/20 z-[60] transition-all cursor-pointer"
+            title={showOriginal ? "Show generated image" : "Show original image"}
+          >
+            {showOriginal ? "Original" : (currentImage.preset_label || "No Style Info")}
+          </button>
 
           {/* Image */}
           <img
-            src={currentImage.high_res_url || currentImage.output_url}
-            alt="Pet portrait"
+            src={showOriginal ? (currentImage.input_url || currentImage.high_res_url || currentImage.output_url) : (currentImage.high_res_url || currentImage.output_url)}
+            alt={showOriginal ? "Original image" : "Pet portrait"}
             className="max-h-[90vh] mx-auto rounded-lg"
           />
           
