@@ -18,6 +18,10 @@ const NEGATIVE =
 /** Style library — only these words change between presets. */
 const STYLES: { label: string; style: string }[] = [
   {
+    label: "CROP TEST - No Style",
+    style: "Simple pet portrait, no special effects, focus on cropping and aspect ratio only."
+  },
+  {
     label: "DEFAULT Portrait",
     style:
       "Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality.",

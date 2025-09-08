@@ -35,7 +35,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Generate in a square frame, aspect ratio 1:1.",
       edit: ({extendBg} = {}) =>
-        `Square format.${extendBg ? " Natural background extension." : ""}`
+        `Recreate the uploaded image in a square frame, aspect ratio 1:1.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "4_5": {
@@ -45,7 +45,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Use portrait orientation, aspect ratio 4:5.",
       edit: ({extendBg} = {}) =>
-        `Portrait format.${extendBg ? " Natural background extension." : ""}`
+        `Recreate the uploaded image in portrait orientation, aspect ratio 4:5.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "3_4": {
@@ -85,7 +85,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Use landscape orientation, aspect ratio 3:2.",
       edit: ({extendBg} = {}) =>
-        `Landscape format.${extendBg ? " Natural background extension." : ""}`
+        `Recreate the uploaded image in landscape orientation, aspect ratio 3:2.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "16_9": {
