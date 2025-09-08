@@ -35,7 +35,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Generate in a square frame, aspect ratio 1:1.",
       edit: ({extendBg} = {}) =>
-        `Recreate the uploaded image in a square frame, aspect ratio 1:1.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
+        `Recreate on a NEW canvas in square format, aspect ratio 1:1.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "4_5": {
@@ -45,7 +45,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Use portrait orientation, aspect ratio 4:5.",
       edit: ({extendBg} = {}) =>
-        `CRITICAL: Recreate the uploaded image in portrait orientation, aspect ratio 4:5. The final image MUST be 4:5 aspect ratio.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
+        `Recreate on a NEW canvas in portrait orientation, aspect ratio 4:5.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "3_4": {
@@ -55,7 +55,7 @@ export const FORMAT_PRESETS: Record<AspectKey, FormatPreset> = {
     prompts: {
       generate: "Use portrait orientation, aspect ratio 3:4.",
       edit: ({extendBg} = {}) =>
-        `Recreate the uploaded image in portrait orientation, aspect ratio 3:4.${extendBg ? " Extend the background naturally to fill the frame." : ""}`
+        `Recreate on a NEW canvas in portrait orientation, aspect ratio 3:4 (1536×2048).${extendBg ? " Extend the background naturally to fill the frame." : ""}`
     }
   },
   "2_3": {
