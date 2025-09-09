@@ -111,12 +111,26 @@ export default function Home() {
   // Pipeline selection
   const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
 
+  // State for lightbox
+  const [currentImage, setCurrentImage] = useState<any>(null);
+
   // Handle image clicks
   const handleImageClick = useCallback((index: number) => {
     // Get the image from CommunityFeed and show it in Lightbox
-    const image = document.querySelector(`[data-index="${index}"] img`);
-    if (image) {
-      setShowLightbox(true);
+    const imageContainer = document.querySelector(`[data-index="${index}"]`);
+    if (imageContainer) {
+      const img = imageContainer.querySelector('img');
+      if (img) {
+        setCurrentImage({
+          id: index,
+          output_url: img.src,
+          input_url: null,
+          display_name: img.alt,
+          website: null,
+          preset_label: null
+        });
+        setShowLightbox(true);
+      }
     }
   }, []);
 
@@ -681,6 +695,18 @@ export default function Home() {
         <h2 className="mb-6 text-xl font-bold text-[var(--fg)]">Community Gallery</h2>
         <CommunityFeed onImageClick={handleImageClick} />
       </div>
+
+      {/* Community Lightbox */}
+      {showLightbox && currentImage && (
+        <Lightbox
+          images={[currentImage]}
+          initialIndex={0}
+          onClose={() => {
+            setShowLightbox(false);
+            setCurrentImage(null);
+          }}
+        />
+      )}
     </main>
   );
 }
