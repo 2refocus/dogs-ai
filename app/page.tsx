@@ -108,29 +108,12 @@ export default function Home() {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(true);
-  const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
-  const [communityItems, setCommunityItems] = useState<any[]>([]);
-  
   // Pipeline selection
   const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
 
-  // Memoized callback for image clicks
+  // Handle image clicks
   const handleImageClick = useCallback((index: number) => {
-    setLightboxImageIndex(index);
     setShowLightbox(true);
-  }, []);
-
-  // Handle URL parameters for direct image sharing
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const imageId = urlParams.get('image');
-    
-    if (imageId) {
-      console.log('[Home] URL parameter detected, image ID:', imageId);
-      // We'll need to find this image in the community data and open it
-      // For now, we'll set a flag to open the lightbox when community data loads
-      setLightboxImageIndex(parseInt(imageId, 10));
-    }
   }, []);
 
   useEffect(() => {
@@ -692,28 +675,8 @@ export default function Home() {
       <div className="mt-12">
         <hr className="my-8 border-[var(--line)]" />
         <h2 className="mb-6 text-xl font-bold text-[var(--fg)]">Community Gallery</h2>
-        <CommunityFeed 
-          onImageClick={handleImageClick}
-          targetImageId={lightboxImageIndex}
-          onItemsChange={setCommunityItems}
-        />
+        <CommunityFeed onImageClick={handleImageClick} />
       </div>
-
-      {/* Community Lightbox */}
-      {showLightbox && lightboxImageIndex !== null && communityItems.length > 0 && (
-        <CommunityLightbox 
-          onClose={() => {
-            setShowLightbox(false);
-            setLightboxImageIndex(null);
-            // Clear URL parameter
-            const url = new URL(window.location.href);
-            url.searchParams.delete('image');
-            window.history.replaceState({}, '', url.toString());
-          }}
-          initialImageId={lightboxImageIndex}
-          images={communityItems}
-        />
-      )}
     </main>
   );
 }
