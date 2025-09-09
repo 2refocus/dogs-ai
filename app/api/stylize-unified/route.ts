@@ -17,7 +17,7 @@ export const maxDuration = 300; // 5 minutes for multi-model pipeline
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
-const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
+const REPLICATE_MODEL = "google/nano-banana"; // Use nano-banana directly
 
 // Helper functions (same as original API)
 function isHttpsUrl(s: unknown): s is string {
@@ -397,23 +397,8 @@ export async function POST(req: NextRequest) {
     const inputUrl = await uploadToSupabasePublic(file);
     console.log(`[stylize-unified] Input uploaded: ${inputUrl}`);
 
-    // 2) Process with selected pipeline
-    let result: { imageUrl: string; model: string };
-    
-    if (selectedMode === "simple") {
-      result = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
-    } else if (selectedMode === "multimodel") {
-      // TODO: Fix IP-Adapter model ID - for now fall back to simple pipeline
-      console.log("[stylize-unified] Multi-model pipeline temporarily disabled, using simple pipeline");
-      result = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
-    } else {
-      // Hybrid: Simple + upscaling
-      const simpleResult = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
-      
-      // Temporarily disable upscaling due to API issues - focus on better base resolution
-      console.log("[stylize-unified] Upscaling temporarily disabled, using enhanced base resolution");
-      result = simpleResult;
-    }
+    // 2) Process with simple pipeline
+    const result = await processSimplePipeline(inputUrl, styleLabel, cropRatio);
 
     console.log(`[stylize-unified] Pipeline complete: ${result.model}`);
 
