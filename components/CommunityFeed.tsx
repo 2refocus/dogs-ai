@@ -19,11 +19,9 @@ type Item = {
 
 interface CommunityFeedProps {
   onImageClick?: (index: number) => void;
-  targetImageId?: number | null;
-  onItemsChange?: (items: Item[]) => void;
 }
 
-export default function CommunityFeed({ onImageClick, targetImageId, onItemsChange }: CommunityFeedProps = {}) {
+export default function CommunityFeed({ onImageClick }: CommunityFeedProps = {}) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -45,12 +43,10 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
           setItems(prev => {
             const newItems = [...prev, ...j.items];
             console.log('[CommunityFeed] Appending items, total now:', newItems.length);
-            onItemsChange?.(newItems);
             return newItems;
           });
         } else {
           setItems(j.items);
-          onItemsChange?.(j.items);
           console.log('[CommunityFeed] Setting initial items:', j.items.length);
         }
         
@@ -74,12 +70,10 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
         created_at: x.created_at,
       }));
       setItems(loc);
-      onItemsChange?.(loc);
       setHasMore(false); // No more items if API failed
     } else {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
-      onItemsChange?.([]);
       setHasMore(false); // No more items if API failed
     }
     
@@ -90,20 +84,6 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
   useEffect(() => {
     fetchCommunityData();
   }, []);
-
-  // Handle target image ID from URL
-  useEffect(() => {
-    if (targetImageId && items.length > 0) {
-      // Find the index of the target image by its ID
-      const targetIndex = items.findIndex(item => item.id === targetImageId);
-      if (targetIndex !== -1) {
-        console.log('[CommunityFeed] Found target image at index:', targetIndex);
-        onImageClick?.(targetIndex);
-      } else {
-        console.log('[CommunityFeed] Could not find image with id:', targetImageId);
-      }
-    }
-  }, [targetImageId, items, onImageClick]);
 
   // Load more function
   function loadMore() {
