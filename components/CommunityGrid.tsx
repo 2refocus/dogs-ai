@@ -16,7 +16,7 @@ type Item = {
 
 interface CommunityGridProps {
   items: Item[];
-  onImageClick?: (index: number) => void;
+  onImageClick?: (item: Item) => void;
 }
 
 // Loading shimmer component
@@ -79,7 +79,7 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
             )}
             
             <button
-              onClick={() => onImageClick?.(idx)}
+              onClick={() => onImageClick?.(it)}
               className="w-full h-full relative"
             >
               <img

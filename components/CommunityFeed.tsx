@@ -18,7 +18,7 @@ type Item = {
 };
 
 interface CommunityFeedProps {
-  onImageClick?: (index: number) => void;
+  onImageClick?: (item: Item) => void;
 }
 
 export default function CommunityFeed({ onImageClick }: CommunityFeedProps = {}) {
@@ -68,6 +68,7 @@ export default function CommunityFeed({ onImageClick }: CommunityFeedProps = {})
       const loc = readLocal().map((x) => ({
         output_url: x.output_url,
         created_at: x.created_at,
+        preset_label: x.preset_label,
       }));
       setItems(loc);
       setHasMore(false); // No more items if API failed

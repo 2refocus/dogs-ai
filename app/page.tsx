@@ -115,23 +115,9 @@ export default function Home() {
   const [currentImage, setCurrentImage] = useState<any>(null);
 
   // Handle image clicks
-  const handleImageClick = useCallback((index: number) => {
-    // Get the image from CommunityFeed and show it in Lightbox
-    const imageContainer = document.querySelector(`[data-index="${index}"]`);
-    if (imageContainer) {
-      const img = imageContainer.querySelector('img');
-      if (img) {
-        setCurrentImage({
-          id: index,
-          output_url: img.src,
-          input_url: null,
-          display_name: img.alt,
-          website: null,
-          preset_label: null
-        });
-        setShowLightbox(true);
-      }
-    }
+  const handleImageClick = useCallback((item: any) => {
+    setCurrentImage(item);
+    setShowLightbox(true);
   }, []);
 
   useEffect(() => {
