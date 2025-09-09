@@ -75,8 +75,18 @@ export default function HistoryPage() {
           // Filter history based on user authentication status
           if (currentUserId) {
             // Show only user's images if logged in, sorted by created_at descending (newest first)
+            console.log(`[history] Current user ID: ${currentUserId}`);
+            console.log(`[history] Total community items: ${j.items.length}`);
+            console.log(`[history] Sample user IDs in community:`, j.items.slice(0, 5).map(item => item.user_id));
+            
             const userImages = j.items
-              .filter((item: CommunityRow) => item.user_id === currentUserId)
+              .filter((item: CommunityRow) => {
+                const matches = item.user_id === currentUserId;
+                if (matches) {
+                  console.log(`[history] Found matching image for user:`, item.id, item.preset_label);
+                }
+                return matches;
+              })
               .sort((a: CommunityRow, b: CommunityRow) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
             console.log(`[history] Loading ${userImages.length} images for user: ${currentUserId}`);
             setUserHistory(userImages);

@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
     if (SUPABASE_URL && SERVICE_ROLE) {
       try {
         const admin = createAdmin(SUPABASE_URL, SERVICE_ROLE);
-        const { data, error } = await admin.from("generations").insert({
+        const insertData = {
           user_id: user_id || "00000000-0000-0000-0000-000000000000",
           output_url: "pending", // Temporary placeholder
           high_res_url: "pending", // Temporary placeholder
@@ -239,7 +239,10 @@ export async function POST(req: NextRequest) {
           display_name: display_name || null,
           website: user_url || null,
           profile_image_url: null,
-        }).select("id").single();
+        };
+        console.log("[stylize] Inserting data:", insertData);
+        
+        const { data, error } = await admin.from("generations").insert(insertData).select("id").single();
         
         if (error) {
           console.error("[stylize] Failed to create generation record:", error);
