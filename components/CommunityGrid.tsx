@@ -75,9 +75,6 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {validItems.map((it, validIdx) => {
-          // Find the original index in the items array
-          const originalIdx = items.findIndex(item => item.id === it.id);
-          
           return (
             <div
               key={String(it.id ?? validIdx)}
@@ -85,29 +82,29 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
               title={it.created_at || ""}
             >
               {/* Loading skeleton - only show while actively loading */}
-              {loadingImages.has(originalIdx) && !loadedImages.has(originalIdx) && (
+              {loadingImages.has(validIdx) && !loadedImages.has(validIdx) && (
                 <div className="absolute inset-0 z-10">
                   <ImageSkeleton />
                 </div>
               )}
               
               <button
-                onClick={() => onImageClick?.(originalIdx)}
+                onClick={() => onImageClick?.(validIdx)}
                 className="w-full h-full relative"
               >
                 <img
                   src={it.output_url}
                   alt={it.display_name || "community"}
                   className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    loadedImages.has(originalIdx) ? 'opacity-100' : 'opacity-100'
+                    loadedImages.has(validIdx) ? 'opacity-100' : 'opacity-100'
                   }`}
-                  onLoadStart={() => handleImageStartLoad(originalIdx)}
-                  onLoad={() => handleImageLoad(originalIdx)}
-                  onError={() => handleImageError(originalIdx)}
+                  onLoadStart={() => handleImageStartLoad(validIdx)}
+                  onLoad={() => handleImageLoad(validIdx)}
+                  onError={() => handleImageError(validIdx)}
                 />
                 
                 {/* Hover overlay - only show for loaded images */}
-                {loadedImages.has(originalIdx) && (
+                {loadedImages.has(validIdx) && (
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-sm font-medium">View</span>
                   </div>
