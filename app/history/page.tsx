@@ -45,12 +45,15 @@ export default function HistoryPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const userId = data.session?.user?.id || null;
+      console.log(`[history] Initial auth check - userId: ${userId}, hasSession: ${!!data.session}`);
       setCurrentUserId(userId);
       setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUserId(session?.user?.id || null);
+      const userId = session?.user?.id || null;
+      console.log(`[history] Auth state change - event: ${_event}, userId: ${userId}, hasSession: ${!!session}`);
+      setCurrentUserId(userId);
       setAuthLoading(false);
     });
 
@@ -59,8 +62,10 @@ export default function HistoryPage() {
 
   useEffect(() => {
     // Only load data when we have a definitive user state
+    console.log(`[history] Data loading effect - authLoading: ${authLoading}, currentUserId: ${currentUserId}`);
     if (authLoading) {
       // Still loading user state, don't load data yet
+      console.log(`[history] Still loading auth, skipping data load`);
       return;
     }
 
