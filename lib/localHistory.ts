@@ -37,8 +37,14 @@ export function pushLocal(item: Partial<LocalGen> & { output_url: string }) {
       prompt: item.prompt ?? null,
       created_at: item.created_at ?? new Date().toISOString(),
     };
+    console.log(`[pushLocal] Creating row:`, row);
     const prev = readLocal();
+    console.log(`[pushLocal] Previous items count:`, prev.length);
     const next = [row, ...prev].slice(0, 50);
+    console.log(`[pushLocal] New items count:`, next.length);
     localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {}
+    console.log(`[pushLocal] Successfully saved to localStorage`);
+  } catch (e) {
+    console.error(`[pushLocal] Error saving to localStorage:`, e);
+  }
 }

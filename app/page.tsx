@@ -306,13 +306,15 @@ export default function Home() {
 
       // 1) local guest history (works offline)
       try {
-        pushLocal({
+        const localHistoryItem = {
           output_url: create.output_url,
           input_url: create?.input_url ?? preview,
           preset_label: presetLabel,
           created_at: new Date().toISOString(),
-        });
-        console.log(`[frontend] Saved to local history: ${create.output_url}`);
+        };
+        console.log(`[frontend] About to save to local history:`, localHistoryItem);
+        pushLocal(localHistoryItem);
+        console.log(`[frontend] Successfully saved to local history: ${create.output_url}`);
       } catch (e) {
         console.error(`[frontend] Failed to save to local history:`, e);
       }
