@@ -7,7 +7,7 @@
 */
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { pushLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
@@ -112,6 +112,12 @@ export default function Home() {
   
   // Pipeline selection
   const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
+
+  // Memoized callback for image clicks
+  const handleImageClick = useCallback((index: number) => {
+    setLightboxImageIndex(index);
+    setShowLightbox(true);
+  }, []);
 
   // Handle URL parameters for direct image sharing
   useEffect(() => {
@@ -686,10 +692,7 @@ export default function Home() {
         <hr className="my-8 border-[var(--line)]" />
         <h2 className="mb-6 text-xl font-bold text-[var(--fg)]">Community Gallery</h2>
         <CommunityFeed 
-          onImageClick={(index) => {
-            setLightboxImageIndex(index);
-            setShowLightbox(true);
-          }}
+          onImageClick={handleImageClick}
           targetImageId={lightboxImageIndex}
         />
       </div>

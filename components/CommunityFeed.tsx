@@ -29,6 +29,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [openedImageId, setOpenedImageId] = useState<number | null>(null);
 
   const fetchCommunityData = async (showRefresh = false, pageNum = 1, append = false) => {
     console.log('[CommunityFeed] Fetching data:', { showRefresh, pageNum, append });
@@ -128,14 +129,15 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
 
   // Handle target image ID from URL
   useEffect(() => {
-    if (targetImageId && items.length > 0) {
+    if (targetImageId && items.length > 0 && onImageClick && openedImageId !== targetImageId) {
       const targetIndex = items.findIndex(item => item.id === targetImageId);
-      if (targetIndex !== -1 && onImageClick) {
+      if (targetIndex !== -1) {
         console.log('[CommunityFeed] Found target image, opening lightbox at index:', targetIndex);
+        setOpenedImageId(targetImageId);
         onImageClick(targetIndex);
       }
     }
-  }, [targetImageId, items, onImageClick]);
+  }, [targetImageId, items.length, openedImageId]); // Added openedImageId to prevent multiple calls
 
   // Debug logging
   console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore, 'page:', page);
