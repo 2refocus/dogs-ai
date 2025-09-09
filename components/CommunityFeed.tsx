@@ -28,7 +28,6 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [openedImageId, setOpenedImageId] = useState<number | null>(null);
 
   const fetchCommunityData = useCallback(async (showRefresh = false, pageNum = 1, append = false) => {
@@ -57,7 +56,6 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
         const newHasMore = j.hasMore !== undefined ? j.hasMore : j.items.length === 20;
         console.log('[CommunityFeed] Setting hasMore to:', newHasMore);
         setHasMore(newHasMore);
-        setLastFetchTime(Date.now());
         
         // Reset loading states
         if (showRefresh) setRefreshing(false);
@@ -101,21 +99,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
   // Initial fetch - only run once
   useEffect(() => {
     fetchCommunityData();
-  }, [fetchCommunityData]);
-
-  // Refresh interval - separate effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Only refresh if it's been more than 30 seconds since last fetch and we're on page 1
-      if (Date.now() - lastFetchTime > 30000 && page === 1) {
-        fetchCommunityData(true, 1, false);
-      }
-    }, 30000);
-    
-    return () => {
-      clearInterval(interval);
-    };
-  }, [page, lastFetchTime, fetchCommunityData]);
+  }, []); // Empty dependencies - only run once
 
   // Remove infinite scroll - we'll use a Load More button instead
 
