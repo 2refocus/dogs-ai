@@ -52,6 +52,10 @@ export default function CommunityFeed() {
         console.log('[CommunityFeed] Setting hasMore to:', newHasMore);
         setHasMore(newHasMore);
         setLastFetchTime(Date.now());
+        
+        // Reset loading states
+        if (showRefresh) setRefreshing(false);
+        setLoading(false);
         return;
       }
     } catch (e) {
@@ -91,18 +95,18 @@ export default function CommunityFeed() {
   useEffect(() => {
     fetchCommunityData();
     
-    // Refresh every 10 seconds to catch new images (less frequent than before)
+    // Refresh every 30 seconds to catch new images (less frequent to avoid pagination conflicts)
     const interval = setInterval(() => {
-      // Only refresh if it's been more than 10 seconds since last fetch
-      if (Date.now() - lastFetchTime > 10000) {
-        fetchCommunityData(true);
+      // Only refresh if it's been more than 30 seconds since last fetch and we're on page 1
+      if (Date.now() - lastFetchTime > 30000 && page === 1) {
+        fetchCommunityData(true, 1, false);
       }
-    }, 10000);
+    }, 30000);
     
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [page, lastFetchTime]);
 
   // Remove infinite scroll - we'll use a Load More button instead
 
@@ -121,14 +125,15 @@ export default function CommunityFeed() {
     <div>
       <CommunityGrid items={items} />
       
-      {/* Load More Button - only show if there are items and more to load */}
-      {hasMore && items.length > 0 && !loading && (
+      {/* Load More Button - show if there are items and more to load */}
+      {hasMore && items.length > 0 && (
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
-            className="px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand)]/90 transition-colors"
+            disabled={loading}
+            className="px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Load More
+            {loading ? 'Loading...' : 'Load More'}
           </button>
         </div>
       )}
