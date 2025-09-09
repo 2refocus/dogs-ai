@@ -29,7 +29,6 @@ interface CommunityGridProps {
 }
 
 export default function CommunityGrid({ items, onImageClick }: CommunityGridProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
@@ -93,12 +92,7 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
               )}
               
               <button
-                onClick={() => {
-                  setSelectedImageIndex(originalIdx);
-                  if (onImageClick) {
-                    onImageClick(originalIdx);
-                  }
-                }}
+                onClick={() => onImageClick?.(originalIdx)}
                 className="w-full h-full relative"
               >
                 <img
@@ -123,13 +117,6 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
           );
         })}
       </div>
-      {selectedImageIndex !== null && (
-        <Lightbox
-          images={items}
-          initialIndex={selectedImageIndex}
-          onClose={() => setSelectedImageIndex(null)}
-        />
-      )}
     </>
   );
 }
