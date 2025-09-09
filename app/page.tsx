@@ -247,41 +247,46 @@ export default function Home() {
       // Always send crop_ratio (available for all users)
       fd.append("crop_ratio", cropRatio);
       console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
-      console.log(`[frontend] About to send request to /api/stylize-unified`);
-      fd.append("user_url", userUrl);
-      fd.append("display_name", displayName);
-      fd.append("preset_label", PRESETS.dog.find(p => p.value === promptToUse)?.label || "");
-      fd.append("user_id", currentUserId || "");
-
-      // Include Authorization header if user is logged in
-      const headers: HeadersInit = {};
-      if (userToken) {
-        headers.Authorization = `Bearer ${userToken}`;
-      }
-      
-      // Add pipeline mode to form data
-      fd.append("pipeline_mode", selectedMode);
-      fd.append("generation_mode", "auto"); // Let the API decide based on user tier
-      
-      console.log(`[frontend] Sending POST request to /api/stylize-unified with pipeline: ${selectedMode}`);
-      const createRes = await fetch("/api/stylize-unified", { 
-        method: "POST", 
-        body: fd,
-        headers
-      });
-      console.log(`[frontend] Received response from /api/stylize-unified:`, createRes.status);
+      console.log(`[frontend] About to send request to /api/stylize`);
+      const createRes = await fetch("/api/stylize", { method: "POST", body: fd });
       const create = await createRes.json();
-      console.log(`[frontend] Response data:`, create);
-      if (!createRes.ok || !create?.output_url) {
+      if (!createRes.ok || !create?.prediction_id) {
         setMsg(create?.error || "Create failed");
         setLoading(false);
         return;
       }
 
-      // Unified API already waits for completion, so we can use the result directly
-      setGenUrl(create.output_url);
-      setMsg("Done ✓");
-      setShowSuccess(true); // Show success animation
+      // poll
+      const id: string = create.prediction_id;
+      setMsg("Generating…");
+      const t0 = Date.now();
+      while (Date.now() - t0 < 120000) {
+        await new Promise((r) => setTimeout(r, 1200));
+        const r2 = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
+        const s = await r2.json();
+
+        if (s?.status === "failed" || s?.status === "canceled") {
+          setMsg(`Failed: ${s?.error || "unknown"}`);
+          setLoading(false);
+          return;
+        }
+
+        // unify: output can be array or string, or Replicate.urls
+        let url: string | null = null;
+        if (Array.isArray(s?.urls) && s.urls.length > 0) url = s.urls[0];
+        else if (typeof s?.output === "string") url = s.output;
+        else if (Array.isArray(s?.output) && s.output.length > 0) url = s.output[0];
+
+        if ((s?.status === "succeeded" || s?.status === "completed") && url) {
+          setGenUrl(url);
+          setMsg("Done ✓");
+          setShowSuccess(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setMsg("Timed out while polling.");
       
       // Log pipeline info if available
       if (create?.pipeline_mode) {
