@@ -257,16 +257,22 @@ export default function Home() {
       console.log(`[frontend] Using preset label: ${presetLabel}`);
       const createRes = await fetch("/api/stylize", { method: "POST", body: fd });
       const create = await createRes.json();
+      console.log(`[frontend] API response:`, { ok: createRes.ok, status: createRes.status, create });
+      
       if (!createRes.ok || !create?.prediction_id) {
+        console.error(`[frontend] Generation failed:`, create?.error || "Create failed");
         setMsg(create?.error || "Create failed");
         setLoading(false);
         return;
       }
+      
+      console.log(`[frontend] Generation successful, prediction_id: ${create.prediction_id}`);
 
       // poll
       const id: string = create.prediction_id;
       setMsg("Generating…");
       const t0 = Date.now();
+      console.log(`[frontend] Starting polling for prediction_id: ${id}`);
       while (Date.now() - t0 < 120000) {
         await new Promise((r) => setTimeout(r, 1200));
         const r2 = await fetch(`/api/predictions/${id}`, { cache: "no-store" });
@@ -285,6 +291,7 @@ export default function Home() {
         else if (Array.isArray(s?.output) && s.output.length > 0) url = s.output[0];
 
         if ((s?.status === "succeeded" || s?.status === "completed") && url) {
+          console.log(`[frontend] Generation completed successfully, output_url: ${url}`);
           setGenUrl(url);
           setMsg("Done ✓");
           setShowSuccess(true);
