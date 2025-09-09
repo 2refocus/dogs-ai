@@ -67,7 +67,9 @@ export default function HistoryPage() {
     // load community
     (async () => {
       try {
-        const res = await fetch("/api/community", { cache: "no-store" });
+        // For history page, we need to load more items to find user's images
+        // Load first 100 items to ensure we get user's history
+        const res = await fetch("/api/community?limit=100", { cache: "no-store" });
         const j = await res.json();
         if (j?.ok && Array.isArray(j.items)) {
           setCommunity(j.items);
@@ -82,8 +84,9 @@ export default function HistoryPage() {
             const userImages = j.items
               .filter((item: CommunityRow) => {
                 const matches = item.user_id === currentUserId;
+                console.log(`[history] Checking item ${item.id}: user_id="${item.user_id}" vs currentUserId="${currentUserId}" - matches: ${matches}`);
                 if (matches) {
-                  console.log(`[history] Found matching image for user:`, item.id, item.preset_label);
+                  console.log(`[history] Found matching image for user:`, item.id, item.preset_label, item.created_at);
                 }
                 return matches;
               })
