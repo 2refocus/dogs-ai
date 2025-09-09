@@ -83,30 +83,30 @@ body { background: var(--bg); color: var(--fg); }
   color: #475569 !important; /* Slightly lighter dark grey */
 }
 
-/* Info box styling - Dark mode */
-.dark .info-box-light {
+/* Info box styling - Dark mode (when data-theme is not set) */
+html:not([data-theme="light"]) .info-box-light {
   background-color: #1e293b !important; /* Dark background */
   border: 1px solid #475569 !important; /* Dark border */
   color: #cbd5e1 !important; /* Light grey text */
 }
 
-.dark .info-box-light p {
+html:not([data-theme="light"]) .info-box-light p {
   color: #cbd5e1 !important; /* Light grey text */
 }
 
-.dark .info-box-light .text-xs {
+html:not([data-theme="light"]) .info-box-light .text-xs {
   color: #94a3b8 !important; /* Slightly darker light grey */
 }
 
-.dark .info-box-light .text-sm {
+html:not([data-theme="light"]) .info-box-light .text-sm {
   color: #cbd5e1 !important; /* Light grey text */
 }
 
-.dark .info-box-light .text-gray-900 {
+html:not([data-theme="light"]) .info-box-light .text-gray-900 {
   color: #cbd5e1 !important; /* Light grey text */
 }
 
-.dark .info-box-light .text-gray-800 {
+html:not([data-theme="light"]) .info-box-light .text-gray-800 {
   color: #94a3b8 !important; /* Slightly darker light grey */
 }
 
