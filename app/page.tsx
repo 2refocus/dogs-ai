@@ -296,6 +296,27 @@ export default function Home() {
           setMsg("Done ✓");
           setShowSuccess(true);
           setLoading(false);
+          
+          // Scroll to generated image
+          generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+          // 1) local guest history (works offline)
+          try {
+            const localHistoryItem = {
+              output_url: url,
+              input_url: create?.input_url ?? preview,
+              preset_label: presetLabel,
+              created_at: new Date().toISOString(),
+            };
+            console.log(`[frontend] About to save to local history:`, localHistoryItem);
+            console.log(`[frontend] Calling pushLocal function...`);
+            pushLocal(localHistoryItem);
+            console.log(`[frontend] pushLocal function completed`);
+            console.log(`[frontend] Successfully saved to local history: ${url}`);
+          } catch (e) {
+            console.error(`[frontend] Failed to save to local history:`, e);
+          }
+          
           return;
         }
       }
@@ -308,25 +329,6 @@ export default function Home() {
         console.log(`[frontend] Model used: ${create.model || 'Unknown'}`);
       }
 
-      // Scroll to generated image
-      generatedRef.current?.scrollIntoView({ behavior: 'smooth' });
-
-      // 1) local guest history (works offline)
-      try {
-        const localHistoryItem = {
-          output_url: create.output_url,
-          input_url: create?.input_url ?? preview,
-          preset_label: presetLabel,
-          created_at: new Date().toISOString(),
-        };
-        console.log(`[frontend] About to save to local history:`, localHistoryItem);
-        console.log(`[frontend] Calling pushLocal function...`);
-        pushLocal(localHistoryItem);
-        console.log(`[frontend] pushLocal function completed`);
-        console.log(`[frontend] Successfully saved to local history: ${create.output_url}`);
-      } catch (e) {
-        console.error(`[frontend] Failed to save to local history:`, e);
-      }
 
       // Note: Database insert is already handled by /api/stylize-unified route
       // No need for duplicate /api/generations call
