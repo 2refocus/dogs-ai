@@ -67,9 +67,11 @@ export default function CommunityFeed() {
         created_at: x.created_at,
       }));
       setItems(loc);
+      setHasMore(false); // Local history has no more pages
     } else {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
+      setHasMore(false); // No more items if API failed
     }
     
     if (showRefresh) setRefreshing(false);
@@ -81,6 +83,7 @@ export default function CommunityFeed() {
       const nextPage = page + 1;
       console.log('[CommunityFeed] Loading more, page:', nextPage);
       setPage(nextPage);
+      setLoading(true); // Set loading state
       fetchCommunityData(false, nextPage, true);
     }
   }, [loading, hasMore, refreshing, page]);
@@ -112,21 +115,20 @@ export default function CommunityFeed() {
   }
 
   // Debug logging
-  console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore);
+  console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore, 'page:', page);
   
   return (
     <div>
       <CommunityGrid items={items} />
       
-      {/* Load More Button */}
-      {hasMore && items.length > 0 && (
+      {/* Load More Button - only show if there are items and more to load */}
+      {hasMore && items.length > 0 && !loading && (
         <div className="mt-6 text-center">
           <button
             onClick={loadMore}
-            disabled={loading}
-            className="px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand)]/90 transition-colors"
           >
-            {loading ? 'Loading...' : 'Load More'}
+            Load More
           </button>
         </div>
       )}

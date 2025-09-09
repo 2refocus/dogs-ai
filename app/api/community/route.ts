@@ -83,6 +83,17 @@ export async function GET(request: Request) {
         .range(offset + limit, offset + limit + 10); // Check next 10 records
       
       hasMore = Boolean(nextPageData && nextPageData.length > 0);
+      console.log(`[Community API] Next page check: found ${nextPageData?.length || 0} records, hasMore: ${hasMore}`);
+    } else {
+      // If no valid items on this page, check if there are any records at all
+      const { data: anyRecords } = await supabaseAdmin
+        .from("generations")
+        .select("id")
+        .order("id", { ascending: false })
+        .range(offset + limit, offset + limit + 10);
+      
+      hasMore = Boolean(anyRecords && anyRecords.length > 0);
+      console.log(`[Community API] No valid items, checking for any records: found ${anyRecords?.length || 0}, hasMore: ${hasMore}`);
     }
     
     console.log(`[Community API] Page ${page}: hasMore = ${hasMore} (got ${validItems.length} valid items, limit ${limit}, total DB records: ${totalCount})`);
