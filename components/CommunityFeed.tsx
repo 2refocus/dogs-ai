@@ -31,7 +31,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [openedImageId, setOpenedImageId] = useState<number | null>(null);
 
-  const fetchCommunityData = async (showRefresh = false, pageNum = 1, append = false) => {
+  const fetchCommunityData = useCallback(async (showRefresh = false, pageNum = 1, append = false) => {
     console.log('[CommunityFeed] Fetching data:', { showRefresh, pageNum, append });
     if (showRefresh) setRefreshing(true);
     if (!append) setLoading(true);
@@ -86,7 +86,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
     
     if (showRefresh) setRefreshing(false);
     setLoading(false);
-  };
+  }, []);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore && !refreshing) {
@@ -101,7 +101,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
   // Initial fetch - only run once
   useEffect(() => {
     fetchCommunityData();
-  }, []);
+  }, [fetchCommunityData]);
 
   // Refresh interval - separate effect
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
     return () => {
       clearInterval(interval);
     };
-  }, [page, lastFetchTime]);
+  }, [page, lastFetchTime, fetchCommunityData]);
 
   // Remove infinite scroll - we'll use a Load More button instead
 
