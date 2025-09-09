@@ -456,7 +456,7 @@ export default function Home() {
                       className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${
                         selectedMode === option.value
                           ? userTier === "guest" 
-                            ? "border-gray-400 bg-gray-400/10" 
+                            ? "border-[var(--line)] bg-[var(--line)]/10" 
                             : "border-[var(--brand)] bg-[var(--brand)]/10"
                           : "border-[var(--line)] hover:border-[var(--brand)]/50"
                       }`}
