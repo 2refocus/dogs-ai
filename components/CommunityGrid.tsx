@@ -23,7 +23,12 @@ const ImageSkeleton = () => (
   </div>
 );
 
-export default function CommunityGrid({ items }: { items: Item[] }) {
+interface CommunityGridProps {
+  items: Item[];
+  onImageClick?: (index: number) => void;
+}
+
+export default function CommunityGrid({ items, onImageClick }: CommunityGridProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
@@ -90,7 +95,12 @@ export default function CommunityGrid({ items }: { items: Item[] }) {
               )}
               
               <button
-                onClick={() => setSelectedImageIndex(idx)}
+                onClick={() => {
+                  setSelectedImageIndex(idx);
+                  if (onImageClick) {
+                    onImageClick(idx);
+                  }
+                }}
                 className="w-full h-full relative"
               >
                 <img

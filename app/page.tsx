@@ -17,6 +17,7 @@ import type { PipelineMode } from "@/lib/pipelineConfig";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 const Lightbox = dynamic(() => import("@/components/Lightbox"), { ssr: false });
+const CommunityLightbox = dynamic(() => import("@/components/CommunityLightbox"), { ssr: false });
 const Shimmer = dynamic(() => import("@/components/Shimmer"), { ssr: false });
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -107,9 +108,23 @@ export default function Home() {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(true);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
   
   // Pipeline selection
   const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
+
+  // Handle URL parameters for direct image sharing
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const imageId = urlParams.get('image');
+    
+    if (imageId) {
+      console.log('[Home] URL parameter detected, image ID:', imageId);
+      // We'll need to find this image in the community data and open it
+      // For now, we'll set a flag to open the lightbox when community data loads
+      setLightboxImageIndex(parseInt(imageId, 10));
+    }
+  }, []);
 
   useEffect(() => {
     
@@ -670,8 +685,29 @@ export default function Home() {
       <div className="mt-12">
         <hr className="my-8 border-[var(--line)]" />
         <h2 className="mb-6 text-xl font-bold text-[var(--fg)]">Community Gallery</h2>
-        <CommunityFeed />
+        <CommunityFeed 
+          onImageClick={(index) => {
+            setLightboxImageIndex(index);
+            setShowLightbox(true);
+          }}
+          targetImageId={lightboxImageIndex}
+        />
       </div>
+
+      {/* Community Lightbox */}
+      {showLightbox && lightboxImageIndex !== null && (
+        <CommunityLightbox 
+          onClose={() => {
+            setShowLightbox(false);
+            setLightboxImageIndex(null);
+            // Clear URL parameter
+            const url = new URL(window.location.href);
+            url.searchParams.delete('image');
+            window.history.replaceState({}, '', url.toString());
+          }}
+          initialImageId={lightboxImageIndex}
+        />
+      )}
     </main>
   );
 }

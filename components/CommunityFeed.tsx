@@ -17,7 +17,12 @@ type Item = {
   preset_label?: string | null;
 };
 
-export default function CommunityFeed() {
+interface CommunityFeedProps {
+  onImageClick?: (index: number) => void;
+  targetImageId?: number | null;
+}
+
+export default function CommunityFeed({ onImageClick, targetImageId }: CommunityFeedProps = {}) {
   const [items, setItems] = useState<Item[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -121,12 +126,23 @@ export default function CommunityFeed() {
     );
   }
 
+  // Handle target image ID from URL
+  useEffect(() => {
+    if (targetImageId && items.length > 0) {
+      const targetIndex = items.findIndex(item => item.id === targetImageId);
+      if (targetIndex !== -1 && onImageClick) {
+        console.log('[CommunityFeed] Found target image, opening lightbox at index:', targetIndex);
+        onImageClick(targetIndex);
+      }
+    }
+  }, [targetImageId, items, onImageClick]);
+
   // Debug logging
   console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore, 'page:', page);
   
   return (
     <div>
-      <CommunityGrid items={items} />
+      <CommunityGrid items={items} onImageClick={onImageClick} />
       
       {/* Load More Button - show if there are items and more to load */}
       {hasMore && items.length > 0 && (

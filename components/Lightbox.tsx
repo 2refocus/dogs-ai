@@ -71,19 +71,22 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
     if (sharing) return;
     setSharing(true);
     
-    const shareUrl = currentImage.high_res_url || currentImage.output_url;
+    // Generate shareable URL with image ID
+    const baseUrl = window.location.origin;
+    const imageId = currentImage.id;
+    const shareableUrl = `${baseUrl}/?image=${imageId}`;
     const shareText = `Check out this amazing pet portrait! 🐾✨`;
     
-    console.log('[Lightbox] Starting share with URL:', shareUrl);
+    console.log('[Lightbox] Starting share with URL:', shareableUrl);
     
     // Simple approach: try clipboard first, then open in new tab
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      await navigator.clipboard.writeText(`${shareText}\n${shareableUrl}`);
       console.log('[Lightbox] Clipboard success');
       
       // Show success notification
       const notification = document.createElement('div');
-      notification.textContent = 'Link copied to clipboard!';
+      notification.textContent = 'Shareable link copied to clipboard!';
       notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
       document.body.appendChild(notification);
       setTimeout(() => {
@@ -94,7 +97,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
       
     } catch (clipboardError) {
       console.log('[Lightbox] Clipboard failed, opening in new tab:', clipboardError);
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      window.open(shareableUrl, '_blank', 'noopener,noreferrer');
     } finally {
       setSharing(false);
     }
