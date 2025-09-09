@@ -7,7 +7,7 @@ import { createClient as createAdmin } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { processWithMultiModelPipeline } from "@/lib/multiModelPipeline";
 import { buildReplicatePrompt, optimizePromptForReplicate } from "@/lib/replicatePipeline";
-import { getRecommendedPipeline, PipelineMode, MODEL_SETTINGS } from "@/lib/pipelineConfig";
+import { getRecommendedPipeline, PipelineMode } from "@/lib/pipelineConfig";
 import { selectPipelineForRequest, getUserTier } from "@/lib/pipelineStrategy";
 
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export const maxDuration = 300; // 5 minutes for multi-model pipeline
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
-const REPLICATE_MODEL = MODEL_SETTINGS["nano-banana"].model;
+const REPLICATE_MODEL = process.env.REPLICATE_MODEL || "google/nano-banana";
 
 // Helper functions (same as original API)
 function isHttpsUrl(s: unknown): s is string {
