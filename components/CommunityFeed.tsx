@@ -28,7 +28,6 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-  const [openedImageId, setOpenedImageId] = useState<number | null>(null);
 
   // Function to fetch community data
   async function fetchCommunityData(pageNum = 1, append = false) {
@@ -94,25 +93,17 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
 
   // Handle target image ID from URL
   useEffect(() => {
-    if (targetImageId && items.length > 0 && onImageClick && openedImageId !== targetImageId) {
+    if (targetImageId && items.length > 0) {
       // Find the index of the target image by its ID
       const targetIndex = items.findIndex(item => item.id === targetImageId);
       if (targetIndex !== -1) {
         console.log('[CommunityFeed] Found target image at index:', targetIndex);
-        setOpenedImageId(targetImageId);
-        onImageClick(targetIndex);
+        onImageClick?.(targetIndex);
       } else {
         console.log('[CommunityFeed] Could not find image with id:', targetImageId);
-        // If not found in current page, try loading more
-        if (hasMore && !loading) {
-          console.log('[CommunityFeed] Loading more pages to find image:', targetImageId);
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchCommunityData(nextPage, true);
-        }
       }
     }
-  }, [targetImageId, items, openedImageId, onImageClick, hasMore, loading, page]);
+  }, [targetImageId, items, onImageClick]);
 
   // Load more function
   function loadMore() {
