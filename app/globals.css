@@ -56,46 +56,58 @@ body { background: var(--bg); color: var(--fg); }
 .btn-outline:hover { background: rgba(255,255,255,0.06); }
 .btn-sm { padding: .4rem .7rem; font-size: .85rem; border-radius: .55rem; }
 
-/* Info box specific styling to override CSS variables */
+/* Info box styling - Light mode (default) */
 .info-box-light {
-  background-color: white !important;
-  border: 2px solid #6b7280 !important;
-  color: #000000 !important;
+  background-color: #f8fafc !important; /* Light grey background */
+  border: 1px solid #e2e8f0 !important; /* Light border */
+  color: #1e293b !important; /* Dark grey text */
 }
 
 .info-box-light p {
-  color: #000000 !important;
+  color: #1e293b !important; /* Dark grey text */
 }
 
 .info-box-light .text-xs {
-  color: #374151 !important;
+  color: #475569 !important; /* Slightly lighter dark grey */
 }
 
-/* Dark mode override */
+.info-box-light .text-sm {
+  color: #1e293b !important; /* Dark grey text */
+}
+
+.info-box-light .text-gray-900 {
+  color: #1e293b !important; /* Dark grey text */
+}
+
+.info-box-light .text-gray-800 {
+  color: #475569 !important; /* Slightly lighter dark grey */
+}
+
+/* Info box styling - Dark mode */
 .dark .info-box-light {
-  background-color: rgba(31, 41, 55, 0.3) !important;
-  border: 1px solid rgba(75, 85, 99, 1) !important;
-  color: #e5e7eb !important;
+  background-color: #1e293b !important; /* Dark background */
+  border: 1px solid #475569 !important; /* Dark border */
+  color: #cbd5e1 !important; /* Light grey text */
 }
 
 .dark .info-box-light p {
-  color: #e5e7eb !important;
+  color: #cbd5e1 !important; /* Light grey text */
 }
 
 .dark .info-box-light .text-xs {
-  color: #d1d5db !important;
+  color: #94a3b8 !important; /* Slightly darker light grey */
 }
 
 .dark .info-box-light .text-sm {
-  color: #e5e7eb !important;
+  color: #cbd5e1 !important; /* Light grey text */
 }
 
 .dark .info-box-light .text-gray-900 {
-  color: #e5e7eb !important;
+  color: #cbd5e1 !important; /* Light grey text */
 }
 
 .dark .info-box-light .text-gray-800 {
-  color: #d1d5db !important;
+  color: #94a3b8 !important; /* Slightly darker light grey */
 }
 
 /* Loading gradient on buttons */
