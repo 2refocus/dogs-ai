@@ -113,7 +113,11 @@ export default function Home() {
 
   // Handle image clicks
   const handleImageClick = useCallback((index: number) => {
-    setShowLightbox(true);
+    // Get the image from CommunityFeed and show it in Lightbox
+    const image = document.querySelector(`[data-index="${index}"] img`);
+    if (image) {
+      setShowLightbox(true);
+    }
   }, []);
 
   useEffect(() => {

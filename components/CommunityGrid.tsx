@@ -67,6 +67,7 @@ export default function CommunityGrid({ items, onImageClick }: CommunityGridProp
         return (
           <div
             key={String(it.id ?? idx)}
+            data-index={idx}
             className="rounded-lg overflow-hidden border border-white/10 bg-white/2 aspect-square relative group"
             title={it.created_at || ""}
           >
