@@ -75,10 +75,12 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
         created_at: x.created_at,
       }));
       setItems(loc);
+      onItemsChange?.(loc);
       setHasMore(false); // No more items if API failed
     } else {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
+      onItemsChange?.([]);
       setHasMore(false); // No more items if API failed
     }
     
@@ -93,14 +95,24 @@ export default function CommunityFeed({ onImageClick, targetImageId, onItemsChan
   // Handle target image ID from URL
   useEffect(() => {
     if (targetImageId && items.length > 0 && onImageClick && openedImageId !== targetImageId) {
+      // Find the index of the target image by its ID
       const targetIndex = items.findIndex(item => item.id === targetImageId);
       if (targetIndex !== -1) {
-        console.log('[CommunityFeed] Found target image, opening lightbox at index:', targetIndex);
+        console.log('[CommunityFeed] Found target image at index:', targetIndex);
         setOpenedImageId(targetImageId);
         onImageClick(targetIndex);
+      } else {
+        console.log('[CommunityFeed] Could not find image with id:', targetImageId);
+        // If not found in current page, try loading more
+        if (hasMore && !loading) {
+          console.log('[CommunityFeed] Loading more pages to find image:', targetImageId);
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchCommunityData(nextPage, true);
+        }
       }
     }
-  }, [targetImageId, items.length, openedImageId, onImageClick]);
+  }, [targetImageId, items, openedImageId, onImageClick, hasMore, loading, page]);
 
   // Load more function
   function loadMore() {
