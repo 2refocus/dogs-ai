@@ -75,13 +75,15 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
     const baseUrl = window.location.origin;
     const imageId = currentImage.id;
     const shareableUrl = `${baseUrl}/?image=${imageId}`;
-    const shareText = `Check out this amazing pet portrait! 🐾✨`;
+    
+    // Put URL first, then text with emoticons at the end
+    const clipboardText = `${shareableUrl}\n\nCheck out this amazing pet portrait! ✨🐾`;
     
     console.log('[Lightbox] Starting share with URL:', shareableUrl);
     
     // Simple approach: try clipboard first, then open in new tab
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${shareableUrl}`);
+      await navigator.clipboard.writeText(clipboardText);
       console.log('[Lightbox] Clipboard success');
       
       // Show success notification
