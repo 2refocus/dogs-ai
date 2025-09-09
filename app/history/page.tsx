@@ -95,18 +95,26 @@ export default function HistoryPage() {
     if (!currentUserId) {
       try {
         const raw = localStorage.getItem("guest_history_v1");
+        console.log(`[history] Raw localStorage data:`, raw);
         if (raw) {
           const arr = JSON.parse(raw);
+          console.log(`[history] Parsed localStorage array:`, arr);
           if (Array.isArray(arr)) {
             const filtered = arr.filter((x:any)=>x && typeof x.output_url === "string");
+            console.log(`[history] Filtered local items:`, filtered);
             // Sort local history by created_at descending (newest first)
             const sorted = filtered.sort((a: any, b: any) => 
               new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
             );
+            console.log(`[history] Sorted local items:`, sorted);
             setLocalItems(sorted);
           }
+        } else {
+          console.log(`[history] No localStorage data found for key: guest_history_v1`);
         }
-      } catch {}
+      } catch (e) {
+        console.error(`[history] Error reading localStorage:`, e);
+      }
     } else {
       // Clear local items when logged in
       setLocalItems([]);

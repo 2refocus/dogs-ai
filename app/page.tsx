@@ -309,10 +309,13 @@ export default function Home() {
         pushLocal({
           output_url: create.output_url,
           input_url: create?.input_url ?? preview,
-          preset_label: PRESETS.dog.find(p => p.value === promptToUse)?.label || "DEFAULT Portrait",
+          preset_label: presetLabel,
           created_at: new Date().toISOString(),
         });
-      } catch {}
+        console.log(`[frontend] Saved to local history: ${create.output_url}`);
+      } catch (e) {
+        console.error(`[frontend] Failed to save to local history:`, e);
+      }
 
       // Note: Database insert is already handled by /api/stylize-unified route
       // No need for duplicate /api/generations call
