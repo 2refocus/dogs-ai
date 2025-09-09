@@ -236,9 +236,14 @@ export default function Home() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      // Use selected preset for logged-in users, or DEFAULT Portrait for non-logged-in users
+      
+      // Use the actual preset value (the style text) as the prompt
       const promptToUse = userToken ? (selectedPreset || PRESETS.dog[0]?.value || DEFAULT_PROMPT) : PRESETS.dog[0]?.value || DEFAULT_PROMPT;
       fd.append("prompt", promptToUse);
+      
+      // Send the preset label for database storage
+      const presetLabel = PRESETS.dog.find(p => p.value === promptToUse)?.label || "DEFAULT Portrait";
+      fd.append("preset_label", presetLabel);
       
       // Add premium parameters for logged-in users
       if (userToken) {
@@ -248,6 +253,8 @@ export default function Home() {
       fd.append("crop_ratio", cropRatio);
       console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
       console.log(`[frontend] About to send request to /api/stylize`);
+      console.log(`[frontend] Using prompt: ${promptToUse}`);
+      console.log(`[frontend] Using preset label: ${presetLabel}`);
       const createRes = await fetch("/api/stylize", { method: "POST", body: fd });
       const create = await createRes.json();
       if (!createRes.ok || !create?.prediction_id) {

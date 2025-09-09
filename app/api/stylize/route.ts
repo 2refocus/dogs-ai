@@ -250,6 +250,8 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.error("[stylize] Exception creating generation record:", e);
       }
+    } else {
+      console.log("[stylize] Skipping database insert - missing SUPABASE_URL or SERVICE_ROLE");
     }
 
     // 2) Upload input with predictable path using generation ID
