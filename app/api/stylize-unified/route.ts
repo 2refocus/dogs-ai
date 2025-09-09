@@ -17,7 +17,6 @@ export const maxDuration = 300; // 5 minutes for multi-model pipeline
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
-import { MODEL_SETTINGS } from "@/lib/pipelineConfig";
 const REPLICATE_MODEL = MODEL_SETTINGS["nano-banana"].model;
 
 // Helper functions (same as original API)
