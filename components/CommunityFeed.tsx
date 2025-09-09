@@ -92,10 +92,13 @@ export default function CommunityFeed() {
     }
   }, [loading, hasMore, refreshing, page]);
 
+  // Initial fetch - only run once
   useEffect(() => {
     fetchCommunityData();
-    
-    // Refresh every 30 seconds to catch new images (less frequent to avoid pagination conflicts)
+  }, []);
+
+  // Refresh interval - separate effect
+  useEffect(() => {
     const interval = setInterval(() => {
       // Only refresh if it's been more than 30 seconds since last fetch and we're on page 1
       if (Date.now() - lastFetchTime > 30000 && page === 1) {
