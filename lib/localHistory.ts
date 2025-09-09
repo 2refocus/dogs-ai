@@ -28,7 +28,11 @@ export function readLocal(): LocalGen[] {
 }
 
 export function pushLocal(item: Partial<LocalGen> & { output_url: string }) {
-  if (typeof window === "undefined") return;
+  console.log(`[pushLocal] Function called with item:`, item);
+  if (typeof window === "undefined") {
+    console.log(`[pushLocal] Window is undefined, returning early`);
+    return;
+  }
   try {
     const row: LocalGen = {
       output_url: item.output_url,

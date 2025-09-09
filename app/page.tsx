@@ -320,7 +320,9 @@ export default function Home() {
           created_at: new Date().toISOString(),
         };
         console.log(`[frontend] About to save to local history:`, localHistoryItem);
+        console.log(`[frontend] Calling pushLocal function...`);
         pushLocal(localHistoryItem);
+        console.log(`[frontend] pushLocal function completed`);
         console.log(`[frontend] Successfully saved to local history: ${create.output_url}`);
       } catch (e) {
         console.error(`[frontend] Failed to save to local history:`, e);
