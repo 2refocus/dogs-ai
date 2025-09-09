@@ -74,8 +74,10 @@ export default function HistoryPage() {
       try {
         // For history page, we need to load more items to find user's images
         // Load first 100 items to ensure we get user's history
+        console.log(`[history] Fetching community data...`);
         const res = await fetch("/api/community?limit=100", { cache: "no-store" });
         const j = await res.json();
+        console.log(`[history] Community API response:`, { ok: j?.ok, itemsCount: j?.items?.length });
         if (j?.ok && Array.isArray(j.items)) {
           setCommunity(j.items);
           
@@ -138,6 +140,14 @@ export default function HistoryPage() {
       setLocalItems([]);
     }
   }, [currentUserId, authLoading]); // Re-run when user ID or auth loading state changes
+
+  // Add a refresh function that can be called manually
+  const refreshData = useCallback(async () => {
+    console.log(`[history] Manual refresh triggered`);
+    // Force reload by setting authLoading to true briefly
+    setAuthLoading(true);
+    setTimeout(() => setAuthLoading(false), 100);
+  }, []);
 
   const hasCommunity = community.length > 0;
   const hasUserHistory = userHistory.length > 0;
@@ -202,9 +212,17 @@ export default function HistoryPage() {
         />
       )}
       <section className="grid gap-4">
-        <h1 className="text-2xl font-bold">
-          {currentUserId ? "Your History" : "Your Local History"}
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">
+            {currentUserId ? "Your History" : "Your Local History"}
+          </h1>
+          <button
+            onClick={refreshData}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Refresh
+          </button>
+        </div>
         {authLoading ? (
           <p className="text-sm opacity-60">Loading your history...</p>
         ) : hasUserHistory ? (

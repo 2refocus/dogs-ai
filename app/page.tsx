@@ -251,6 +251,20 @@ export default function Home() {
       }
       // Always send crop_ratio (available for all users)
       fd.append("crop_ratio", cropRatio);
+      
+      // Add user_id for logged-in users
+      if (userToken) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) {
+            fd.append("user_id", user.id);
+            console.log(`[frontend] Sending user_id: ${user.id}`);
+          }
+        } catch (e) {
+          console.error(`[frontend] Failed to get user ID:`, e);
+        }
+      }
+      
       console.log(`[frontend] Sending crop_ratio: ${cropRatio}`);
       console.log(`[frontend] About to send request to /api/stylize`);
       console.log(`[frontend] Using prompt: ${promptToUse}`);
