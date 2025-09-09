@@ -77,7 +77,7 @@ export default function HistoryPage() {
             // Show only user's images if logged in, sorted by created_at descending (newest first)
             console.log(`[history] Current user ID: ${currentUserId}`);
             console.log(`[history] Total community items: ${j.items.length}`);
-            console.log(`[history] Sample user IDs in community:`, j.items.slice(0, 5).map(item => item.user_id));
+            console.log(`[history] Sample user IDs in community:`, j.items.slice(0, 5).map((item: CommunityRow) => item.user_id));
             
             const userImages = j.items
               .filter((item: CommunityRow) => {
