@@ -6,50 +6,27 @@ import Lightbox from "./Lightbox";
 interface CommunityLightboxProps {
   onClose: () => void;
   initialImageId: number;
+  images: any[];
 }
 
-export default function CommunityLightbox({ onClose, initialImageId }: CommunityLightboxProps) {
-  const [images, setImages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function CommunityLightbox({ onClose, initialImageId, images }: CommunityLightboxProps) {
   const [initialIndex, setInitialIndex] = useState(0);
 
   useEffect(() => {
-    const fetchCommunityData = async () => {
-      try {
-        const res = await fetch('/api/community?limit=100', { cache: "no-store" });
-        const data = await res.json();
-        
-        if (data.ok && Array.isArray(data.items)) {
-          setImages(data.items);
-          
-          // Find the index of the target image
-          const targetIndex = data.items.findIndex((item: any) => item.id === initialImageId);
-          if (targetIndex !== -1) {
-            setInitialIndex(targetIndex);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch community data for lightbox:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCommunityData();
-  }, [initialImageId]);
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
+    // Find the index of the target image
+    const targetIndex = images.findIndex(item => item.id === initialImageId);
+    if (targetIndex !== -1) {
+      setInitialIndex(targetIndex);
+      console.log('[CommunityLightbox] Found target image at index:', targetIndex, 'for id:', initialImageId);
+    } else {
+      console.log('[CommunityLightbox] Could not find image with id:', initialImageId);
+    }
+  }, [initialImageId, images]);
 
   if (images.length === 0) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-        <div className="text-white">Image not found</div>
+        <div className="text-white">No images available</div>
         <button 
           onClick={onClose}
           className="ml-4 px-4 py-2 bg-white text-black rounded"

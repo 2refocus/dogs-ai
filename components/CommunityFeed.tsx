@@ -20,9 +20,10 @@ type Item = {
 interface CommunityFeedProps {
   onImageClick?: (index: number) => void;
   targetImageId?: number | null;
+  onItemsChange?: (items: Item[]) => void;
 }
 
-export default function CommunityFeed({ onImageClick, targetImageId }: CommunityFeedProps = {}) {
+export default function CommunityFeed({ onImageClick, targetImageId, onItemsChange }: CommunityFeedProps = {}) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -45,10 +46,12 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
           setItems(prev => {
             const newItems = [...prev, ...j.items];
             console.log('[CommunityFeed] Appending items, total now:', newItems.length);
+            onItemsChange?.(newItems);
             return newItems;
           });
         } else {
           setItems(j.items);
+          onItemsChange?.(j.items);
           console.log('[CommunityFeed] Setting initial items:', j.items.length);
         }
         

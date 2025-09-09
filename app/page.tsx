@@ -109,6 +109,7 @@ export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(true);
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+  const [communityItems, setCommunityItems] = useState<any[]>([]);
   
   // Pipeline selection
   const { selectedMode, setSelectedMode, userTier, availableOptions } = usePipelineSelection(currentUserId);
@@ -694,11 +695,12 @@ export default function Home() {
         <CommunityFeed 
           onImageClick={handleImageClick}
           targetImageId={lightboxImageIndex}
+          onItemsChange={setCommunityItems}
         />
       </div>
 
       {/* Community Lightbox */}
-      {showLightbox && lightboxImageIndex !== null && (
+      {showLightbox && lightboxImageIndex !== null && communityItems.length > 0 && (
         <CommunityLightbox 
           onClose={() => {
             setShowLightbox(false);
@@ -709,6 +711,7 @@ export default function Home() {
             window.history.replaceState({}, '', url.toString());
           }}
           initialImageId={lightboxImageIndex}
+          images={communityItems}
         />
       )}
     </main>
