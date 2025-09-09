@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import CommunityGrid from "./CommunityGrid";
 import { readLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
@@ -24,15 +24,14 @@ interface CommunityFeedProps {
 
 export default function CommunityFeed({ onImageClick, targetImageId }: CommunityFeedProps = {}) {
   const [items, setItems] = useState<Item[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [openedImageId, setOpenedImageId] = useState<number | null>(null);
 
-  const fetchCommunityData = useCallback(async (showRefresh = false, pageNum = 1, append = false) => {
-    console.log('[CommunityFeed] Fetching data:', { showRefresh, pageNum, append });
-    if (showRefresh) setRefreshing(true);
+  // Function to fetch community data
+  async function fetchCommunityData(pageNum = 1, append = false) {
+    console.log('[CommunityFeed] Fetching data:', { pageNum, append });
     if (!append) setLoading(true);
     
     try {
@@ -52,13 +51,11 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
           setItems(j.items);
           console.log('[CommunityFeed] Setting initial items:', j.items.length);
         }
+        
         // Use hasMore from API response, fallback to checking item count
         const newHasMore = j.hasMore !== undefined ? j.hasMore : j.items.length === 20;
         console.log('[CommunityFeed] Setting hasMore to:', newHasMore);
         setHasMore(newHasMore);
-        
-        // Reset loading states
-        if (showRefresh) setRefreshing(false);
         setLoading(false);
         return;
       }
@@ -75,41 +72,20 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
         created_at: x.created_at,
       }));
       setItems(loc);
-      setHasMore(false); // Local history has no more pages
+      setHasMore(false); // No more items if API failed
     } else {
       console.log("[CommunityFeed] Logged in, API failed, showing empty");
       setItems([]);
       setHasMore(false); // No more items if API failed
     }
     
-    if (showRefresh) setRefreshing(false);
     setLoading(false);
-  }, []);
-
-  const loadMore = useCallback(() => {
-    if (!loading && hasMore && !refreshing) {
-      const nextPage = page + 1;
-      console.log('[CommunityFeed] Loading more, page:', nextPage);
-      setPage(nextPage);
-      setLoading(true); // Set loading state
-      fetchCommunityData(false, nextPage, true);
-    }
-  }, [loading, hasMore, refreshing, page]);
+  }
 
   // Initial fetch - only run once
   useEffect(() => {
     fetchCommunityData();
-  }, []); // Empty dependencies - only run once
-
-  // Remove infinite scroll - we'll use a Load More button instead
-
-  if (loading && items.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-sm opacity-60">Loading community images...</div>
-      </div>
-    );
-  }
+  }, []);
 
   // Handle target image ID from URL
   useEffect(() => {
@@ -121,7 +97,17 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
         onImageClick(targetIndex);
       }
     }
-  }, [targetImageId, items.length, openedImageId]); // Added openedImageId to prevent multiple calls
+  }, [targetImageId, items.length, openedImageId, onImageClick]);
+
+  // Load more function
+  function loadMore() {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      console.log('[CommunityFeed] Loading more, page:', nextPage);
+      setPage(nextPage);
+      fetchCommunityData(nextPage, true);
+    }
+  }
 
   // Debug logging
   console.log('[CommunityFeed] Rendering with items:', items.length, 'loading:', loading, 'hasMore:', hasMore, 'page:', page);
@@ -142,7 +128,6 @@ export default function CommunityFeed({ onImageClick, targetImageId }: Community
           </button>
         </div>
       )}
-      
       
       {!hasMore && items.length > 0 && (
         <div className="mt-4 text-center text-sm opacity-60">
