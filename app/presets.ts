@@ -23,6 +23,37 @@ const STYLES: { label: string; style: string }[] = [
     style:
       "Dramatic fine-art portrait of a pet, against an ornate background in a cozy home, lit in rich cinematic lighting. Inspired by Annie Leibovitz, elegant, intricate details, painterly yet realistic, ultra high quality.",
   },
+  // ---- New 5-style pack ----
+  {
+    label: "Modern Studio Portrait",
+    style:
+      "clean minimalist studio set, neutral gradient background, controlled soft key and subtle rim light, " +
+      "shallow depth of field, timeless and refined",
+  },
+  {
+    label: "Luxury Interior",
+    style:
+      "stylish upscale apartment interior, tasteful modern furniture, marble and wood accents, " +
+      "subtle warm ambient lighting, sophisticated lifestyle mood",
+  },
+  {
+    label: "Outdoor Premium Lifestyle",
+    style:
+      "editorial outdoor setting at golden hour, landscaped garden or chic rooftop terrace, " +
+      "warm sunlight, cinematic bokeh, aspirational mood",
+  },
+  {
+    label: "Fine Art Black & White",
+    style:
+      "dramatic monochrome portrait, high micro-contrast, deep shadows and luminous highlights, " +
+      "textured backdrop, classic fine-art aesthetic",
+  },
+  {
+    label: "Editorial Fashion Vibe",
+    style:
+      "fashion-inspired lighting setup (soft fill + dramatic rim), magazine-ready composition, " +
+      "clean background, chic modern styling",
+  },
   {
     label: "Classic Oil on Canvas",
     style:
@@ -60,12 +91,6 @@ const STYLES: { label: string; style: string }[] = [
       "subtle halation on highlights",
   },
   {
-    label: "Minimal Line Art",
-    style:
-      "single-weight line art, clean outlines, sparse shading, ivory paper background, " +
-      "contemporary minimalism",
-  },
-  {
     label: "Autumn Forest Glow",
     style:
       "golden hour backlight, autumn foliage bokeh, warm oranges and browns, " +
@@ -96,12 +121,6 @@ const STYLES: { label: string; style: string }[] = [
       "canvas texture, museum-quality finish",
   },
   {
-    label: "Pop Art Halftone",
-    style:
-      "bold pop-art poster, halftone shading, limited high-contrast palette, " +
-      "clean graphic feel",
-  },
-  {
     label: "Cozy Cabin Wood",
     style:
       "warm lamplight, rustic wood textures, gentle smoke/tea steam ambiance, " +
@@ -114,37 +133,6 @@ const STYLES: { label: string; style: string }[] = [
       "tonal depth, smudge highlights",
   },
 
-  // ---- New 5-style pack ----
-  {
-    label: "Modern Studio Portrait",
-    style:
-      "clean minimalist studio set, neutral gradient background, controlled soft key and subtle rim light, " +
-      "shallow depth of field, timeless and refined",
-  },
-  {
-    label: "Luxury Interior",
-    style:
-      "stylish upscale apartment interior, tasteful modern furniture, marble and wood accents, " +
-      "subtle warm ambient lighting, sophisticated lifestyle mood",
-  },
-  {
-    label: "Outdoor Premium Lifestyle",
-    style:
-      "editorial outdoor setting at golden hour, landscaped garden or chic rooftop terrace, " +
-      "warm sunlight, cinematic bokeh, aspirational mood",
-  },
-  {
-    label: "Fine Art Black & White",
-    style:
-      "dramatic monochrome portrait, high micro-contrast, deep shadows and luminous highlights, " +
-      "textured backdrop, classic fine-art aesthetic",
-  },
-  {
-    label: "Editorial Fashion Vibe",
-    style:
-      "fashion-inspired lighting setup (soft fill + dramatic rim), magazine-ready composition, " +
-      "clean background, chic modern styling",
-  },
 ];
 
 // ---------- Aspect Ratio suggestions per style ----------
