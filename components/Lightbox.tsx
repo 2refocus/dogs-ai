@@ -197,7 +197,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
 
       {/* Social Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/5 backdrop-blur-sm"
              onClick={() => setShowShareModal(false)}>
           <div onClick={e => e.stopPropagation()}>
             <SocialShareButtons
