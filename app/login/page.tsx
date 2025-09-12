@@ -108,7 +108,7 @@ export default function LoginPage() {
           <button
             onClick={signInWithEmail}
             disabled={emailLoading || !email}
-            className="w-full rounded-xl bg-white hover:bg-gray-50 text-black px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+            className="w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-white text-black px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-6"
           >
             {emailLoading ? "Sending magic link..." : "Continue"}
           </button>
