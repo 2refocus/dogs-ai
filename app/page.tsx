@@ -592,7 +592,7 @@ export default function Home() {
                 onClick={onGenerate}
                 disabled={loading || !file}
                 className={cx(
-                  "w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+                  "w-full rounded-xl bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-white px-6 py-4 font-semibold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
                   loading && "animate-pulse"
                 )}
               >
@@ -648,7 +648,7 @@ export default function Home() {
               </button>
             ) : (
               <div className="h-full w-full flex items-center justify-center text-sm text-[var(--fg)]/60">
-                Generated image will appear here
+                Your Pet Portrait will appear here
               </div>
             )}
           </div>
