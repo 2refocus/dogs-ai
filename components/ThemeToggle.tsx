@@ -18,7 +18,7 @@ export default function ThemeToggle() {
       root.removeAttribute('data-theme');
       root.style.setProperty('--bg', '#0f1115');
       root.style.setProperty('--fg', '#e9eef6');
-      root.style.setProperty('--muted', '#1a1f29');
+      root.style.setProperty('--muted', '#423831');
       root.style.setProperty('--line', 'rgba(255,255,255,0.08)');
       root.style.setProperty('--skeleton-a', 'rgba(255,255,255,0.06)');
       root.style.setProperty('--skeleton-b', 'rgba(255,255,255,0.04)');
@@ -49,7 +49,7 @@ export default function ThemeToggle() {
       root.removeAttribute('data-theme');
       root.style.setProperty('--bg', '#0f1115');
       root.style.setProperty('--fg', '#e9eef6');
-      root.style.setProperty('--muted', '#1a1f29');
+      root.style.setProperty('--muted', '#423831');
       root.style.setProperty('--line', 'rgba(255,255,255,0.08)');
       root.style.setProperty('--skeleton-a', 'rgba(255,255,255,0.06)');
       root.style.setProperty('--skeleton-b', 'rgba(255,255,255,0.04)');
