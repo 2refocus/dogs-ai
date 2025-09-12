@@ -61,7 +61,7 @@ export default function LoginPage() {
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-top justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-8 text-center">
             <p className="text-[var(--fg)] mb-4">Signed in as <b>{user.email}</b></p>
@@ -78,7 +78,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-top justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         {/* <div className="text-center mb-8">
