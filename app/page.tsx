@@ -123,6 +123,15 @@ function URLHandler({
         })
         .catch(error => {
           console.error('[Home] Failed to load shared image:', error);
+          
+          // Check if it's a local image ID
+          if (imageId.startsWith('local_')) {
+            console.log('[Home] This is a local image ID, but we cannot load it directly');
+            // For local images, we can't load them directly since they're not in the database
+            // We could show a message or redirect to the main page
+            return;
+          }
+          
           // Try to find in local history
           const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]');
           const localImage = localHistory.find((item: any) => item.id === imageId);
@@ -239,27 +248,37 @@ export default function Home() {
     if (!genUrl) return;
     
     try {
-      // Check if Web Share API is supported
+      // Generate shareable URL - we need to create a unique ID for this image
+      // Since this is a local generation, we'll use a timestamp-based ID
+      const baseUrl = window.location.origin;
+      const imageId = `local_${Date.now()}`;
+      const shareableUrl = `${baseUrl}/?image=${imageId}`;
+      const shareText = `Check out this amazing pet portrait I created! ✨🐾`;
+      
+      console.log('[Home] Starting share with URL:', shareableUrl);
+      
+      // Check if Web Share API is supported (mobile)
       if (navigator.share) {
-        // Fetch the image as a blob
-        const response = await fetch(genUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'pet-portrait.jpg', { type: 'image/jpeg' });
-        
-        await navigator.share({
-          title: 'My Pet Portrait',
-          text: 'Check out this amazing pet portrait I created!',
-          files: [file]
-        });
-      } else {
-        // Fallback: copy URL to clipboard
-        await navigator.clipboard.writeText(genUrl);
-        setMsg("Image URL copied to clipboard!");
-        setTimeout(() => setMsg(""), 3000);
+        try {
+          await navigator.share({
+            title: 'My Pet Portrait',
+            text: shareText,
+            url: shareableUrl,
+          });
+          return;
+        } catch (error) {
+          console.log('[Home] Web Share API failed, falling back to clipboard:', error);
+        }
       }
+      
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(`${shareableUrl}\n\n${shareText}`);
+      setMsg("Shareable link copied to clipboard!");
+      setTimeout(() => setMsg(""), 3000);
+      
     } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback: copy URL to clipboard
+      console.error('[Home] Error sharing:', error);
+      // Final fallback: copy direct image URL
       try {
         await navigator.clipboard.writeText(genUrl);
         setMsg("Image URL copied to clipboard!");

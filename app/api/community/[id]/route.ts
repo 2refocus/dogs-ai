@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const STORAGE_BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET || "generations";
 
 export async function GET(
   request: NextRequest,
@@ -16,10 +15,12 @@ export async function GET(
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
     }
 
-    // Fetch the specific community image by ID
-    const { data: image, error } = await supabase
-      .from('community_images')
-      .select('*')
+    console.log(`[API] Fetching community image with ID: ${imageId}`);
+
+    // Fetch the specific community image by ID from the same table as the main API
+    const { data: image, error } = await supabaseAdmin
+      .from('generations')
+      .select('id, user_id, output_url, high_res_url, input_url, aspect_ratio, preset_label, display_name, website, profile_image_url, pipeline_mode, model_used, user_tier, generation_time_ms, created_at')
       .eq('id', imageId)
       .single();
 
@@ -29,21 +30,20 @@ export async function GET(
     }
 
     if (!image) {
+      console.log('[API] No image found with ID:', imageId);
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
     }
 
-    // Return the image data in the same format as the community API
-    return NextResponse.json({
-      id: image.id,
-      output_url: image.output_url,
-      high_res_url: image.high_res_url,
-      input_url: image.input_url,
-      aspect_ratio: image.aspect_ratio,
-      created_at: image.created_at,
-      display_name: image.display_name,
-      website: image.website,
-      preset_label: image.preset_label,
-    });
+    // Process the image data the same way as the main community API
+    const processedImage = {
+      ...image,
+      // For records without input_url, try to reconstruct it from the predictable path
+      input_url: image.input_url || (image.id ? `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/public/inputs/input-${image.id}.jpg` : null)
+    };
+
+    console.log(`[API] Successfully fetched image:`, { id: processedImage.id, output_url: processedImage.output_url });
+
+    return NextResponse.json(processedImage);
 
   } catch (error) {
     console.error('[API] Unexpected error:', error);
