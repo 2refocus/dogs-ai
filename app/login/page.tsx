@@ -81,12 +81,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
-       {/*} <div className="text-center mb-8">
+        {/* <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <LogoDog className="w-16 h-16" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--fg)]">Pet Portrait Studio</h1>
-        </div>*/}
+        </div> */}
 
         {/* Login Card */}
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--muted)] p-8">
