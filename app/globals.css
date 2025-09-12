@@ -10,7 +10,8 @@
   --brand-ink: #0f1115;
   --brand-2: #C57429;   /* secondary */
   --brand-2-hover: #955223;
-  --muted: #1a1f29;
+  /*--muted: #1a1f29;*/
+  --muted: #423831;
   --line: rgba(255,255,255,0.08);
   --soft-1: #F4D7A1;
   --soft-5: #786552;
