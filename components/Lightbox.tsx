@@ -70,10 +70,10 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   };
 
   const share = async () => {
-    // Generate shareable URL with image ID
+    // Generate shareable URL with image ID - use /shared/[id] for better meta tags
     const baseUrl = window.location.origin;
     const imageId = currentImage.id;
-    const shareableUrl = `${baseUrl}/?image=${imageId}`;
+    const shareableUrl = `${baseUrl}/shared/${imageId}`;
     const shareText = `Check out this amazing pet portrait! ✨🐾`;
     
     console.log('[Lightbox] Starting share with URL:', shareableUrl);
@@ -201,7 +201,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
              onClick={() => setShowShareModal(false)}>
           <div onClick={e => e.stopPropagation()}>
             <SocialShareButtons
-              shareableUrl={`${window.location.origin}/?image=${currentImage.id}`}
+              shareableUrl={`${window.location.origin}/shared/${currentImage.id}`}
               shareText="Check out this amazing pet portrait! ✨🐾"
               onClose={() => setShowShareModal(false)}
             />

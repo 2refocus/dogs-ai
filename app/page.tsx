@@ -103,54 +103,15 @@ function URLHandler({
   useEffect(() => {
     const imageId = searchParams.get('image');
     if (imageId) {
-      console.log('[Home] Loading shared image with ID:', imageId);
+      console.log('[Home] Redirecting to /shared/[id] route for better meta tags');
       
-      // Try to load the image from the community API
-      fetch(`/api/community/${imageId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Image not found');
-          }
-          return response.json();
-        })
-        .then(imageData => {
-          console.log('[Home] Loaded shared image:', imageData);
-          onSharedImageLoad(imageData);
-          
-          // Clean up the URL
-          const url = new URL(window.location.href);
-          url.searchParams.delete('image');
-          window.history.replaceState({}, '', url.toString());
-        })
-        .catch(error => {
-          console.error('[Home] Failed to load shared image:', error);
-          
-          // Check if it's a local image ID
-          if (imageId.startsWith('local_')) {
-            console.log('[Home] This is a local image ID, but we cannot load it directly');
-            // For local images, we can't load them directly since they're not in the database
-            // We could show a message or redirect to the main page
-            return;
-          }
-          
-          // Try to find in local history
-          const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]');
-          const localImage = localHistory.find((item: any) => item.id === imageId);
-          
-          if (localImage) {
-            console.log('[Home] Found shared image in local history:', localImage);
-            onSharedImageLoad(localImage);
-            
-            // Clean up the URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('image');
-            window.history.replaceState({}, '', url.toString());
-          } else {
-            console.log('[Home] Shared image not found in community or local history');
-          }
-        });
+      // Redirect to the dedicated shared page for better meta tags
+      const url = new URL(window.location.href);
+      url.pathname = `/shared/${imageId}`;
+      url.searchParams.delete('image');
+      window.location.replace(url.toString());
     }
-  }, [searchParams, onSharedImageLoad]);
+  }, [searchParams]);
 
   return null;
 }
@@ -256,7 +217,7 @@ export default function Home() {
       // Since this is a local generation, we'll use a timestamp-based ID
       const baseUrl = window.location.origin;
       const imageId = `local_${Date.now()}`;
-      const shareableUrl = `${baseUrl}/?image=${imageId}`;
+      const shareableUrl = `${baseUrl}/shared/${imageId}`;
       const shareText = `Check out this amazing pet portrait I created! ✨🐾`;
       
       console.log('[Home] Starting share with URL:', shareableUrl);
@@ -844,7 +805,7 @@ export default function Home() {
              onClick={() => setShowShareModal(false)}>
           <div onClick={e => e.stopPropagation()}>
             <SocialShareButtons
-              shareableUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/?image=local_${Date.now()}`}
+              shareableUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/shared/local_${Date.now()}`}
               shareText="Check out this amazing pet portrait I created! ✨🐾"
               onClose={() => setShowShareModal(false)}
             />
