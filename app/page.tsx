@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { pushLocal } from "@/lib/localHistory";
 import { supabase } from "@/lib/supabaseClient";
 import { PRESETS } from "./presets";
@@ -91,6 +92,7 @@ const DEFAULT_PROMPT =
   "transform this into a single pet portrait, convert any human or other subject into a realistic dog or cat, preserve the pose and composition but change the subject to a pet animal, realistic breed, fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail";
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [genUrl, setGenUrl] = useState<string>("");
@@ -113,6 +115,10 @@ export default function Home() {
 
   // State for lightbox
   const [currentImage, setCurrentImage] = useState<any>(null);
+  
+  // State for shared image handling
+  const [sharedImage, setSharedImage] = useState<any>(null);
+  const [showSharedLightbox, setShowSharedLightbox] = useState(false);
 
   // Handle image clicks
   const handleImageClick = useCallback((item: any) => {
@@ -128,6 +134,52 @@ export default function Home() {
       setFreeLeft(parseInt(localStorage.getItem("freeGenerationsLeft") || "1", 10) || 0);
     } catch {}
   }, []);
+
+  // Handle shared image URL parameters
+  useEffect(() => {
+    const imageId = searchParams.get('image');
+    if (imageId) {
+      console.log('[Home] Loading shared image with ID:', imageId);
+      
+      // Try to load the image from the community API
+      fetch(`/api/community/${imageId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Image not found');
+          }
+          return response.json();
+        })
+        .then(imageData => {
+          console.log('[Home] Loaded shared image:', imageData);
+          setSharedImage(imageData);
+          setShowSharedLightbox(true);
+          
+          // Clean up the URL
+          const url = new URL(window.location.href);
+          url.searchParams.delete('image');
+          window.history.replaceState({}, '', url.toString());
+        })
+        .catch(error => {
+          console.error('[Home] Failed to load shared image:', error);
+          // Try to find in local history
+          const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]');
+          const localImage = localHistory.find((item: any) => item.id === imageId);
+          
+          if (localImage) {
+            console.log('[Home] Found shared image in local history:', localImage);
+            setSharedImage(localImage);
+            setShowSharedLightbox(true);
+            
+            // Clean up the URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('image');
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            console.log('[Home] Shared image not found in community or local history');
+          }
+        });
+    }
+  }, [searchParams]);
 
   // Get user token and ID for authenticated requests
   useEffect(() => {
@@ -732,6 +784,18 @@ export default function Home() {
           onClose={() => {
             setShowLightbox(false);
             setCurrentImage(null);
+          }}
+        />
+      )}
+
+      {/* Shared Image Lightbox */}
+      {showSharedLightbox && sharedImage && (
+        <Lightbox
+          images={[sharedImage]}
+          initialIndex={0}
+          onClose={() => {
+            setShowSharedLightbox(false);
+            setSharedImage(null);
           }}
         />
       )}

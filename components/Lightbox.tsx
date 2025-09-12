@@ -75,15 +75,28 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
     const baseUrl = window.location.origin;
     const imageId = currentImage.id;
     const shareableUrl = `${baseUrl}/?image=${imageId}`;
-    
-    // Put URL first, then text with emoticons at the end
-    const clipboardText = `${shareableUrl}\n\nCheck out this amazing pet portrait! ✨🐾`;
+    const shareText = `Check out this amazing pet portrait! ✨🐾`;
     
     console.log('[Lightbox] Starting share with URL:', shareableUrl);
     
-    // Simple approach: try clipboard first, then open in new tab
+    // Check if Web Share API is available (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Pet Portrait',
+          text: shareText,
+          url: shareableUrl,
+        });
+        setSharing(false);
+        return;
+      } catch (error) {
+        console.log('[Lightbox] Web Share API failed, falling back to clipboard:', error);
+      }
+    }
+    
+    // Fallback to clipboard
     try {
-      await navigator.clipboard.writeText(clipboardText);
+      await navigator.clipboard.writeText(`${shareableUrl}\n\n${shareText}`);
       console.log('[Lightbox] Clipboard success');
       
       // Show success notification
