@@ -10,6 +10,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   other: { "color-scheme": site.meta.colorScheme },
   themeColor: site.meta.themeColor,
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' }
+    ],
+    apple: '/icon.png',
+  },
 };
 
 const BUILD_TAG = process.env.NEXT_PUBLIC_BUILD_TAG || "ui";
