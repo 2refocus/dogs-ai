@@ -7,7 +7,7 @@
 */
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { pushLocal } from "@/lib/localHistory";
@@ -91,8 +91,61 @@ const SHIMMER_CSS = `
 const DEFAULT_PROMPT =
   "transform this into a single pet portrait, convert any human or other subject into a realistic dog or cat, preserve the pose and composition but change the subject to a pet animal, realistic breed, fine‑art studio quality, dramatic yet elegant lighting, in a cozy environment with a tasteful background pattern, high detail";
 
-export default function Home() {
+// Component to handle URL parameters
+function URLHandler({ 
+  onSharedImageLoad 
+}: { 
+  onSharedImageLoad: (image: any) => void 
+}) {
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const imageId = searchParams.get('image');
+    if (imageId) {
+      console.log('[Home] Loading shared image with ID:', imageId);
+      
+      // Try to load the image from the community API
+      fetch(`/api/community/${imageId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Image not found');
+          }
+          return response.json();
+        })
+        .then(imageData => {
+          console.log('[Home] Loaded shared image:', imageData);
+          onSharedImageLoad(imageData);
+          
+          // Clean up the URL
+          const url = new URL(window.location.href);
+          url.searchParams.delete('image');
+          window.history.replaceState({}, '', url.toString());
+        })
+        .catch(error => {
+          console.error('[Home] Failed to load shared image:', error);
+          // Try to find in local history
+          const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]');
+          const localImage = localHistory.find((item: any) => item.id === imageId);
+          
+          if (localImage) {
+            console.log('[Home] Found shared image in local history:', localImage);
+            onSharedImageLoad(localImage);
+            
+            // Clean up the URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('image');
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            console.log('[Home] Shared image not found in community or local history');
+          }
+        });
+    }
+  }, [searchParams, onSharedImageLoad]);
+
+  return null;
+}
+
+export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [genUrl, setGenUrl] = useState<string>("");
@@ -135,51 +188,11 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // Handle shared image URL parameters
-  useEffect(() => {
-    const imageId = searchParams.get('image');
-    if (imageId) {
-      console.log('[Home] Loading shared image with ID:', imageId);
-      
-      // Try to load the image from the community API
-      fetch(`/api/community/${imageId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Image not found');
-          }
-          return response.json();
-        })
-        .then(imageData => {
-          console.log('[Home] Loaded shared image:', imageData);
-          setSharedImage(imageData);
-          setShowSharedLightbox(true);
-          
-          // Clean up the URL
-          const url = new URL(window.location.href);
-          url.searchParams.delete('image');
-          window.history.replaceState({}, '', url.toString());
-        })
-        .catch(error => {
-          console.error('[Home] Failed to load shared image:', error);
-          // Try to find in local history
-          const localHistory = JSON.parse(localStorage.getItem('localHistory') || '[]');
-          const localImage = localHistory.find((item: any) => item.id === imageId);
-          
-          if (localImage) {
-            console.log('[Home] Found shared image in local history:', localImage);
-            setSharedImage(localImage);
-            setShowSharedLightbox(true);
-            
-            // Clean up the URL
-            const url = new URL(window.location.href);
-            url.searchParams.delete('image');
-            window.history.replaceState({}, '', url.toString());
-          } else {
-            console.log('[Home] Shared image not found in community or local history');
-          }
-        });
-    }
-  }, [searchParams]);
+  // Handle shared image loading
+  const handleSharedImageLoad = useCallback((image: any) => {
+    setSharedImage(image);
+    setShowSharedLightbox(true);
+  }, []);
 
   // Get user token and ID for authenticated requests
   useEffect(() => {
@@ -458,6 +471,10 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-6xl p-6">
+      {/* URL Parameter Handler */}
+      <Suspense fallback={null}>
+        <URLHandler onSharedImageLoad={handleSharedImageLoad} />
+      </Suspense>
       <style dangerouslySetInnerHTML={{ __html: SHIMMER_CSS }} />
       <SuccessAnimation />
 
