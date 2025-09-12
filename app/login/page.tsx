@@ -163,6 +163,7 @@ export default function LoginPage() {
               Continue with X (Twitter)
             </button>
 
+            {/* LinkedIn temporarily disabled
             <button
               onClick={() => signInWithOAuth("linkedin")}
               disabled={loading}
@@ -173,6 +174,7 @@ export default function LoginPage() {
               </svg>
               Continue with LinkedIn
             </button>
+            */
 
             <button
               onClick={() => signInWithOAuth("facebook")}
