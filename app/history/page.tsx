@@ -283,12 +283,12 @@ export default function HistoryPage() {
               <button
                 key={`${it.created_at || idx}-${it.output_url}`}
                 onClick={() => setSelectedLocalImage({ image: it, index: idx })}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group"
+                className="rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--muted)] relative group aspect-square"
               >
                 <img
                   src={it.output_url}
                   alt=""
-                  className="w-full aspect-square object-cover"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
@@ -311,7 +311,7 @@ export default function HistoryPage() {
               <button
                 key={it.id}
                 onClick={() => setSelectedCommunityImage({ image: it, index: community.indexOf(it) })}
-                className="rounded-xl overflow-hidden border border-white/10 bg-white/2 relative group aspect-square"
+                className="rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--muted)] relative group aspect-square"
               >
                 <img
                   src={it.output_url}
