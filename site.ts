@@ -1,8 +1,8 @@
 export const site = {
-  name: "Pet Portrait Studio *",
+  name: "my Pet Portrait Studio *",
   tagline: "Elegant & cozy portraits of your pets",
   description: "Stylized dog & cat portraits",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://dogs-ai-eight.vercel.app",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://mypetportrait.app",
   nav: {
     showSettingsQuick: true,
   },
