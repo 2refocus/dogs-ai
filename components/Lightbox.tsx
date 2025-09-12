@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SocialShareButtons from "./SocialShareButtons";
 
 interface LightboxProps {
   images: Array<{
@@ -22,6 +23,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showOriginal, setShowOriginal] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   useEffect(() => {
     // Handle keyboard navigation
@@ -68,9 +70,6 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
   };
 
   const share = async () => {
-    if (sharing) return;
-    setSharing(true);
-    
     // Generate shareable URL with image ID
     const baseUrl = window.location.origin;
     const imageId = currentImage.id;
@@ -79,7 +78,7 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
     
     console.log('[Lightbox] Starting share with URL:', shareableUrl);
     
-    // Check if Web Share API is available (mobile)
+    // Check if Web Share API is available (mobile) - prefer native sharing
     if (navigator.share) {
       try {
         await navigator.share({
@@ -87,35 +86,14 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
           text: shareText,
           url: shareableUrl,
         });
-        setSharing(false);
         return;
       } catch (error) {
-        console.log('[Lightbox] Web Share API failed, falling back to clipboard:', error);
+        console.log('[Lightbox] Web Share API failed, showing share modal:', error);
       }
     }
     
-    // Fallback to clipboard
-    try {
-      await navigator.clipboard.writeText(`${shareableUrl}\n\n${shareText}`);
-      console.log('[Lightbox] Clipboard success');
-      
-      // Show success notification
-      const notification = document.createElement('div');
-      notification.textContent = 'Shareable link copied to clipboard!';
-      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg z-50 shadow-lg';
-      document.body.appendChild(notification);
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 3000);
-      
-    } catch (clipboardError) {
-      console.log('[Lightbox] Clipboard failed, opening in new tab:', clipboardError);
-      window.open(shareableUrl, '_blank', 'noopener,noreferrer');
-    } finally {
-      setSharing(false);
-    }
+    // Show social share modal for desktop or when Web Share API fails
+    setShowShareModal(true);
   };
 
   return (
@@ -216,6 +194,20 @@ export default function Lightbox({ images, initialIndex = 0, onClose }: Lightbox
           {currentIndex + 1} / {images.length}
         </div>
       </div>
+
+      {/* Social Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+             onClick={() => setShowShareModal(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <SocialShareButtons
+              shareableUrl={`${window.location.origin}/?image=${currentImage.id}`}
+              shareText="Check out this amazing pet portrait! ✨🐾"
+              onClose={() => setShowShareModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

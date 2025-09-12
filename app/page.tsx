@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { PRESETS } from "./presets";
 import { usePipelineSelection } from "@/components/PipelineSelector";
 import type { PipelineMode } from "@/lib/pipelineConfig";
+import SocialShareButtons from "@/components/SocialShareButtons";
 
 const CommunityFeed = dynamic(() => import("@/components/CommunityFeed"), { ssr: true });
 const Lightbox = dynamic(() => import("@/components/Lightbox"), { ssr: false });
@@ -181,6 +182,9 @@ export default function Home() {
   // State for shared image handling
   const [sharedImage, setSharedImage] = useState<any>(null);
   const [showSharedLightbox, setShowSharedLightbox] = useState(false);
+  
+  // State for social share modal
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Handle image clicks
   const handleImageClick = useCallback((item: any) => {
@@ -257,7 +261,7 @@ export default function Home() {
       
       console.log('[Home] Starting share with URL:', shareableUrl);
       
-      // Check if Web Share API is supported (mobile)
+      // Check if Web Share API is supported (mobile) - prefer native sharing
       if (navigator.share) {
         try {
           await navigator.share({
@@ -267,14 +271,12 @@ export default function Home() {
           });
           return;
         } catch (error) {
-          console.log('[Home] Web Share API failed, falling back to clipboard:', error);
+          console.log('[Home] Web Share API failed, showing share modal:', error);
         }
       }
       
-      // Fallback to clipboard
-      await navigator.clipboard.writeText(`${shareableUrl}\n\n${shareText}`);
-      setMsg("Shareable link copied to clipboard!");
-      setTimeout(() => setMsg(""), 3000);
+      // Show social share modal for desktop or when Web Share API fails
+      setShowShareModal(true);
       
     } catch (error) {
       console.error('[Home] Error sharing:', error);
@@ -749,24 +751,24 @@ export default function Home() {
                 <>
                   <button
                     onClick={shareImage}
-                    className="rounded-lg border border-[var(--brand)] bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-3 py-2 text-sm font-medium transition-all"
+                    className="rounded-lg border border-[var(--line)] bg-[var(--brand)] hover:bg-[var(--brand)]/90 text-[var(--brand-ink)] px-3 py-2 text-sm font-medium transition-all"
                   >
                     Share
                   </button>
                   <button
                     onClick={() => setShowLightbox(true)}
-                    className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
+                    className="rounded-lg border border-[var(--brand)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                   >
                     View
                   </button>
-                  <a
+               {/*}   <a
                     className="rounded-lg border border-[var(--line)] bg-[var(--muted)] hover:bg-[var(--line)]/10 text-[var(--fg)] px-3 py-2 text-sm font-medium transition-all"
                     href={genUrl}
                     target="_blank"
                     rel="noreferrer"
                   >
                     Open
-                  </a>
+                  </a>*/}
                 </>
               )}
             </div>
@@ -834,6 +836,20 @@ export default function Home() {
             setSharedImage(null);
           }}
         />
+      )}
+
+      {/* Social Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+             onClick={() => setShowShareModal(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <SocialShareButtons
+              shareableUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/?image=local_${Date.now()}`}
+              shareText="Check out this amazing pet portrait I created! ✨🐾"
+              onClose={() => setShowShareModal(false)}
+            />
+          </div>
+        </div>
       )}
     </main>
   );
