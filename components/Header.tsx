@@ -6,7 +6,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b">
       <div className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between">
-        <a href="/" className="font-semibold tracking-tight">Dogs.AI</a>
+        <a href="/" className="font-semibold tracking-tight">my Pet Portrait Studio</a>
 
         <nav className="hidden md:flex items-center gap-4">
           <a href="/bundles" className="hover:underline">Bundles</a>
