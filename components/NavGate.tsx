@@ -6,11 +6,19 @@ import ThemeToggle from "./ThemeToggle";
 export default function NavGate() {
   const [isOpen, setOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? null;
+      setUserEmail(email);
+      // Simple admin check - you can enhance this with proper role-based access
+      setIsAdmin(email === "admin@example.com" || (email?.includes("admin") ?? false));
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUserEmail(session?.user?.email ?? null);
+      const email = session?.user?.email ?? null;
+      setUserEmail(email);
+      setIsAdmin(email === "admin@example.com" || (email?.includes("admin") ?? false));
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
@@ -30,6 +38,9 @@ export default function NavGate() {
         <a href="/dashboard" className="hover:opacity-80">Dashboard</a>
         <a href="/bundles" className="hover:opacity-80">Credits</a>
         <a href="/account" className="hover:opacity-80">Account</a>
+        {isAdmin && (
+          <a href="/admin" className="hover:opacity-80 text-amber-400">Admin</a>
+        )}
         
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -56,6 +67,9 @@ export default function NavGate() {
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/dashboard">Dashboard</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/bundles">Credits</a>
           <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors" href="/account">Account</a>
+          {isAdmin && (
+            <a className="block px-3 py-2 hover:bg-[var(--line)] rounded transition-colors text-amber-400" href="/admin">Admin</a>
+          )}
           
           <div className="border-t border-[var(--line)] my-2"></div>
           

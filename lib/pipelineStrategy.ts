@@ -25,17 +25,17 @@ const PIPELINE_STRATEGIES: Record<UserTier, PipelineStrategy> = {
   },
   logged_in: {
     defaultMode: "simple", // Fast by default
-    availableModes: ["simple", "hybrid", "multimodel"],
+    availableModes: ["simple", "hybrid", "multimodel", "seedream"],
     maxResolution: "4096x4096",
     estimatedTime: "30s - 4min",
-    features: ["Style transfer", "Aspect ratio", "Upscaling", "High-res"],
+    features: ["Style transfer", "Aspect ratio", "Upscaling", "High-res", "4K generation"],
   },
   premium: {
     defaultMode: "multimodel", // Best quality by default
-    availableModes: ["simple", "hybrid", "multimodel"],
+    availableModes: ["simple", "hybrid", "multimodel", "seedream"],
     maxResolution: "4096x4096",
     estimatedTime: "30s - 4min",
-    features: ["Style transfer", "Precise aspect ratio", "4K upscaling", "Best quality"],
+    features: ["Style transfer", "Precise aspect ratio", "4K upscaling", "Best quality", "Advanced editing"],
   },
 };
 
@@ -172,6 +172,7 @@ function getPipelineLabel(mode: PipelineMode): string {
     simple: "Fast Generation",
     hybrid: "Balanced Quality", 
     multimodel: "Best Quality",
+    seedream: "4K Advanced",
   };
   return labels[mode];
 }
@@ -181,6 +182,7 @@ function getPipelineDescription(mode: PipelineMode): string {
     simple: "Quick style transfer with basic aspect ratio",
     hybrid: "Good quality with 2× upscaling",
     multimodel: "Best quality with precise control and 4× upscaling",
+    seedream: "Advanced 4K generation with precise editing capabilities",
   };
   return descriptions[mode];
 }
@@ -190,6 +192,7 @@ function getPipelineTime(mode: PipelineMode): string {
     simple: "30-60s",
     hybrid: "1-2min",
     multimodel: "2-4min",
+    seedream: "2-3min",
   };
   return times[mode];
 }
@@ -199,6 +202,7 @@ function getPipelineResolution(mode: PipelineMode): string {
     simple: "1024×1024",
     hybrid: "2048×2048", 
     multimodel: "4096×4096",
+    seedream: "4096×4096",
   };
   return resolutions[mode];
 }

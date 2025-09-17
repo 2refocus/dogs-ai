@@ -1,8 +1,8 @@
 // lib/pipelineConfig.ts
 // Configuration for different pipeline modes and models
 
-export type PipelineMode = "simple" | "multimodel" | "hybrid";
-export type ModelType = "nano-banana" | "sdxl" | "ip-adapter-sdxl" | "real-esrgan";
+export type PipelineMode = "simple" | "multimodel" | "hybrid" | "seedream";
+export type ModelType = "nano-banana" | "sdxl" | "ip-adapter-sdxl" | "real-esrgan" | "seedream-4";
 
 // Pipeline configurations
 export const PIPELINE_CONFIGS = {
@@ -29,6 +29,14 @@ export const PIPELINE_CONFIGS = {
     estimatedTime: "1-2 minutes", 
     maxResolution: "2048x2048",
     features: ["Style transfer", "Basic aspect ratio", "2x upscaling"],
+  },
+  seedream: {
+    name: "SeeDream Pipeline",
+    description: "SeeDream-4 - Advanced 4K generation with precise editing",
+    models: ["seedream-4"],
+    estimatedTime: "2-3 minutes",
+    maxResolution: "4096x4096",
+    features: ["4K generation", "Precise editing", "Advanced aspect ratios", "Built-in upscaling"],
   },
 } as const;
 
@@ -63,6 +71,14 @@ export const MODEL_SETTINGS = {
     outputSize: "4096x4096",
     scales: [2, 4],
   },
+  "seedream-4": {
+    model: "bytedance/seedream-4",
+    supportsAspectRatio: true,
+    supportsUpscaling: true,
+    maxInputSize: "4096x4096",
+    outputSize: "4096x4096",
+    scales: [2, 4],
+  },
 } as const;
 
 // Get pipeline configuration
@@ -78,7 +94,7 @@ export function getModelConfig(model: ModelType) {
 // Check if pipeline supports feature
 export function supportsFeature(mode: PipelineMode, feature: string): boolean {
   const config = getPipelineConfig(mode);
-  return config.features.includes(feature as any);
+  return (config.features as readonly string[]).includes(feature);
 }
 
 // Get recommended pipeline for use case
