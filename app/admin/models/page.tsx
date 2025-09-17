@@ -44,7 +44,7 @@ export default function ModelConfigPage() {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? null;
       setUserEmail(email);
-      setIsAdmin(email === "admin@example.com" || (email?.includes("admin") ?? false));
+      setIsAdmin(email === "ai2refocus@gmail.com" || (email?.includes("ai2refocus") ?? false));
     });
     loadModels();
   }, []);

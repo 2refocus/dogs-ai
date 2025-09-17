@@ -13,12 +13,12 @@ export default function NavGate() {
       const email = data.user?.email ?? null;
       setUserEmail(email);
       // Simple admin check - you can enhance this with proper role-based access
-      setIsAdmin(email === "admin@example.com" || (email?.includes("admin") ?? false));
+      setIsAdmin(email === "ai2refocus@gmail.com" || (email?.includes("ai2refocus") ?? false));
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       const email = session?.user?.email ?? null;
       setUserEmail(email);
-      setIsAdmin(email === "admin@example.com" || (email?.includes("admin") ?? false));
+      setIsAdmin(email === "ai2refocus@gmail.com" || (email?.includes("ai2refocus") ?? false));
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);

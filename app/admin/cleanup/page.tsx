@@ -18,7 +18,7 @@ export default function AdminCleanupPage() {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? null;
       setUserEmail(email);
-      setIsAdmin(email === "admin@example.com" || email?.includes("admin"));
+      setIsAdmin(email === "ai2refocus@gmail.com" || (email?.includes("ai2refocus") ?? false));
     });
     loadStats();
   }, []);
