@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseAdmin";
 
 // GET /api/admin/models - Get all model configurations
 export async function GET(req: NextRequest) {
