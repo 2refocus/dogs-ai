@@ -1,58 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-// GET /api/admin/models - Get all model configurations
+// GET /api/admin/models - Get all model configurations from database
 export async function GET(req: NextRequest) {
   try {
-    // In a real implementation, you'd store these in a database
-    // For now, we'll return the static configuration
-    const models = [
-      {
-        id: "nano-banana",
-        name: "Nano Banana",
-        model: "google/nano-banana",
-        supportsAspectRatio: true,
-        supportsUpscaling: false,
-        maxInputSize: "1024x1024",
-        outputSize: "1024x1024",
-        isActive: true,
-        description: "Fast, efficient model for quick generations"
-      },
-      {
-        id: "sdxl",
-        name: "Stable Diffusion XL",
-        model: "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-        supportsAspectRatio: true,
-        supportsUpscaling: false,
-        maxInputSize: "1024x1024",
-        outputSize: "1024x1024",
-        isActive: true,
-        description: "High-quality text-to-image generation"
-      },
-      {
-        id: "seedream-4",
-        name: "SeeDream-4",
-        model: "bytedance/seedream-4",
-        supportsAspectRatio: true,
-        supportsUpscaling: true,
-        maxInputSize: "4096x4096",
-        outputSize: "4096x4096",
-        scales: [2, 4],
-        isActive: false,
-        description: "Unified text-to-image generation and precise single-sentence editing at up to 4K resolution"
-      },
-      {
-        id: "real-esrgan",
-        name: "Real-ESRGAN",
-        model: "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
-        supportsAspectRatio: false,
-        supportsUpscaling: true,
-        maxInputSize: "2048x2048",
-        outputSize: "4096x4096",
-        scales: [2, 4],
-        isActive: true,
-        description: "High-quality image upscaling"
-      }
-    ];
+    const { data, error } = await supabaseAdmin
+      .from("model_configs")
+      .select("*")
+      .order("id");
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch models: " + error.message },
+        { status: 500 }
+      );
+    }
+
+    // Transform snake_case to camelCase for frontend
+    const models = (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      model: row.model,
+      supportsAspectRatio: row.supports_aspect_ratio,
+      supportsUpscaling: row.supports_upscaling,
+      maxInputSize: row.max_input_size,
+      outputSize: row.output_size,
+      scales: row.scales || [],
+      isActive: row.is_active,
+      description: row.description,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
 
     return NextResponse.json({ models });
   } catch (error) {
@@ -78,24 +57,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // In a real implementation, you'd save this to a database
-    // For now, we'll just return success
-    const modelConfig = {
-      id,
-      name,
-      model,
-      supportsAspectRatio: supportsAspectRatio ?? true,
-      supportsUpscaling: supportsUpscaling ?? false,
-      maxInputSize: maxInputSize ?? "1024x1024",
-      outputSize: outputSize ?? "1024x1024",
-      scales: scales || [],
-      isActive: isActive ?? true,
-      description: description || ""
-    };
+    // Upsert to database (insert or update on conflict)
+    const { data, error } = await supabaseAdmin
+      .from("model_configs")
+      .upsert({
+        id,
+        name,
+        model,
+        supports_aspect_ratio: supportsAspectRatio ?? true,
+        supports_upscaling: supportsUpscaling ?? false,
+        max_input_size: maxInputSize ?? "1024x1024",
+        output_size: outputSize ?? "1024x1024",
+        scales: scales || [],
+        is_active: isActive ?? true,
+        description: description || "",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase upsert error:", error);
+      return NextResponse.json(
+        { error: "Failed to save model: " + error.message },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ 
       message: "Model configuration saved successfully",
-      model: modelConfig
+      model: data
     });
   } catch (error) {
     console.error("Error saving model:", error);
@@ -119,8 +109,19 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // In a real implementation, you'd delete from database
-    // For now, we'll just return success
+    const { error } = await supabaseAdmin
+      .from("model_configs")
+      .delete()
+      .eq("id", modelId);
+
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return NextResponse.json(
+        { error: "Failed to delete model: " + error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ 
       message: `Model ${modelId} deleted successfully` 
     });
